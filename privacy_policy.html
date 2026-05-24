@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politique de confidentialité — FavorAI</title>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <style>
+    :root {
+      --bg-dark: #090a0f;
+      --panel-bg: rgba(17, 19, 28, 0.9);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent-color: #6366f1;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.7;
+      padding: 40px 20px 60px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 16px rgba(99,102,241,0.4);
+      flex-shrink: 0;
+    }
+
+    .logo-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 50%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 32px 0 12px;
+      padding-left: 12px;
+      border-left: 3px solid var(--accent-color);
+      letter-spacing: 0.2px;
+    }
+
+    p, li {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    ul li::before {
+      content: "→ ";
+      color: var(--accent-color);
+      font-weight: 600;
+    }
+
+    strong { color: var(--text-main); font-weight: 600; }
+
+    .highlight-box {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    .highlight-box.success {
+      background: rgba(16, 185, 129, 0.07);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .highlight-box.warning {
+      background: rgba(245, 158, 11, 0.07);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .highlight-box.info {
+      background: rgba(99, 102, 241, 0.07);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .highlight-box p { margin: 0; }
+    .highlight-box p + p { margin-top: 6px; }
+
+    .icon { margin-right: 6px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 12px;
+    }
+
+    th {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    td strong { color: var(--text-main); }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-family: var(--font-family);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 28px;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(255,255,255,0.09);
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-icon">
+      <img src="icons/icon48.png" alt="FavorAI logo" />
+    </div>
+    <div>
+      <h1>FavorAI — Politique de confidentialité</h1>
+      <p class="subtitle">Dernière mise à jour : mai 2026 · Version de l'extension : 1.1.0</p>
+    </div>
+  </header>
+
+  <button class="back-btn" onclick="window.close()">← Fermer</button>
+
+  <!-- Résumé -->
+  <div class="highlight-box success">
+    <p><strong>✅ En résumé :</strong> FavorAI ne collecte <strong>aucune donnée personnelle</strong> pour son propre compte. Il ne possède aucun serveur, aucune base de données, aucune télémétrie. Votre clé API et vos favoris ne quittent jamais votre appareil sauf pour être envoyés au service d'IA <strong>que vous avez vous-même configuré</strong>.</p>
+  </div>
+
+  <!-- 1. Qui sommes-nous -->
+  <h2>1. Qui sommes-nous ?</h2>
+  <p>FavorAI est une extension de navigateur développée à titre personnel / indépendant. Elle est publiée sur le Microsoft Edge Add-ons Store et le Chrome Web Store. Le code source est disponible pour audit.</p>
+  <p>Contact : <strong>[À compléter : votre adresse e-mail ou lien GitHub]</strong></p>
+
+  <!-- 2. Données traitées -->
+  <h2>2. Quelles données sont traitées ?</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Donnée</th>
+        <th>Stockage</th>
+        <th>Transmis à un tiers ?</th>
+        <th>Nécessaire ?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Clé API LLM</strong><br>(OpenAI, Gemini, Mistral, etc.)</td>
+        <td>Stockée localement dans <code>chrome.storage.sync</code> (chiffré par le navigateur)</td>
+        <td>Non — uniquement utilisée en en-tête des requêtes vers l'API que vous avez configurée</td>
+        <td>✅ Oui — authentification LLM</td>
+      </tr>
+      <tr>
+        <td><strong>Titres et structure des favoris</strong><br>(hiérarchie de dossiers + noms)</td>
+        <td>Non persisté — utilisé uniquement pendant l'analyse en mémoire vive</td>
+        <td>✅ <strong>Oui</strong> — envoyé au service LLM configuré par l'utilisateur (voir ci-dessous)</td>
+        <td>✅ Oui — nécessaire pour la réorganisation IA</td>
+      </tr>
+      <tr>
+        <td><strong>URLs des favoris</strong></td>
+        <td>Non persisté par FavorAI</td>
+        <td>❌ Non — les URLs ne sont <strong>jamais</strong> transmises au LLM (supprimées avant envoi)</td>
+        <td>Partiellement — utilisées en local pour la vérification des liens morts</td>
+      </tr>
+      <tr>
+        <td><strong>Historique des sessions</strong></td>
+        <td>Stocké localement dans <code>chrome.storage.local</code></td>
+        <td>❌ Non</td>
+        <td>✅ Oui — pour permettre le rollback</td>
+      </tr>
+      <tr>
+        <td><strong>Configuration (provider, modèle, prompt custom)</strong></td>
+        <td><code>chrome.storage.sync</code></td>
+        <td>❌ Non</td>
+        <td>✅ Oui — préférences utilisateur</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 3. Transmission au LLM -->
+  <h2>3. Transmission de données à votre service d'IA</h2>
+  <div class="highlight-box warning">
+    <p><strong>⚠️ Point important :</strong> Lorsque vous lancez une réorganisation, FavorAI construit un fichier JSON contenant les <strong>titres</strong> et la <strong>structure hiérarchique</strong> de vos favoris, puis l'envoie au service d'IA que <strong>vous avez configuré</strong> dans l'onglet Configuration (OpenAI, Google Gemini, Mistral, Grok, Ollama ou un endpoint personnalisé).</p>
+    <p>FavorAI n'a aucun contrôle sur la politique de confidentialité de ces services tiers. Nous vous encourageons à consulter la politique de confidentialité du fournisseur que vous utilisez :</p>
+  </div>
+
+  <ul>
+    <li><a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer">OpenAI — Politique de confidentialité</a></li>
+    <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google (Gemini) — Politique de confidentialité</a></li>
+    <li><a href="https://mistral.ai/privacy/" target="_blank" rel="noopener noreferrer">Mistral AI — Politique de confidentialité</a></li>
+    <li><a href="https://x.ai/legal/privacy-policy" target="_blank" rel="noopener noreferrer">xAI (Grok) — Politique de confidentialité</a></li>
+    <li>Ollama (local) — Aucune transmission externe ; le modèle s'exécute entièrement sur votre machine</li>
+  </ul>
+
+  <!-- 4. Ce que nous ne faisons PAS -->
+  <h2>4. Ce que FavorAI ne fait jamais</h2>
+  <ul>
+    <li>Nous <strong>n'avons aucun serveur propre</strong> — FavorAI n'a pas de backend, pas de base de données, pas de compte utilisateur</li>
+    <li>Nous <strong>ne collectons aucune donnée</strong> à des fins d'analyse, de publicité ou de profilage</li>
+    <li>Nous <strong>n'utilisons aucune telémétrie</strong>, aucun tracker, aucun pixel de suivi</li>
+    <li>Nous <strong>ne partageons aucune donnée</strong> avec des partenaires tiers autres que le LLM que vous avez vous-même configuré</li>
+    <li>Nous <strong>ne stockons pas les URLs</strong> de vos favoris — elles restent sur votre appareil</li>
+    <li>Nous <strong>ne lisons pas vos onglets ouverts</strong>, votre historique de navigation, vos cookies ou vos mots de passe</li>
+    <li>Nous <strong>n'injectons aucun script</strong> dans les pages que vous visitez</li>
+  </ul>
+
+  <!-- 5. Permissions -->
+  <h2>5. Pourquoi ces permissions ?</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Permission</th>
+        <th>Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>bookmarks</code></td>
+        <td>Lire, déplacer, renommer et supprimer des favoris — la fonction principale de l'extension</td>
+      </tr>
+      <tr>
+        <td><code>storage</code></td>
+        <td>Stocker votre configuration (clé API, préférences) et l'historique des sessions localement dans votre navigateur</td>
+      </tr>
+      <tr>
+        <td><code>&lt;all_urls&gt;</code></td>
+        <td>
+          Deux usages : (1) vérifier si les URLs de vos favoris sont accessibles (liens morts) en envoyant des requêtes HEAD/GET aux sites concernés, et (2) communiquer avec l'API LLM que vous avez configurée, qui peut pointer vers n'importe quel domaine (y compris un serveur local)
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 6. Sécurité de la clé API -->
+  <h2>6. Sécurité de votre clé API</h2>
+  <div class="highlight-box info">
+    <p>Votre clé API est stockée dans <code>chrome.storage.sync</code>. Ce stockage est <strong>chiffré par le navigateur</strong> et synchronisé entre vos appareils connectés au même compte Microsoft/Google Edge/Chrome. FavorAI ne peut pas lire votre clé en dehors du contexte de l'extension.</p>
+    <p>Recommandation : Créez une clé API dédiée à FavorAI avec un quota limité chez votre fournisseur LLM.</p>
+  </div>
+
+  <!-- 7. Droits RGPD -->
+  <h2>7. Vos droits (RGPD)</h2>
+  <p>Puisque FavorAI ne collecte aucune donnée personnelle pour son propre compte, les droits d'accès, de rectification et de suppression s'appliquent directement à votre navigateur :</p>
+  <ul>
+    <li><strong>Supprimer vos données</strong> : Utilisez le bouton « Vider » dans l'onglet Historique, ou désinstallez l'extension (toutes les données locales sont effacées)</li>
+    <li><strong>Exporter votre configuration</strong> : Utilisez le bouton « Exporter » dans l'onglet Configuration</li>
+    <li><strong>Exercer vos droits auprès du LLM</strong> : Contactez directement votre fournisseur d'IA (OpenAI, Google, Mistral, etc.) pour les données qu'ils ont pu traiter</li>
+  </ul>
+
+  <!-- 8. Modifications -->
+  <h2>8. Modifications de cette politique</h2>
+  <p>Toute modification significative de cette politique sera signalée dans les notes de version de l'extension. La date de dernière mise à jour est indiquée en haut de cette page.</p>
+
+  <!-- 9. Contact -->
+  <h2>9. Contact</h2>
+  <p>Pour toute question relative à la confidentialité de vos données dans le cadre de l'utilisation de FavorAI :</p>
+  <p><strong>Email :</strong> <a href="mailto:[votre-email@exemple.com]">[À compléter]</a></p>
+  <p><strong>GitHub :</strong> <a href="[URL du dépôt GitHub]" target="_blank" rel="noopener noreferrer">[À compléter]</a></p>
+
+  <footer>
+    <p>FavorAI v1.1.0 · Politique de confidentialité · Dernière mise à jour : mai 2026</p>
+    <p style="margin-top: 4px;">Cette politique est également disponible à l'adresse : <strong>[À compléter : URL publique hébergeant cette politique]</strong></p>
+  </footer>
+</body>
+</html>

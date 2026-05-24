@@ -1,0 +1,153 @@
+import { NEW_FOLDER_PREFIX, CHROME_ROOT_IDS } from '../utils/constants.js';
+import { buildNodeMap, getPathFromMap } from './diff.js';
+import { saveSessionToHistory } from './history.js';
+
+/**
+ * Résout l'ID réel d'un parent (gestion des IDs temporaires new_).
+ */
+export function resolveParentId(id, idMap) {
+  if (!id || String(id) === '0') return '1'; // '0' = racine virtuelle Chrome, pas un parent valide
+  const s = String(id);
+  return s.startsWith(NEW_FOLDER_PREFIX) ? (idMap[s] || '1') : s;
+}
+
+/**
+ * Applique les modifications approuvées par l'utilisateur sur les favoris Chrome.
+ */
+export async function applyChanges(approvedActionIds, pendingActions, mode) {
+  const approvedSet = new Set(approvedActionIds);
+  const toRun = pendingActions.filter(a => approvedSet.has(a.id));
+
+  let nodeMap = {};
+  try {
+    const trees = await chrome.bookmarks.getTree();
+    nodeMap = buildNodeMap(trees[0]);
+  } catch (e) {
+    console.error('Error reading bookmark tree for history:', e);
+  }
+
+  const idMap = {};
+  const history = [];
+
+  // A. Créer les dossiers (ordre croissant de profondeur)
+  const creates = toRun.filter(a => a.type === 'create_folder')
+    .sort((a, b) => (a.params.targetPath || '').split(' > ').length - (b.params.targetPath || '').split(' > ').length);
+
+  for (const act of creates) {
+    const parentId = resolveParentId(act.params.parentId, idMap);
+    try {
+      const created = await chrome.bookmarks.create({ parentId, title: act.params.title });
+      idMap[act.params.tempId] = created.id;
+      history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
+    } catch (err) {
+      console.error(`Error creating folder "${act.params.title}":`, err);
+    }
+  }
+
+  // B. Renommages
+  for (const act of toRun.filter(a => a.type === 'rename_folder' || a.type === 'rename_bookmark')) {
+    const realId = idMap[act.params.nodeId] || act.params.nodeId;
+    let oldTitle = '', oldUrl = null, parentId = '';
+    try {
+      const nodes = await chrome.bookmarks.get(realId);
+      if (nodes?.[0]) { oldTitle = nodes[0].title; oldUrl = nodes[0].url || null; parentId = nodes[0].parentId; }
+    } catch { /* ignore */ }
+    const update = { title: act.params.newTitle };
+    if (act.type === 'rename_bookmark' && act.params.newUrl) update.url = act.params.newUrl;
+    try {
+      await chrome.bookmarks.update(realId, update);
+      history.push({ type: 'rename', nodeId: realId, oldTitle, newTitle: act.params.newTitle, oldUrl, newUrl: update.url || null, isFolder: !oldUrl, parentPath: getPathFromMap(parentId, nodeMap) });
+    } catch (err) {
+      console.error(`Error renaming ${realId}:`, err);
+    }
+  }
+
+  // C. Déplacements
+  for (const act of toRun.filter(a => a.type === 'move_bookmark' || a.type === 'move_folder')) {
+    const realId  = idMap[act.params.nodeId] || act.params.nodeId;
+    const realPid = resolveParentId(act.params.newParentId, idMap);
+    let oldPid = '', title = '', isFolder = false;
+    try {
+      const nodes = await chrome.bookmarks.get(realId);
+      if (nodes?.[0]) { oldPid = nodes[0].parentId; title = nodes[0].title; isFolder = !nodes[0].url; }
+    } catch { /* ignore */ }
+    try {
+      await chrome.bookmarks.move(realId, { parentId: realPid });
+      history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
+    } catch (err) {
+      console.error(`Error moving ${realId} → ${realPid}:`, err);
+    }
+  }
+
+  // D. Suppressions (favoris d'abord, dossiers les plus profonds en dernier)
+  const deletions = toRun.filter(a => ['delete_duplicate', 'delete_dead', 'delete_folder'].includes(a.type))
+    .sort((a, b) => {
+      if (a.type === 'delete_folder' && b.type !== 'delete_folder') return 1;
+      if (a.type !== 'delete_folder' && b.type === 'delete_folder') return -1;
+      if (a.type === 'delete_folder' && b.type === 'delete_folder') {
+        return (b.params.sourcePath || '').split(' > ').length - (a.params.sourcePath || '').split(' > ').length;
+      }
+      return 0;
+    });
+
+  for (const act of deletions) {
+    const realId = idMap[act.targetId] || act.targetId;
+    let old = null;
+    try { const n = await chrome.bookmarks.get(realId); if (n?.[0]) old = n[0]; } catch { /* ignore */ }
+    try {
+      if (act.type === 'delete_folder') {
+        await chrome.bookmarks.removeTree(realId);
+      } else {
+        await chrome.bookmarks.remove(realId);
+      }
+      if (old) history.push({ type: 'delete', nodeId: realId, title: old.title, url: old.url || null, parentId: old.parentId, isFolder: !old.url, sourcePath: getPathFromMap(old.parentId, nodeMap) });
+    } catch (err) {
+      console.error(`Error deleting ${realId}:`, err);
+    }
+  }
+
+  // E. Post-apply cleanup: remove any folders left empty after moves/deletions
+  await removeEmptyFoldersRecursive('0', history);
+
+  if (history.length > 0) await saveSessionToHistory(history, mode);
+}
+
+/**
+ * Parcourt récursivement l'arbre et supprime tout dossier vide (depth-first).
+ * Les IDs racines Chrome (0,1,2,3) ne sont jamais supprimés.
+ */
+async function removeEmptyFoldersRecursive(parentId, history) {
+  let children;
+  try {
+    children = await chrome.bookmarks.getChildren(parentId);
+  } catch {
+    return;
+  }
+
+  for (const child of children) {
+    if (child.url || CHROME_ROOT_IDS.has(child.id)) continue;
+
+    // Recurse first so leaves are cleaned before their parents
+    await removeEmptyFoldersRecursive(child.id, history);
+
+    // Re-check children after recursion
+    let remaining;
+    try {
+      remaining = await chrome.bookmarks.getChildren(child.id);
+    } catch {
+      continue;
+    }
+
+    if (remaining.length === 0) {
+      try {
+        await chrome.bookmarks.removeTree(child.id);
+        history.push({
+          type: 'delete', nodeId: child.id, title: child.title,
+          url: null, parentId, isFolder: true, sourcePath: 'post-cleanup (dossier vide)'
+        });
+      } catch (err) {
+        console.error(`Post-cleanup: impossible de supprimer le dossier vide "${child.title}" (${child.id}):`, err);
+      }
+    }
+  }
+}

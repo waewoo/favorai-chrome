@@ -1,0 +1,21 @@
+{
+  "name": "favorai-extension",
+  "version": "1.1.0",
+  "description": "AI-powered bookmark manager Chrome extension",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint src/ background.js popup.js --ext .js",
+    "lint:fix": "eslint src/ background.js popup.js --ext .js --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "package": "node scripts/package.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.0",
+    "vitest": "^1.6.0"
+  }
+}

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FavorAI</title>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">
+          <img src="icons/icon48.png" alt="FavorAI" />
+        </div>
+        <div>
+          <h1>FavorAI</h1>
+          <p style="font-size: 10px; color: var(--text-muted);" data-i18n="appTagline">Intelligent bookmark management</p>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="btnDetach" title="Détacher dans une fenêtre" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px 8px; display: flex; align-items: center; justify-content: center;">🪟</button>
+        <div class="badge" id="appVersion">v1.2.0</div>
+      </div>
+    </header>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">Configuration saved!</div>
+
+    <!-- TAB NAVIGATION -->
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
+      <button class="tab-btn" id="tabConfigBtn" data-i18n="tabConfig">⚙️ Configuration</button>
+      <button class="tab-btn" id="tabHistoryBtn" data-i18n="tabHistory">📜 History</button>
+    </div>
+
+    <!-- TAB PANELS -->
+    <div id="tabRangementPanel" class="tab-panel">
+      <!-- MAIN VIEW (LAUNCH + LOGS) -->
+      <div id="mainView" class="view">
+        <!-- EXECUTION SECTION -->
+        <section class="section">
+          <div class="section-title" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="sectionLaunchDesc">
+            The extension will analyze duplicates, dead links, and query AI to organize your bookmarks.
+          </p>
+
+          <!-- Privacy/Transmission warning -->
+          <div style="display: flex; align-items: flex-start; gap: 8px; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px;" role="note" aria-label="Privacy Information">
+            <span style="font-size: 13px; flex-shrink: 0;">ℹ️</span>
+            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0;" data-i18n="privacyNote">
+              To reorganize your bookmarks, their titles and structure (without URLs) are transmitted to the AI service you configured. No data is collected by FavorAI.
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="bookmarkFolderSelect" style="font-size: 11px; color: var(--text-muted);">Bookmark Folder</label>
+            <select id="bookmarkFolderSelect">
+              <option value="root">Tous les favoris (Racine)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="checkDeadLinks" style="width: 14px; height: 14px; margin-top: 1px; accent-color: var(--accent-color); cursor: pointer;" />
+            <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Check dead links (slow)</label>
+          </div>
+          
+          <div class="btn-group" id="reorgBtnGroup">
+            <button class="btn btn-primary" id="btnMinReorg" data-i18n-title="btnMinimalTitle">
+              <span data-i18n="btnMinimal">🔍 Minimal</span>
+            </button>
+            <button class="btn btn-secondary" id="btnFullReorg" data-i18n-title="btnCompleteTitle">
+              <span data-i18n="btnComplete">✨ Complete</span>
+            </button>
+          </div>
+          <button class="btn btn-danger hidden" id="btnStopReorg" style="width: 100%; margin-top: 10px;">
+            <span data-i18n="btnStop">🛑 Stop Reorganization</span>
+          </button>
+        </section>
+
+        <!-- STATUS & LOGS PANEL -->
+        <section class="section status-panel">
+          <div class="section-title" data-i18n="sectionStatus">💻 Status Console</div>
+          <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-label="Analysis Status Console">
+            <div class="log-entry info" data-i18n="logReady">&gt; Ready to analyze your bookmarks. Save your API key then launch a reorganization.</div>
+          </div>
+          <div class="progress-bar-container" id="progressBarContainer" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- VALIDATION VIEW (CHECKLIST) -->
+      <div id="validationView" class="view validation-panel hidden">
+        <section class="section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+          <div class="section-title">
+            <span data-i18n="validationTitle">📋 Proposed Changes</span>
+            <span class="badge" id="reorgModeBadge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99,102,241,0.4);">Minimal</span>
+          </div>
+
+          <div class="explanation-block" id="explanationBlock" style="display: none;">
+            <strong data-i18n="explanationTitle">Explication de l'IA</strong>
+            <div id="iaExplanationText"></div>
+          </div>
+
+          <div class="action-header-bar">
+            <span style="font-size: 11px; color: var(--text-muted);" id="actionCount">0 proposed changes</span>
+            <div class="selection-controls">
+              <span id="selectAll" data-i18n="selectAll">Select All</span>
+              <span>|</span>
+              <span id="selectNone" data-i18n="selectNone">Deselect All</span>
+            </div>
+          </div>
+
+          <div class="action-list-container" id="actionListContainer">
+            <!-- Action items will be generated here -->
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color);">
+            <button class="btn btn-flat btn-danger" id="btnCancel" style="flex: 1;" title="Cancel the analysis and start over">🔄 Restart</button>
+            <button class="btn btn-success" id="btnApply" style="flex: 2;" data-i18n="btnApply">Apply selected changes</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- CONFIG PANEL (TAB CONFIG) -->
+    <div id="tabConfigPanel" class="tab-panel hidden">
+      <!-- CONFIGURATION SECTION -->
+      <section class="section" id="configSection">
+        <div class="section-title" id="configHeader" style="user-select: none;">
+          <span data-i18n="sectionConfigTitle">⚙️ LLM Configuration</span>
+          <div style="display: flex; gap: 8px; font-size: 9px; align-items: center;" id="configHeaderActions">
+            <span style="cursor: pointer; color: var(--accent-color);" id="btnExportConfig" data-i18n="btnExport">Export</span>
+            <span style="color: var(--border-color);">|</span>
+            <span style="cursor: pointer; color: var(--accent-color);" id="btnImportConfig" data-i18n="btnImport">Import</span>
+            <span style="color: var(--border-color);">|</span>
+            <span style="cursor: pointer; color: var(--accent-color);" id="btnResetConfig" data-i18n="btnReset">Reset</span>
+          </div>
+        </div>
+        <!-- Hidden input for JSON config import -->
+        <input type="file" id="importConfigFile" accept=".json" style="display: none;" />
+
+        <div id="configBody" class="config-body">
+          <div class="form-group">
+            <label for="provider" data-i18n="labelProvider">Provider</label>
+            <select id="provider">
+              <option value="openai">OpenAI</option>
+              <option value="claude">Anthropic Claude</option>
+              <option value="google">Google Gemini</option>
+              <option value="mistral">Mistral AI</option>
+              <option value="grok">Grok (xAI)</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="ollama">Ollama (Local)</option>
+              <option value="custom">Custom / OpenAI-Compatible (LM Studio, etc.)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="apiKey" data-i18n="labelApiKey">API Key (Token)</label>
+            <input type="password" id="apiKey" data-i18n-placeholder="placeholderApiKey" placeholder="sk-..." />
+          </div>
+
+          <details style="margin-top: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.01);">
+            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; display: list-item; outline: none;" data-i18n="summaryAdvanced">⚙️ Advanced Settings</summary>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="apiUrl" data-i18n="labelApiUrl">API URL</label>
+                <input type="text" id="apiUrl" placeholder="https://api.openai.com/v1" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="modelName" data-i18n="labelModelName">Model Name</label>
+                <input type="text" id="modelName" placeholder="gpt-4o" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="linkCheckBatchSize" data-i18n="labelBatchSize">Link verification speed (batch size)</label>
+                <select id="linkCheckBatchSize">
+                  <option value="4">4 (Min Load - Slow)</option>
+                  <option value="8">8 (Standard)</option>
+                  <option value="16">16 (Fast)</option>
+                  <option value="24" selected>24 (Very Fast)</option>
+                  <option value="32">32 (Max Load - Hyper Fast)</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="maxTokens">Max tokens (réponse IA)</label>
+                <select id="maxTokens">
+                  <option value="8192">8 192 — Petit modèle / peu de favoris</option>
+                  <option value="16384">16 384 — Standard</option>
+                  <option value="32768">32 768 — Grande bibliothèque</option>
+                  <option value="65536">65 536 — Très grande bibliothèque</option>
+                  <option value="131072" selected>131 072 — Défaut recommandé</option>
+                  <option value="262144">262 144 — 256K (Gemini / Claude)</option>
+                  <option value="524288">524 288 — 512K (modèles récents)</option>
+                  <option value="1048576">1 048 576 — 1M (Gemini 1.5 Pro)</option>
+                </select>
+                <p style="font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                  ⚠️ Si l'erreur "réponse incomplète" apparaît, augmenter cette valeur.
+                </p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                <input type="checkbox" id="debugMode" style="width: 14px; height: 14px; margin-top: 1px; accent-color: var(--accent-color); cursor: pointer;" />
+                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">🐛 Debug Mode (logs raw AI response)</label>
+              </div>
+            </div>
+          </details>
+
+          <details style="margin-top: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.01);">
+            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; display: list-item; outline: none;" data-i18n="summaryPrompts">📝 Customize Prompts</summary>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;">Minimal Reorganization Prompt</label>
+                <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; transition: all 0.2s; resize: vertical;"></textarea>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="promptComplete" style="font-size: 11px; font-weight: 600;">Complete Reorganization Prompt</label>
+                <textarea id="promptComplete" rows="4" style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; transition: all 0.2s; resize: vertical;"></textarea>
+              </div>
+              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto;" data-i18n="btnReset">Reset to Defaults</button>
+            </div>
+          </details>
+
+          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; margin-top: 12px; font-size: 11px; padding: 6px 12px;" data-i18n="btnSaveConfig">Save Configuration</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- HISTORIQUE PANEL (TAB HISTORIQUE) -->
+    <div id="tabHistoryPanel" class="tab-panel hidden">
+      <!-- HISTORIQUE SECTION -->
+      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; max-height: 480px;">
+        <div class="section-title">
+          <span data-i18n="historyTitle">📜 Session History</span>
+          <button class="btn btn-flat btn-danger" id="btnClearHistory" style="font-size: 9px; padding: 2px 6px; height: auto;" data-i18n="btnClearHistory">Clear</button>
+        </div>
+        
+        <div class="action-list-container" id="historyListContainer" style="max-height: 400px; margin-bottom: 0;">
+          <!-- History sessions will be rendered here -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer style="text-align: center; padding: 6px 20px 10px; border-top: 1px solid var(--border-color); margin-top: -8px;">
+    <button id="btnPrivacyPolicy" style="background: none; border: none; color: var(--text-muted); font-size: 10px; cursor: pointer; font-family: var(--font-family); text-decoration: underline; padding: 0;" data-i18n="btnPrivacyPolicy">
+      Privacy Policy
+    </button>
+  </footer>
+
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
+    <div class="modal-content-custom">
+      <h3 id="modalTitle">Confirmation</h3>
+      <p id="modalMessage">Are you sure?</p>
+      <div class="modal-buttons-custom">
+        <button id="modalBtnCancel" class="btn btn-flat" style="font-size: 11px; padding: 6px 12px;" data-i18n="btnCancel">Cancel</button>
+        <button id="modalBtnConfirm" class="btn btn-primary" style="font-size: 11px; padding: 6px 12px; margin-top: 0; box-shadow: none;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
