@@ -1683,6 +1683,50 @@ function startInlineEdit(actionId, itemDiv) {
       editContainer.appendChild(group2);
     }
 
+    // Add folder selector for bookmark actions
+    let folderSelect = null;
+    if (act.url && (act.type === 'move_bookmark' || act.type === 'rename_bookmark' || act.type === 'delete_dead' || act.type === 'delete_duplicate')) {
+      const groupFolder = document.createElement('div');
+      groupFolder.className = 'form-group';
+      groupFolder.style.cssText = 'margin-bottom: 0; margin-top: 4px;';
+      const labelFolder = document.createElement('label');
+      labelFolder.style.fontSize = '10px';
+      labelFolder.style.display = 'block';
+      labelFolder.style.marginBottom = '2px';
+      labelFolder.textContent = chrome.i18n.getMessage('lightFolderLabel') || 'Dossier cible';
+      folderSelect = document.createElement('select');
+      folderSelect.className = 'edit-inline-folder';
+      folderSelect.style.cssText = 'padding: 4px 8px; font-size: 11px; width: 100%;';
+
+      // Populate folder select
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder') || 'Sélectionner un dossier...';
+      folderSelect.appendChild(placeholder);
+
+      if (bookmarkFolders && bookmarkFolders.length > 0) {
+        bookmarkFolders.forEach(folder => {
+          const option = document.createElement('option');
+          option.value = folder.id;
+          const parts = folder.path.split(' > ');
+          const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
+          const displayPath = parts.length > 1 && roots.includes(parts[0]) ? parts.slice(1).join(' > ') : parts.join(' > ');
+          option.textContent = displayPath;
+          folderSelect.appendChild(option);
+        });
+
+        // Pre-select target folder
+        const targetId = act.params?.targetParentId || act.params?.parentId;
+        if (targetId) {
+          folderSelect.value = targetId;
+        }
+      }
+
+      groupFolder.appendChild(labelFolder);
+      groupFolder.appendChild(folderSelect);
+      editContainer.appendChild(groupFolder);
+    }
+
     const buttonRow = document.createElement('div');
     buttonRow.style.cssText = 'display: flex; gap: 8px; margin-top: 6px; justify-content: flex-end;';
     
@@ -1711,6 +1755,7 @@ function startInlineEdit(actionId, itemDiv) {
       e.stopPropagation();
       const newTitle = input1.value.trim();
       const newUrl = input2 ? input2.value.trim() : null;
+      const newFolderId = folderSelect ? folderSelect.value : null;
 
       if (!newTitle) {
         showToast("Le titre ne peut pas être vide");
@@ -1744,6 +1789,16 @@ function startInlineEdit(actionId, itemDiv) {
       } else {
         if (act.type === 'rename_folder' || act.type === 'move_folder') {
           act.params.newTitle = newTitle;
+        }
+      }
+
+      // Handle folder change
+      if (newFolderId && newFolderId !== (act.params?.targetParentId || act.params?.parentId)) {
+        act.params.targetParentId = newFolderId;
+        if (act.type === 'rename_bookmark' || act.type === 'delete_dead' || act.type === 'delete_duplicate') {
+          act.type = 'move_bookmark';
+          act.category = 'structure';
+          act.description = 'Déplacer le favori';
         }
       }
 
