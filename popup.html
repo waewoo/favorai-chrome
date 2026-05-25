@@ -20,13 +20,13 @@
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="btnDetach" title="Détacher dans une fenêtre" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px 8px; display: flex; align-items: center; justify-content: center;">🪟</button>
+        <button id="btnDetach" data-i18n="detachButtonTitle" data-i18n-attr="title" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px 8px; display: flex; align-items: center; justify-content: center;">🪟</button>
         <div class="badge" id="appVersion">v1.2.0</div>
       </div>
     </header>
 
     <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="toast">Configuration saved!</div>
+    <div id="toast" class="toast" data-i18n="toastConfigSaved"></div>
 
     <!-- TAB NAVIGATION -->
     <div class="tab-nav">
@@ -58,7 +58,7 @@
           <div class="form-group">
             <label for="bookmarkFolderSelect" style="font-size: 11px; color: var(--text-muted);">Bookmark Folder</label>
             <select id="bookmarkFolderSelect">
-              <option value="root">Tous les favoris (Racine)</option>
+              <option value="root" data-i18n="allBookmarks"></option>
             </select>
           </div>
 
@@ -189,7 +189,7 @@
               <!-- Max tokens + Batch size côte à côte -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label for="maxTokens">Max tokens</label>
+                  <label for="maxTokens" data-i18n="maxTokens"></label>
                   <select id="maxTokens">
                     <option value="8192">8 192</option>
                     <option value="16384">16 384</option>
@@ -204,36 +204,36 @@
                 <div class="form-group" style="margin-bottom: 0;">
                   <label for="linkCheckBatchSize" data-i18n="labelBatchSize">Vitesse vérif. liens</label>
                   <select id="linkCheckBatchSize">
-                    <option value="4">4 — Lent</option>
-                    <option value="8">8 — Standard</option>
-                    <option value="16">16 — Rapide</option>
-                    <option value="24" selected>24 — Très rapide</option>
-                    <option value="32">32 — Max</option>
+                    <option value="4"><span data-i18n="slowSpeed">4 — Lent</span></option>
+                    <option value="8"><span data-i18n="standardSpeed">8 — Standard</span></option>
+                    <option value="16"><span data-i18n="fastSpeed">16 — Rapide</span></option>
+                    <option value="24" selected><span data-i18n="veryFastSpeed">24 — Très rapide</span></option>
+                    <option value="32"><span data-i18n="maxSpeed">32 — Max</span></option>
                   </select>
                 </div>
               </div>
 
               <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                 <input type="checkbox" id="debugMode" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer;" />
-                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">🐛 Debug Mode</label>
+                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="debugMode"></label>
               </div>
             </div>
           </details>
 
           <!-- Personnalisation des prompts -->
           <details style="margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,0.01);">
-            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryPrompts">📝 Personnaliser les prompts</summary>
+            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryPrompts"></summary>
             <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;">Prompt — Mode Minimal</label>
+                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;" data-i18n="promptMinimal"></label>
                 <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptComplete" style="font-size: 11px; font-weight: 600;">Prompt — Mode Complet</label>
+                <label for="promptComplete" style="font-size: 11px; font-weight: 600;" data-i18n="promptComplete"></label>
                 <textarea id="promptComplete" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptSuggest" style="font-size: 11px; font-weight: 600;">Prompt — Suggestion / Ajout favori</label>
+                <label for="promptSuggest" style="font-size: 11px; font-weight: 600;" data-i18n="promptSuggest"></label>
                 <textarea id="promptSuggest" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
               <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto;" data-i18n="btnReset">Réinitialiser les prompts</button>
@@ -263,31 +263,31 @@
     <!-- ADD BOOKMARK PANEL (TAB ADD BOOKMARK) -->
     <div id="tabAddBookmarkPanel" class="tab-panel">
       <section class="section">
-        <div class="section-title">➕ Add Current Tab with AI</div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+        <div class="section-title" data-i18n="addBookmarkTitle"></div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="addBookmarkDesc">
           Analyze the active browser tab and use AI to automatically determine the best folder location for this bookmark.
         </p>
 
         <div id="activeTabDetails" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 16px;">
-          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">Titre du favori :</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;" data-i18n="bookmarkTitleLabel"></div>
           <input type="text" id="bookmarkTitleInput" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 12px; color: var(--text-main); font-family: var(--font-family); margin-bottom: 8px;" />
           <div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace;" id="activeTabUrl">-</div>
         </div>
 
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-          <button class="btn btn-primary" id="btnAnalyzeBookmark" style="flex: 1; margin-bottom: 0;">🔍 Suggest Best Location</button>
-          <button class="btn btn-flat hidden" id="btnAlternativeBookmark" style="border: 1px solid var(--border-color); font-size: 11px; padding: 0 12px; margin-top: 0; box-shadow: none;">🔄 Alternative</button>
+          <button class="btn btn-primary" id="btnAnalyzeBookmark" style="flex: 1; margin-bottom: 0;" data-i18n="suggestLocationBtn"></button>
+          <button class="btn btn-flat hidden" id="btnAlternativeBookmark" style="border: 1px solid var(--border-color); font-size: 11px; padding: 0 12px; margin-top: 0; box-shadow: none;" data-i18n="alternativeBtn"></button>
         </div>
 
         <!-- AI SUGGESTION RESULTS -->
         <div id="aiBookmarkSuggestion" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;">💡 Recommandation de l'IA</div>
+          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;" data-i18n="suggestionLabel"></div>
 
           <!-- Bookmark name row -->
           <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 8px 10px; margin-bottom: 8px;">
             <span style="font-size: 15px; flex-shrink: 0;">🔖</span>
             <div style="min-width: 0;">
-              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">Nom du favori</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;" data-i18n="bookmarkNameLabel"></div>
               <div id="suggestionBookmarkName" style="font-size: 13px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
             </div>
           </div>
@@ -296,7 +296,7 @@
           <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 7px; padding: 8px 10px; margin-bottom: 10px;">
             <span id="suggestionFolderIcon" style="font-size: 15px; flex-shrink: 0;">📂</span>
             <div style="min-width: 0;">
-              <div id="suggestionFolderLabel" style="font-size: 10px; color: #6ee7b7; margin-bottom: 2px;">Dossier cible</div>
+              <div id="suggestionFolderLabel" style="font-size: 10px; color: #6ee7b7; margin-bottom: 2px;" data-i18n="targetFolderLabel"></div>
               <div id="suggestionFolderResult" style="font-size: 13px; font-weight: 700; color: #10b981; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
             </div>
           </div>
@@ -305,16 +305,14 @@
           <div style="font-size: 10px; color: var(--text-muted); line-height: 1.5; padding: 0 2px;" id="suggestionReasonResult"></div>
         </div>
 
-        <button class="btn btn-success hidden" id="btnConfirmAddBookmark" style="width: 100%;">💾 Confirm & Save Bookmark</button>
+        <button class="btn btn-success hidden" id="btnConfirmAddBookmark" style="width: 100%;" data-i18n="confirmSaveBtn"></button>
       </section>
     </div>
   </div>
 
   <!-- FOOTER -->
   <footer style="text-align: center; padding: 6px 20px 10px; border-top: 1px solid var(--border-color); margin-top: -8px;">
-    <button id="btnPrivacyPolicy" style="background: none; border: none; color: var(--text-muted); font-size: 10px; cursor: pointer; font-family: var(--font-family); text-decoration: underline; padding: 0;" data-i18n="btnPrivacyPolicy">
-      Privacy Policy
-    </button>
+    <button id="btnPrivacyPolicy" style="background: none; border: none; color: var(--text-muted); font-size: 10px; cursor: pointer; font-family: var(--font-family); text-decoration: underline; padding: 0;" data-i18n="btnPrivacyPolicy"></button>
   </footer>
 
   <!-- CUSTOM CONFIRMATION MODAL -->

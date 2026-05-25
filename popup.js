@@ -250,8 +250,19 @@ function translatePage() {
   document.documentElement.lang = chrome.i18n.getUILanguage() || 'en';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
+    const attr = el.getAttribute('data-i18n-attr') || 'textContent';
     const msg = chrome.i18n.getMessage(key);
-    if (msg) el.textContent = msg;
+    if (msg) {
+      if (attr === 'textContent') {
+        el.textContent = msg;
+      } else if (attr === 'title') {
+        el.title = msg;
+      } else if (attr === 'placeholder') {
+        el.placeholder = msg;
+      } else {
+        el.setAttribute(attr, msg);
+      }
+    }
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     const key = el.getAttribute('data-i18n-title');
@@ -542,11 +553,11 @@ document.addEventListener('DOMContentLoaded', () => {
           suggestionFolderResult.textContent = `${lastAiSuggestion.newFolderTitle}  ←  ${parentPath}`;
         } else {
           suggestionFolderIcon.textContent = '📂';
-          suggestionFolderLabel.textContent = 'Dossier cible';
+          suggestionFolderLabel.textContent = chrome.i18n.getMessage('targetFolderLabel');
           suggestionFolderResult.textContent = getFolderPathFromList(lastAiSuggestion.targetFolderId, lastFoldersList);
         }
 
-        suggestionReasonResult.textContent = lastAiSuggestion.explanation || 'Recommandation sémantique de l\'IA.';
+        suggestionReasonResult.textContent = lastAiSuggestion.explanation || chrome.i18n.getMessage('suggestionLabel');
         aiBookmarkSuggestion.style.display = 'block';
         btnConfirmAddBookmark.classList.remove('hidden');
         btnAlternativeBookmark.classList.remove('hidden');
@@ -758,7 +769,7 @@ function saveConfig() {
   };
 
   chrome.storage.sync.set(config, () => {
-    showToast(chrome.i18n.getMessage('logReady') ? "Configuration saved!" : "Configuration enregistrée !");
+    showToast(chrome.i18n.getMessage('toastConfigSaved'));
     addLog('> Configuration sauvegardée avec succès.', 'success');
   });
 }
