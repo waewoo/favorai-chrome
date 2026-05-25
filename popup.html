@@ -279,6 +279,30 @@
           <button class="btn btn-flat hidden" id="btnAlternativeBookmark" style="border: 1px solid var(--border-color); font-size: 11px; padding: 0 12px; margin-top: 0; box-shadow: none;" data-i18n="alternativeBtn"></button>
         </div>
 
+        <!-- Manual save button -->
+        <button class="btn btn-flat" id="btnManualAddBookmark" data-i18n="lightManualSaveBtn" style="width: 100%; margin-bottom: 12px; border: 1px solid var(--border-color);"></button>
+
+        <!-- Manual save section (hidden by default) -->
+        <div id="manualAddSection" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;" data-i18n="lightManualSaveTitle"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div>
+              <label for="manualAddTitle" style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="bookmarkTitleLabel"></label>
+              <input type="text" id="manualAddTitle" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none;" />
+            </div>
+
+            <div>
+              <label for="manualAddFolder" style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="lightFolderLabel"></label>
+              <select id="manualAddFolder" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none;">
+                <option value="" data-i18n="lightSelectFolder"></option>
+              </select>
+            </div>
+
+            <button class="btn btn-success" id="btnManualAddConfirm" data-i18n="confirmSaveBtn" style="margin-top: 4px;"></button>
+          </div>
+        </div>
+
         <!-- AI SUGGESTION RESULTS -->
         <div id="aiBookmarkSuggestion" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
           <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;" data-i18n="suggestionLabel"></div>

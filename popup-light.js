@@ -42,11 +42,16 @@ const elFolderPath = document.getElementById('lightFolderPath');
 const elReason     = document.getElementById('lightSuggestionReason');
 const elToast      = document.getElementById('lightToast');
 
-const btnAnalyze     = document.getElementById('btnLightAnalyze');
-const btnAlternative = document.getElementById('btnLightAlternative');
-const btnConfirm     = document.getElementById('btnLightConfirm');
-const btnAdvanced    = document.getElementById('btnOpenAdvanced');
-const btnPrivacy     = document.getElementById('btnLightPrivacy');
+const btnAnalyze          = document.getElementById('btnLightAnalyze');
+const btnAlternative      = document.getElementById('btnLightAlternative');
+const btnConfirm          = document.getElementById('btnLightConfirm');
+const btnAdvanced         = document.getElementById('btnOpenAdvanced');
+const btnPrivacy          = document.getElementById('btnLightPrivacy');
+const btnManualSave       = document.getElementById('btnLightManualSave');
+const btnManualConfirm    = document.getElementById('btnLightManualSaveConfirm');
+const manualSection       = document.getElementById('lightManualSection');
+const manualTitleInput    = document.getElementById('lightManualTitle');
+const manualFolderSelect  = document.getElementById('lightManualFolder');
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg, duration = 2800) {
@@ -79,6 +84,34 @@ function resolveFolder(folderId) {
   const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
   if (parts.length > 1 && roots.includes(parts[0])) return parts.slice(1).join(' > ');
   return parts.join(' > ');
+}
+
+// ── Load folders for dropdown ──────────────────────────────────────────────────
+function loadFolders() {
+  chrome.runtime.sendMessage({ action: 'get_folders' }, (response) => {
+    if (response && response.folders) {
+      lastFolders = response.folders;
+      populateFolderSelect();
+    } else {
+      showError(chrome.i18n.getMessage('lightErrorLoadingFolders'));
+    }
+  });
+}
+
+// ── Populate folder select ─────────────────────────────────────────────────────
+function populateFolderSelect() {
+  manualFolderSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');
+  manualFolderSelect.appendChild(placeholder);
+
+  lastFolders.forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder.id;
+    option.textContent = resolveFolder(folder.id);
+    manualFolderSelect.appendChild(option);
+  });
 }
 
 // ── Reset suggestion UI ───────────────────────────────────────────────────────
@@ -198,7 +231,7 @@ function runAnalysis() {
   });
 }
 
-// ── Confirm save ──────────────────────────────────────────────────────────────
+// ── Confirm save (AI suggestion) ──────────────────────────────────────────────
 function confirmSave() {
   if (!lastSuggestion) return;
   btnConfirm.disabled = true;
@@ -222,6 +255,49 @@ function confirmSave() {
       showToast('✅ ' + chrome.i18n.getMessage('lightSaveSuccess'));
       // Reset for next use
       setTimeout(() => loadActiveTab(), 1200);
+    } else {
+      showError(`❌ ${response?.error || chrome.i18n.getMessage('lightSaveFailed')}`);
+    }
+  });
+}
+
+// ── Manual save ────────────────────────────────────────────────────────────────
+function saveManualBookmark() {
+  const title = manualTitleInput.value.trim();
+  const folderId = manualFolderSelect.value;
+
+  if (!title) {
+    showError('❌ Veuillez entrer un titre.');
+    return;
+  }
+  if (!folderId) {
+    showError('❌ Veuillez sélectionner un dossier.');
+    return;
+  }
+
+  btnManualConfirm.disabled = true;
+  const orig = btnManualConfirm.textContent;
+  btnManualConfirm.textContent = 'Enregistrement…';
+
+  chrome.runtime.sendMessage({
+    action: 'save_manual_bookmark',
+    bookmark: { title, url: activeUrl, parentId: folderId }
+  }, (response) => {
+    btnManualConfirm.disabled = false;
+    btnManualConfirm.textContent = orig;
+
+    if (chrome.runtime.lastError) {
+      showError('❌ Erreur lors de l\'enregistrement.');
+      return;
+    }
+
+    if (response && response.success) {
+      showToast('✅ ' + chrome.i18n.getMessage('lightSaveSuccess'));
+      // Reset for next use
+      setTimeout(() => {
+        manualSection.classList.add('hidden');
+        loadActiveTab();
+      }, 1200);
     } else {
       showError(`❌ ${response?.error || chrome.i18n.getMessage('lightSaveFailed')}`);
     }
@@ -265,9 +341,23 @@ btnAlternative.addEventListener('click', () => {
 });
 
 btnConfirm.addEventListener('click', confirmSave);
+
+btnManualSave.addEventListener('click', () => {
+  if (manualSection.classList.contains('hidden')) {
+    manualSection.classList.remove('hidden');
+    manualTitleInput.value = elTitle.value;
+    manualTitleInput.focus();
+  } else {
+    manualSection.classList.add('hidden');
+  }
+});
+
+btnManualConfirm.addEventListener('click', saveManualBookmark);
+
 btnAdvanced.addEventListener('click', openAdvanced);
 btnPrivacy.addEventListener('click', openPrivacy);
 
 // ── Auto-load on open ─────────────────────────────────────────────────────────
 applyI18n();
 loadActiveTab();
+loadFolders();

@@ -160,6 +160,11 @@ const suggestionReasonResult = document.getElementById('suggestionReasonResult')
 const btnConfirmAddBookmark = document.getElementById('btnConfirmAddBookmark');
 const bookmarkTitleInput = document.getElementById('bookmarkTitleInput');
 const btnAlternativeBookmark = document.getElementById('btnAlternativeBookmark');
+const btnManualAddBookmark = document.getElementById('btnManualAddBookmark');
+const manualAddSection = document.getElementById('manualAddSection');
+const manualAddTitle = document.getElementById('manualAddTitle');
+const manualAddFolder = document.getElementById('manualAddFolder');
+const btnManualAddConfirm = document.getElementById('btnManualAddConfirm');
 
 const providerSelect = document.getElementById('provider');
 const apiUrlInput = document.getElementById('apiUrl');
@@ -217,6 +222,7 @@ const modalBtnConfirm = document.getElementById('modalBtnConfirm');
 let activeTabUrlValue = '';
 let activeTabTitleValue = '';
 let lastAiSuggestion = null;
+let bookmarkFolders = [];
 let lastFoldersList = [];
 let ignoredFolderIds = [];
 
@@ -273,6 +279,79 @@ function translatePage() {
     const key = el.getAttribute('data-i18n-placeholder');
     const msg = chrome.i18n.getMessage(key);
     if (msg) el.placeholder = msg;
+  });
+}
+
+/**
+ * Load folders for manual bookmark save
+ */
+function loadBookmarkFoldersForUI() {
+  chrome.runtime.sendMessage({ action: 'get_folders' }, (response) => {
+    if (response && response.folders) {
+      bookmarkFolders = response.folders;
+      populateManualFolderSelect();
+    }
+  });
+}
+
+/**
+ * Populate the manual folder select
+ */
+function populateManualFolderSelect() {
+  manualAddFolder.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');
+  manualAddFolder.appendChild(placeholder);
+
+  bookmarkFolders.forEach(folder => {
+    const option = document.createElement('option');
+    option.value = folder.id;
+    const parts = folder.path.split(' > ');
+    const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
+    const displayPath = parts.length > 1 && roots.includes(parts[0]) ? parts.slice(1).join(' > ') : parts.join(' > ');
+    option.textContent = displayPath;
+    manualAddFolder.appendChild(option);
+  });
+}
+
+/**
+ * Save bookmark manually
+ */
+function saveManualBookmarkPopup() {
+  const title = manualAddTitle.value.trim();
+  const folderId = manualAddFolder.value;
+  const url = activeTabUrl.textContent;
+
+  if (!title) {
+    alert('Veuillez entrer un titre.');
+    return;
+  }
+  if (!folderId) {
+    alert('Veuillez sélectionner un dossier.');
+    return;
+  }
+  if (!url || url === '-') {
+    alert('URL invalide.');
+    return;
+  }
+
+  btnManualAddConfirm.disabled = true;
+
+  chrome.runtime.sendMessage({
+    action: 'save_manual_bookmark',
+    bookmark: { title, url, parentId: folderId }
+  }, (response) => {
+    btnManualAddConfirm.disabled = false;
+
+    if (response && response.success) {
+      showToast(chrome.i18n.getMessage('lightSaveSuccess'));
+      manualAddSection.style.display = 'none';
+      manualAddTitle.value = '';
+      manualAddFolder.value = '';
+    } else {
+      showToast(chrome.i18n.getMessage('lightSaveFailed'));
+    }
   });
 }
 
@@ -348,6 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConfig();
   restoreStatus();
   loadBookmarkFolders();
+  loadBookmarkFoldersForUI();
 
   // Set manifest version
   const appVersionEl = document.getElementById('appVersion');
@@ -566,6 +646,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  btnManualAddBookmark.addEventListener('click', () => {
+    if (manualAddSection.style.display === 'none') {
+      manualAddSection.style.display = 'block';
+      manualAddTitle.value = bookmarkTitleInput.value;
+      manualAddTitle.focus();
+    } else {
+      manualAddSection.style.display = 'none';
+    }
+  });
+
+  btnManualAddConfirm.addEventListener('click', saveManualBookmarkPopup);
 
   btnConfirmAddBookmark.addEventListener('click', () => {
     btnConfirmAddBookmark.disabled = true;

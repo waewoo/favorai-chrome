@@ -458,4 +458,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
     return false;
   }
+
+  if (message.action === 'get_folders') {
+    chrome.bookmarks.getTree((bookmarkTreeNodes) => {
+      const folders = [];
+      function traverse(node, path = '') {
+        const newPath = path ? `${path} > ${node.title}` : node.title;
+        if (node.children) {
+          folders.push({ id: node.id, title: node.title, path: newPath });
+          node.children.forEach(child => traverse(child, newPath));
+        }
+      }
+      bookmarkTreeNodes.forEach(node => traverse(node));
+      sendResponse({ success: true, folders });
+    });
+    return true; // async
+  }
+
+  if (message.action === 'save_manual_bookmark') {
+    const { bookmark } = message;
+    if (!bookmark || !bookmark.title || !bookmark.url || !bookmark.parentId) {
+      sendResponse({ success: false, error: 'Invalid bookmark data' });
+      return false;
+    }
+
+    chrome.bookmarks.create({
+      parentId: bookmark.parentId,
+      title: bookmark.title,
+      url: bookmark.url
+    }, (newBookmark) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        sendResponse({ success: true, bookmark: newBookmark });
+      }
+    });
+    return true; // async
+  }
 });
