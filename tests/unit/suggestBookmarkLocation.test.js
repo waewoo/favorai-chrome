@@ -2,9 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { suggestBookmarkLocation } from '../../src/llm/index.js';
 import { queryOpenAI } from '../../src/llm/providers/openai.js';
 import { queryGemini } from '../../src/llm/providers/gemini.js';
+import { queryClaude } from '../../src/llm/providers/claude.js';
+import { queryMistral } from '../../src/llm/providers/mistral.js';
+import { queryDeepSeek } from '../../src/llm/providers/deepseek.js';
+import { queryOllama } from '../../src/llm/providers/ollama.js';
+import { queryCustom } from '../../src/llm/providers/custom.js';
 
 vi.mock('../../src/llm/providers/openai.js');
 vi.mock('../../src/llm/providers/gemini.js');
+vi.mock('../../src/llm/providers/claude.js');
+vi.mock('../../src/llm/providers/mistral.js');
+vi.mock('../../src/llm/providers/deepseek.js');
+vi.mock('../../src/llm/providers/ollama.js');
+vi.mock('../../src/llm/providers/custom.js');
 
 describe('suggestBookmarkLocation', () => {
   beforeEach(() => {
@@ -60,5 +70,138 @@ describe('suggestBookmarkLocation', () => {
     expect(queryGemini).toHaveBeenCalled();
     expect(result.action).toBe('create_new');
     expect(result.newFolderTitle).toBe('Cooking');
+  });
+});
+
+describe('suggestBookmarkLocation - all providers', () => {
+  const bookmark = { title: 'New Bookmark', url: 'https://example.com' };
+  const folders = [
+    { id: '1', path: 'Barre de favoris' },
+    { id: '2', path: 'Barre de favoris > Tech' }
+  ];
+
+  it('should route to Claude provider', async () => {
+    vi.mocked(queryClaude).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'Claude recommendation'
+    });
+
+    const config = {
+      provider: 'claude',
+      apiKey: 'test-key',
+      modelName: 'claude-opus-4-7'
+    };
+
+    const result = await suggestBookmarkLocation(config, bookmark, folders, null);
+
+    expect(queryClaude).toHaveBeenCalled();
+    expect(result.explanation).toBe('Claude recommendation');
+  });
+
+  it('should route to Mistral provider', async () => {
+    vi.mocked(queryMistral).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'Mistral recommendation'
+    });
+
+    const config = {
+      provider: 'mistral',
+      apiKey: 'test-key',
+      modelName: 'mistral-medium-latest'
+    };
+
+    const result = await suggestBookmarkLocation(config, bookmark, folders, null);
+
+    expect(queryMistral).toHaveBeenCalled();
+    expect(result.explanation).toBe('Mistral recommendation');
+  });
+
+  it('should route to DeepSeek provider', async () => {
+    vi.mocked(queryDeepSeek).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'DeepSeek recommendation'
+    });
+
+    const config = {
+      provider: 'deepseek',
+      apiKey: 'test-key',
+      modelName: 'deepseek-reasoner'
+    };
+
+    const result = await suggestBookmarkLocation(config, bookmark, folders, null);
+
+    expect(queryDeepSeek).toHaveBeenCalled();
+    expect(result.explanation).toBe('DeepSeek recommendation');
+  });
+
+  it('should route to Ollama provider', async () => {
+    vi.mocked(queryOllama).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'Ollama recommendation'
+    });
+
+    const config = {
+      provider: 'ollama',
+      modelName: 'llama-4-scout'
+    };
+
+    const result = await suggestBookmarkLocation(config, bookmark, folders, null);
+
+    expect(queryOllama).toHaveBeenCalled();
+    expect(result.explanation).toBe('Ollama recommendation');
+  });
+
+  it('should route to Custom provider', async () => {
+    vi.mocked(queryCustom).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'Custom provider recommendation'
+    });
+
+    const config = {
+      provider: 'custom',
+      apiUrl: 'https://custom.api',
+      apiKey: 'test-key',
+      modelName: 'custom-model'
+    };
+
+    const result = await suggestBookmarkLocation(config, bookmark, folders, null);
+
+    expect(queryCustom).toHaveBeenCalled();
+    expect(result.explanation).toBe('Custom provider recommendation');
+  });
+
+  it('should handle ignored folder IDs', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '3',
+      explanation: 'Avoiding ignored folders'
+    });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      modelName: 'gpt-5.5'
+    };
+
+    const foldersWithIgnored = [
+      { id: '1', path: 'Barre de favoris' },
+      { id: '2', path: 'Barre de favoris > Ignored' },
+      { id: '3', path: 'Barre de favoris > Recommended' }
+    ];
+
+    const result = await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, ['2']);
+
+    expect(queryOpenAI).toHaveBeenCalled();
+    // Check that avoidInstruction was built
+    // queryOpenAI signature: (url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens)
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    const finalPrompt = callArgs[3]; // prompt is the 4th argument (index 3)
+    expect(finalPrompt).toContain('CRITICAL CONSTRAINT');
+    expect(finalPrompt).toContain('avoid');
   });
 });
