@@ -7,7 +7,8 @@
   "permissions": [
     "bookmarks",
     "storage",
-    "alarms"
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -20,6 +21,7 @@
     "type": "module"
   },
   "action": {
+    "default_popup": "popup-light.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
