@@ -4,6 +4,26 @@
  * Loads active tab automatically on open.
  */
 
+// ── i18n helpers ──────────────────────────────────────────────────────────────
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const attr = el.getAttribute('data-i18n-attr') || 'textContent';
+    const msg = chrome.i18n.getMessage(key);
+    if (msg) {
+      if (attr === 'textContent') {
+        el.textContent = msg;
+      } else if (attr === 'placeholder') {
+        el.placeholder = msg;
+      } else if (attr === 'title') {
+        el.title = msg;
+      } else {
+        el.setAttribute(attr, msg);
+      }
+    }
+  });
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 let activeUrl = '';
 let lastSuggestion = null;
@@ -73,7 +93,7 @@ function resetSuggestion() {
 
 // ── Load active tab ───────────────────────────────────────────────────────────
 function loadActiveTab() {
-  elTitle.value = 'Chargement…';
+  elTitle.value = chrome.i18n.getMessage('lightLoading');
   elUrl.textContent = '-';
   btnAnalyze.disabled = true;
   hideError();
@@ -89,14 +109,14 @@ function loadActiveTab() {
 
     chrome.tabs.query(queryInfo, (tabs) => {
       if (chrome.runtime.lastError || !tabs?.[0]) {
-        elTitle.value = 'Aucun onglet actif détecté';
+        elTitle.value = chrome.i18n.getMessage('lightNoTabDetected');
         elUrl.textContent = '-';
         return;
       }
 
       const tab = tabs[0];
       activeUrl = tab.url || '';
-      elTitle.value = tab.title || 'Favori';
+      elTitle.value = tab.title || chrome.i18n.getMessage('tabAddBookmark');
       elUrl.textContent = activeUrl;
 
       if (activeUrl.startsWith('http://') || activeUrl.startsWith('https://')) {
@@ -116,7 +136,7 @@ function runAnalysis() {
   btnAnalyze.disabled = true;
   btnAlternative.disabled = true;
   const origLabel = btnAnalyze.textContent;
-  btnAnalyze.textContent = '🔍 Analyse en cours';
+  btnAnalyze.textContent = '🔍 ' + chrome.i18n.getMessage('lightAnalyzeBtn').replace('🔍 ', '');
   btnAnalyze.classList.add('loading-dots');
   elCard.classList.add('hidden');
   btnConfirm.classList.add('hidden');
@@ -166,7 +186,7 @@ function runAnalysis() {
       elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
     } else {
       elFolderIcon.textContent = '📂';
-      elFolderLbl.textContent = 'Dossier cible';
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightFolderLabel');
       elFolderPath.textContent = resolveFolder(lastSuggestion.targetFolderId);
     }
 
@@ -199,11 +219,11 @@ function confirmSave() {
     }
 
     if (response && response.success) {
-      showToast('✅ Favori enregistré avec succès !');
+      showToast('✅ ' + chrome.i18n.getMessage('lightSaveSuccess'));
       // Reset for next use
       setTimeout(() => loadActiveTab(), 1200);
     } else {
-      showError(`❌ ${response?.error || 'Échec de l\'enregistrement.'}`);
+      showError(`❌ ${response?.error || chrome.i18n.getMessage('lightSaveFailed')}`);
     }
   });
 }
@@ -249,4 +269,5 @@ btnAdvanced.addEventListener('click', openAdvanced);
 btnPrivacy.addEventListener('click', openPrivacy);
 
 // ── Auto-load on open ─────────────────────────────────────────────────────────
+applyI18n();
 loadActiveTab();

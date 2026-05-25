@@ -115,5 +115,23 @@
     }
   },
   "toastModelsFetched": { "message": "Models list updated" },
-  "optionCustomModel": { "message": "Custom (enter manually)..." }
+  "optionCustomModel": { "message": "Custom (enter manually)..." },
+  "lightOpenAdvanced": { "message": "⚡ Full interface" },
+  "lightOpenAdvancedTitle": { "message": "Open full interface (Organization, Configuration, History)" },
+  "lightBookmarkTitle": { "message": "Bookmark name" },
+  "lightLoading": { "message": "Loading..." },
+  "lightAnalyzeBtn": { "message": "🔍 Suggest location" },
+  "lightAlternativeBtn": { "message": "🔄" },
+  "lightSuggestionLabel": { "message": "💡 AI Recommendation" },
+  "lightBookmarkLabel": { "message": "Bookmark name" },
+  "lightFolderLabel": { "message": "Target folder" },
+  "lightConfirmBtn": { "message": "💾 Confirm &amp; Save" },
+  "lightPrivacyBtn": { "message": "Privacy Policy" },
+  "lightNoTabDetected": { "message": "No active tab detected" },
+  "lightManualSaveBtn": { "message": "✏️ Choose manually" },
+  "lightManualSaveTitle": { "message": "Manual bookmark registration" },
+  "lightSaveSuccess": { "message": "Bookmark saved successfully!" },
+  "lightSaveFailed": { "message": "Failed to save bookmark" },
+  "lightErrorLoadingFolders": { "message": "Error loading folders" },
+  "lightSelectFolder": { "message": "Select a folder..." }
 }

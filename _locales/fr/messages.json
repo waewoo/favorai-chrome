@@ -115,5 +115,23 @@
     }
   },
   "toastModelsFetched": { "message": "Liste des modèles mise à jour" },
-  "optionCustomModel": { "message": "Autre (saisir manuellement)..." }
+  "optionCustomModel": { "message": "Autre (saisir manuellement)..." },
+  "lightOpenAdvanced": { "message": "⚡ Interface complète" },
+  "lightOpenAdvancedTitle": { "message": "Ouvrir l'interface complète (Rangement, Configuration, Historique)" },
+  "lightBookmarkTitle": { "message": "Nom du favori" },
+  "lightLoading": { "message": "Chargement..." },
+  "lightAnalyzeBtn": { "message": "🔍 Suggérer un emplacement" },
+  "lightAlternativeBtn": { "message": "🔄" },
+  "lightSuggestionLabel": { "message": "💡 Recommandation de l'IA" },
+  "lightBookmarkLabel": { "message": "Nom du favori" },
+  "lightFolderLabel": { "message": "Dossier cible" },
+  "lightConfirmBtn": { "message": "💾 Confirmer &amp; Enregistrer" },
+  "lightPrivacyBtn": { "message": "Politique de confidentialité" },
+  "lightNoTabDetected": { "message": "Aucun onglet actif détecté" },
+  "lightManualSaveBtn": { "message": "✏️ Choisir manuellement" },
+  "lightManualSaveTitle": { "message": "Enregistrement manuel du favori" },
+  "lightSaveSuccess": { "message": "Favori enregistré avec succès !" },
+  "lightSaveFailed": { "message": "Échec de l'enregistrement du favori" },
+  "lightErrorLoadingFolders": { "message": "Erreur lors du chargement des dossiers" },
+  "lightSelectFolder": { "message": "Sélectionner un dossier..." }
 }

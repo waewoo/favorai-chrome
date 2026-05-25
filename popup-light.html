@@ -272,7 +272,7 @@
       <img src="icons/icon48.png" alt="FavorAI" />
       <h1>FavorAI</h1>
     </div>
-    <button class="btn-advanced" id="btnOpenAdvanced" title="Ouvrir l'interface complète (Organisation, Configuration, Historique)">
+    <button class="btn-advanced" id="btnOpenAdvanced" data-i18n="lightOpenAdvancedTitle" data-i18n-attr="title" data-i18n-text="lightOpenAdvanced">
       ⚡ Interface complète
     </button>
   </div>
@@ -285,25 +285,25 @@
 
     <!-- Tab details -->
     <div class="tab-box">
-      <label for="lightBookmarkTitle">Nom du favori</label>
-      <input type="text" id="lightBookmarkTitle" placeholder="Chargement..." />
+      <label for="lightBookmarkTitle" data-i18n="lightBookmarkLabel"></label>
+      <input type="text" id="lightBookmarkTitle" data-i18n="lightLoading" data-i18n-attr="placeholder" />
       <div class="tab-url" id="lightTabUrl">-</div>
     </div>
 
     <!-- Action buttons -->
     <div class="btn-row">
-      <button class="btn btn-primary" id="btnLightAnalyze" disabled>🔍 Suggérer un emplacement</button>
-      <button class="btn btn-alt hidden" id="btnLightAlternative" title="Demander une autre suggestion">🔄</button>
+      <button class="btn btn-primary" id="btnLightAnalyze" data-i18n="lightAnalyzeBtn" disabled></button>
+      <button class="btn btn-alt hidden" id="btnLightAlternative" data-i18n="lightAlternativeBtn" title="Demander une autre suggestion"></button>
     </div>
 
     <!-- AI Suggestion card -->
     <div id="lightSuggestionCard" class="suggestion-card hidden">
-      <div class="suggestion-label">💡 Recommandation de l'IA</div>
+      <div class="suggestion-label" data-i18n="lightSuggestionLabel"></div>
 
       <div class="suggestion-row bookmark-row">
         <span class="icon">🔖</span>
         <div class="info">
-          <div class="sublabel">Nom du favori</div>
+          <div class="sublabel" data-i18n="lightBookmarkLabel"></div>
           <div class="suggestion-name" id="lightSuggestionName"></div>
         </div>
       </div>
@@ -311,7 +311,7 @@
       <div class="suggestion-row folder-row">
         <span class="icon" id="lightFolderIcon">📂</span>
         <div class="info">
-          <div class="sublabel" id="lightFolderLabel">Dossier cible</div>
+          <div class="sublabel" data-i18n="lightFolderLabel"></div>
           <div class="suggestion-folder" id="lightFolderPath"></div>
         </div>
       </div>
@@ -320,13 +320,13 @@
     </div>
 
     <!-- Confirm button -->
-    <button class="btn-success hidden" id="btnLightConfirm">💾 Confirmer &amp; Enregistrer</button>
+    <button class="btn-success hidden" id="btnLightConfirm" data-i18n="lightConfirmBtn"></button>
 
   </div>
 
   <!-- FOOTER -->
   <div class="footer">
-    <button id="btnLightPrivacy">Politique de confidentialité</button>
+    <button id="btnLightPrivacy" data-i18n="lightPrivacyBtn"></button>
   </div>
 
   <!-- Toast notification -->
