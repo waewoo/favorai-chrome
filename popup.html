@@ -30,13 +30,14 @@
 
     <!-- TAB NAVIGATION -->
     <div class="tab-nav">
-      <button class="tab-btn active" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
+      <button class="tab-btn active" id="tabAddBookmarkBtn" data-i18n="tabAddBookmark">➕ Add Bookmark</button>
+      <button class="tab-btn" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
       <button class="tab-btn" id="tabConfigBtn" data-i18n="tabConfig">⚙️ Configuration</button>
       <button class="tab-btn" id="tabHistoryBtn" data-i18n="tabHistory">📜 History</button>
     </div>
 
     <!-- TAB PANELS -->
-    <div id="tabRangementPanel" class="tab-panel">
+    <div id="tabRangementPanel" class="tab-panel hidden">
       <!-- MAIN VIEW (LAUNCH + LOGS) -->
       <div id="mainView" class="view">
         <!-- EXECUTION SECTION -->
@@ -143,85 +144,103 @@
         <input type="file" id="importConfigFile" accept=".json" style="display: none;" />
 
         <div id="configBody" class="config-body">
-          <div class="form-group">
-            <label for="provider" data-i18n="labelProvider">Provider</label>
-            <select id="provider">
-              <option value="openai">OpenAI</option>
-              <option value="claude">Anthropic Claude</option>
-              <option value="google">Google Gemini</option>
-              <option value="mistral">Mistral AI</option>
-              <option value="grok">Grok (xAI)</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="ollama">Ollama (Local)</option>
-              <option value="custom">Custom / OpenAI-Compatible (LM Studio, etc.)</option>
-            </select>
+
+          <!-- Fournisseur + Modèle côte à côte -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="provider" data-i18n="labelProvider">Fournisseur</label>
+              <select id="provider">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Anthropic Claude</option>
+                <option value="google">Google Gemini</option>
+                <option value="mistral">Mistral AI</option>
+                <option value="grok">Grok (xAI)</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="ollama">Ollama (Local)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="modelSelect" data-i18n="labelModelName">Modèle</label>
+              <div style="display: flex; gap: 6px;">
+                <select id="modelSelect" style="flex: 1; min-width: 0;"></select>
+                <button type="button" id="btnFetchModels" style="padding: 0 10px; min-width: auto; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 0; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); cursor: pointer; border-radius: 6px;" data-i18n-title="titleFetchModels" title="Charger les modèles disponibles depuis l'API">🔄</button>
+              </div>
+              <input type="text" id="modelName" class="hidden" style="margin-top: 6px;" placeholder="Nom du modèle personnalisé" />
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="apiKey" data-i18n="labelApiKey">API Key (Token)</label>
+          <!-- Clé API -->
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="apiKey" data-i18n="labelApiKey">Clé API</label>
             <input type="password" id="apiKey" data-i18n-placeholder="placeholderApiKey" placeholder="sk-..." />
           </div>
 
-          <details style="margin-top: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.01);">
-            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; display: list-item; outline: none;" data-i18n="summaryAdvanced">⚙️ Advanced Settings</summary>
+          <!-- Paramètres avancés -->
+          <details style="margin-top: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,0.01);">
+            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryAdvanced">⚙️ Paramètres avancés</summary>
             <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="apiUrl" data-i18n="labelApiUrl">API URL</label>
+                <label for="apiUrl" data-i18n="labelApiUrl">URL de l'API</label>
                 <input type="text" id="apiUrl" placeholder="https://api.openai.com/v1" />
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="modelName" data-i18n="labelModelName">Model Name</label>
-                <input type="text" id="modelName" placeholder="gpt-4o" />
+
+              <!-- Max tokens + Batch size côte à côte -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="maxTokens">Max tokens</label>
+                  <select id="maxTokens">
+                    <option value="8192">8 192</option>
+                    <option value="16384">16 384</option>
+                    <option value="32768">32 768</option>
+                    <option value="65536">65 536</option>
+                    <option value="131072" selected>131 072</option>
+                    <option value="262144">262 144</option>
+                    <option value="524288">524 288</option>
+                    <option value="1048576">1 048 576</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="linkCheckBatchSize" data-i18n="labelBatchSize">Vitesse vérif. liens</label>
+                  <select id="linkCheckBatchSize">
+                    <option value="4">4 — Lent</option>
+                    <option value="8">8 — Standard</option>
+                    <option value="16">16 — Rapide</option>
+                    <option value="24" selected>24 — Très rapide</option>
+                    <option value="32">32 — Max</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="linkCheckBatchSize" data-i18n="labelBatchSize">Link verification speed (batch size)</label>
-                <select id="linkCheckBatchSize">
-                  <option value="4">4 (Min Load - Slow)</option>
-                  <option value="8">8 (Standard)</option>
-                  <option value="16">16 (Fast)</option>
-                  <option value="24" selected>24 (Very Fast)</option>
-                  <option value="32">32 (Max Load - Hyper Fast)</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="maxTokens">Max tokens (réponse IA)</label>
-                <select id="maxTokens">
-                  <option value="8192">8 192 — Petit modèle / peu de favoris</option>
-                  <option value="16384">16 384 — Standard</option>
-                  <option value="32768">32 768 — Grande bibliothèque</option>
-                  <option value="65536">65 536 — Très grande bibliothèque</option>
-                  <option value="131072" selected>131 072 — Défaut recommandé</option>
-                  <option value="262144">262 144 — 256K (Gemini / Claude)</option>
-                  <option value="524288">524 288 — 512K (modèles récents)</option>
-                  <option value="1048576">1 048 576 — 1M (Gemini 1.5 Pro)</option>
-                </select>
-                <p style="font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
-                  ⚠️ Si l'erreur "réponse incomplète" apparaît, augmenter cette valeur.
-                </p>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-                <input type="checkbox" id="debugMode" style="width: 14px; height: 14px; margin-top: 1px; accent-color: var(--accent-color); cursor: pointer;" />
-                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">🐛 Debug Mode (logs raw AI response)</label>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <input type="checkbox" id="debugMode" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer;" />
+                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;">🐛 Debug Mode</label>
               </div>
             </div>
           </details>
 
-          <details style="margin-top: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255, 255, 255, 0.01);">
-            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; display: list-item; outline: none;" data-i18n="summaryPrompts">📝 Customize Prompts</summary>
+          <!-- Personnalisation des prompts -->
+          <details style="margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,0.01);">
+            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryPrompts">📝 Personnaliser les prompts</summary>
             <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;">Minimal Reorganization Prompt</label>
-                <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; transition: all 0.2s; resize: vertical;"></textarea>
+                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;">Prompt — Mode Minimal</label>
+                <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptComplete" style="font-size: 11px; font-weight: 600;">Complete Reorganization Prompt</label>
-                <textarea id="promptComplete" rows="4" style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; transition: all 0.2s; resize: vertical;"></textarea>
+                <label for="promptComplete" style="font-size: 11px; font-weight: 600;">Prompt — Mode Complet</label>
+                <textarea id="promptComplete" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
-              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto;" data-i18n="btnReset">Reset to Defaults</button>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="promptSuggest" style="font-size: 11px; font-weight: 600;">Prompt — Suggestion / Ajout favori</label>
+                <textarea id="promptSuggest" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
+              </div>
+              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto;" data-i18n="btnReset">Réinitialiser les prompts</button>
             </div>
           </details>
 
-          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; margin-top: 12px; font-size: 11px; padding: 6px 12px;" data-i18n="btnSaveConfig">Save Configuration</button>
+          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; font-size: 11px; padding: 6px 12px;" data-i18n="btnSaveConfig">💾 Sauvegarder</button>
         </div>
       </section>
     </div>
@@ -238,6 +257,55 @@
         <div class="action-list-container" id="historyListContainer" style="max-height: 400px; margin-bottom: 0;">
           <!-- History sessions will be rendered here -->
         </div>
+      </section>
+    </div>
+
+    <!-- ADD BOOKMARK PANEL (TAB ADD BOOKMARK) -->
+    <div id="tabAddBookmarkPanel" class="tab-panel">
+      <section class="section">
+        <div class="section-title">➕ Add Current Tab with AI</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+          Analyze the active browser tab and use AI to automatically determine the best folder location for this bookmark.
+        </p>
+
+        <div id="activeTabDetails" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 16px;">
+          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">Titre du favori :</div>
+          <input type="text" id="bookmarkTitleInput" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 12px; color: var(--text-main); font-family: var(--font-family); margin-bottom: 8px;" />
+          <div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace;" id="activeTabUrl">-</div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button class="btn btn-primary" id="btnAnalyzeBookmark" style="flex: 1; margin-bottom: 0;">🔍 Suggest Best Location</button>
+          <button class="btn btn-flat hidden" id="btnAlternativeBookmark" style="border: 1px solid var(--border-color); font-size: 11px; padding: 0 12px; margin-top: 0; box-shadow: none;">🔄 Alternative</button>
+        </div>
+
+        <!-- AI SUGGESTION RESULTS -->
+        <div id="aiBookmarkSuggestion" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;">💡 Recommandation de l'IA</div>
+
+          <!-- Bookmark name row -->
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 8px 10px; margin-bottom: 8px;">
+            <span style="font-size: 15px; flex-shrink: 0;">🔖</span>
+            <div style="min-width: 0;">
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">Nom du favori</div>
+              <div id="suggestionBookmarkName" style="font-size: 13px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+            </div>
+          </div>
+
+          <!-- Target folder row -->
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 7px; padding: 8px 10px; margin-bottom: 10px;">
+            <span id="suggestionFolderIcon" style="font-size: 15px; flex-shrink: 0;">📂</span>
+            <div style="min-width: 0;">
+              <div id="suggestionFolderLabel" style="font-size: 10px; color: #6ee7b7; margin-bottom: 2px;">Dossier cible</div>
+              <div id="suggestionFolderResult" style="font-size: 13px; font-weight: 700; color: #10b981; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div style="font-size: 10px; color: var(--text-muted); line-height: 1.5; padding: 0 2px;" id="suggestionReasonResult"></div>
+        </div>
+
+        <button class="btn btn-success hidden" id="btnConfirmAddBookmark" style="width: 100%;">💾 Confirm & Save Bookmark</button>
       </section>
     </div>
   </div>

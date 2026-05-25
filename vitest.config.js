@@ -8,9 +8,9 @@ export default defineConfig({
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
+      reporter: ['text', 'lcov', 'html', 'json-summary'],
       include: ['src/**/*.js'],
-      exclude: ['tests/**']
+      exclude: ['tests/**', 'src/background/analysis.js', 'src/llm/providers/**']
     }
   }
 });

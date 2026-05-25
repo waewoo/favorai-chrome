@@ -35,6 +35,7 @@ test-watch:
 
 test-coverage:
 	npm run test:coverage
+	@node -e "const fs = require('fs'); const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); console.log('\n======================================================'); console.log(' GLOBAL COVERAGE SUMMARY:'); console.log('  Statements: ' + summary.total.statements.pct + '%% (' + summary.total.statements.covered + '/' + summary.total.statements.total + ')'); console.log('  Branches:   ' + summary.total.branches.pct + '%% (' + summary.total.branches.covered + '/' + summary.total.branches.total + ')'); console.log('  Functions:  ' + summary.total.functions.pct + '%% (' + summary.total.functions.covered + '/' + summary.total.functions.total + ')'); console.log('  Lines:      ' + summary.total.lines.pct + '%% (' + summary.total.lines.covered + '/' + summary.total.lines.total + ')'); console.log('======================================================\n');"
 
 test-e2e:
 	npm run test:e2e

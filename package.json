@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "package": "node scripts/package.js"
+    "package": "node scripts/package.js",
+    "postinstall": "npx playwright install chromium"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",

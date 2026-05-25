@@ -14,7 +14,7 @@ export function resolveParentId(id, idMap) {
 /**
  * Applique les modifications approuvées par l'utilisateur sur les favoris Chrome.
  */
-export async function applyChanges(approvedActionIds, pendingActions, mode) {
+export async function applyChanges(approvedActionIds, pendingActions, mode, explanation = '') {
   const approvedSet = new Set(approvedActionIds);
   const toRun = pendingActions.filter(a => approvedSet.has(a.id));
 
@@ -109,7 +109,13 @@ export async function applyChanges(approvedActionIds, pendingActions, mode) {
   // E. Post-apply cleanup: remove any folders left empty after moves/deletions
   await removeEmptyFoldersRecursive('0', history);
 
-  if (history.length > 0) await saveSessionToHistory(history, mode);
+  if (history.length > 0) {
+    const historyWithIds = history.map(entry => ({
+      id: `ent_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`,
+      ...entry
+    }));
+    await saveSessionToHistory(historyWithIds, mode, explanation);
+  }
 }
 
 /**
@@ -125,10 +131,12 @@ async function removeEmptyFoldersRecursive(parentId, history) {
   }
 
   for (const child of children) {
-    if (child.url || CHROME_ROOT_IDS.has(child.id)) continue;
+    if (child.url) continue;
 
     // Recurse first so leaves are cleaned before their parents
     await removeEmptyFoldersRecursive(child.id, history);
+
+    if (CHROME_ROOT_IDS.has(child.id)) continue;
 
     // Re-check children after recursion
     let remaining;

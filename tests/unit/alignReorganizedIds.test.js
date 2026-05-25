@@ -31,4 +31,18 @@ describe('alignReorganizedIds', () => {
     alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
     expect(node.id).toBe('1');
   });
+
+  it('should fallback to cross-type matching if primary type candidates do not exist', () => {
+    // If a folder has the same name as a bookmark, or vice versa, but primary candidate is empty
+    const node = { id: 'new_folder_x', title: 'Bookmark X', children: [] };
+    alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+    expect(node.id).toBe('2');
+  });
+
+  it('should generate a new randomUUID folder id if node is a folder but ID is not new and has no matched node', () => {
+    const node = { id: '2', title: 'Completely New Folder', children: [] };
+    alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+    expect(node.id).toBeTypeOf('string');
+    expect(node.id.startsWith('new_')).toBe(true);
+  });
 });

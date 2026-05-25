@@ -5,6 +5,7 @@
   "tabOrganize": { "message": "Organization" },
   "tabConfig": { "message": "Configuration" },
   "tabHistory": { "message": "History" },
+  "tabAddBookmark": { "message": "Add Bookmark" },
   "sectionLaunchTitle": { "message": "Launch Reorganization" },
   "sectionLaunchDesc": { "message": "The extension will analyze duplicates, dead links, and query AI to organize your bookmarks." },
   "privacyNote": { "message": "To reorganize your bookmarks, their titles and structure (without URLs) are transmitted to the AI service you configured. No data is collected by FavorAI." },
@@ -98,5 +99,21 @@
   "labelCustomPrompt": { "message": "Custom instructions (Additional LLM prompt)" },
   "placeholderCustomPrompt": { "message": "E.g. Do not touch 'Work' folder. Put recipes under 'Personal > Recipes'..." },
   "placeholderApiKey": { "message": "sk-... or key" },
-  "btnSaveConfig": { "message": "Save Configuration" }
+  "btnSaveConfig": { "message": "Save Configuration" },
+  "titleFetchModels": { "message": "Load available models from the API" },
+  "logFetchingModels": { "message": "Fetching models list from the API..." },
+  "logFetchModelsSuccess": {
+    "message": "Successfully fetched $count$ models from the API.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "logFetchModelsError": {
+    "message": "Failed to fetch models from the API: $error$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "toastModelsFetched": { "message": "Models list updated" },
+  "optionCustomModel": { "message": "Custom (enter manually)..." }
 }

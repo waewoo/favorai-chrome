@@ -5,12 +5,13 @@ describe('getPathFromMap', () => {
   it('should construct the full path string from a node map', () => {
     const nodeMap = {
       '0': { id: '0', title: 'Root', parentId: null },
-      '1': { id: '1', title: 'Folder A', parentId: '0' },
-      '2': { id: '2', title: 'Folder B', parentId: '1' }
+      '1': { id: '1', title: 'Barre de favoris', parentId: '0' },
+      '10': { id: '10', title: 'Folder A', parentId: '1' },
+      '20': { id: '20', title: 'Folder B', parentId: '10' }
     };
 
-    expect(getPathFromMap('2', nodeMap)).toBe('Folder A > Folder B');
-    expect(getPathFromMap('1', nodeMap)).toBe('Folder A');
-    expect(getPathFromMap('0', nodeMap)).toBe('Barre de favoris');
+    expect(getPathFromMap('20', nodeMap)).toBe('Folder A > Folder B');
+    expect(getPathFromMap('10', nodeMap)).toBe('Folder A');
+    expect(getPathFromMap('1', nodeMap)).toBe('Barre de favoris');
   });
 });

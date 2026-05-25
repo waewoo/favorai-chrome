@@ -22,8 +22,24 @@ describe('cleanAndParseJSON', () => {
     expect(cleanAndParseJSON(json)).toEqual({ key: 'value' });
   });
 
+  it('should extract JSON arrays with surrounding text', () => {
+    const json = 'Array results: [1, 2, 3] end of line';
+    expect(cleanAndParseJSON(json)).toEqual([1, 2, 3]);
+  });
+
+  it('should throw isTokenLimit error if the response is likely truncated', () => {
+    // Generate a long truncated string
+    const truncated = '{"reorganizedTree": {' + 'a'.repeat(2100);
+    expect(() => cleanAndParseJSON(truncated)).toThrow(/limite de tokens/i);
+    try {
+      cleanAndParseJSON(truncated);
+    } catch (e) {
+      expect(e.isTokenLimit).toBe(true);
+    }
+  });
+
   it('should throw an error for invalid JSON strings', () => {
     const invalid = 'not a json';
-    expect(() => cleanAndParseJSON(invalid)).toThrow();
+    expect(() => cleanAndParseJSON(invalid)).toThrow(/invalid/i);
   });
 });

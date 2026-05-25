@@ -96,6 +96,7 @@ SEMANTIC COHERENCE RULES:
 - Folder titles must accurately describe ALL their content
 - No personal bookmarks in technical folders and vice versa
 - No mixed themes in a single folder
+- Emojis / Prefix symbols: Feel free to prefix folder names with a single expressive emoji (like 💼, 🏠, 🤖, 🎨, etc.) if it represents the theme well.
 
 FINAL VALIDATION:
 ✅ Top-level folder count is between 6 and 8 — HARD MAXIMUM 8, count them explicitly
@@ -108,7 +109,32 @@ FINAL VALIDATION:
 ✅ No duplicate URLs in multiple folders
 ✅ No empty folders remain
 ✅ NO ORPHAN FOLDERS: original folders whose content was fully moved must be ABSENT from reorganizedTree
-✅ QUICK ACCESS: all direct bookmarks on the bar (not in any folder) are in a "★ Quick Access" folder`
+✅ QUICK ACCESS: all direct bookmarks on the bar (not in any folder) are in a "★ Quick Access" folder`,
+
+  suggest: `You are an expert bookmark organizer. Your task is to recommend the best parent folder location for a new bookmark.
+
+Analyze the bookmark's title and URL:
+- Title: "{title}"
+- URL: "{url}"
+
+Here is a list of all existing folder paths in my bookmarks structure (in the format ID: Path):
+{folders}
+
+Instructions:
+1. If the bookmark fits into one of the existing folders, recommend "use_existing" and return the ID of that folder in "targetFolderId".
+2. If the bookmark does not fit into any existing folders, recommend "create_new". Suggest a name for a new folder (e.g. "Cooking", "Finance" - optionally including an emoji like 🍳 Cooking) in "newFolderTitle", and return the existing parent folder ID under which it should be created in "newFolderParentId".
+3. Provide a brief explanation for your recommendation in "explanation".
+4. Recommend a cleaner/better title for this bookmark (e.g. removing site name suffixes like " - Google Maps" or " | GitHub") and return it in "suggestedTitle".
+
+Your response MUST be a valid JSON object matching this schema:
+{
+  "action": "use_existing" | "create_new",
+  "targetFolderId": "ID of existing folder (if action is use_existing)",
+  "newFolderTitle": "Name of new folder (if action is create_new)",
+  "newFolderParentId": "ID of existing parent folder (if action is create_new)",
+  "suggestedTitle": "Suggested cleaner title for this bookmark",
+  "explanation": "Brief reason for this choice"
+}`
 };
 
 // Cache DOM elements
@@ -120,15 +146,32 @@ const tabHistoryBtn = document.getElementById('tabHistoryBtn');
 const tabRangementPanel = document.getElementById('tabRangementPanel');
 const tabConfigPanel = document.getElementById('tabConfigPanel');
 const tabHistoryPanel = document.getElementById('tabHistoryPanel');
+const tabAddBookmarkPanel = document.getElementById('tabAddBookmarkPanel');
+
+const tabAddBookmarkBtn = document.getElementById('tabAddBookmarkBtn');
+const activeTabUrl = document.getElementById('activeTabUrl');
+const btnAnalyzeBookmark = document.getElementById('btnAnalyzeBookmark');
+const aiBookmarkSuggestion = document.getElementById('aiBookmarkSuggestion');
+const suggestionFolderResult = document.getElementById('suggestionFolderResult');
+const suggestionFolderIcon = document.getElementById('suggestionFolderIcon');
+const suggestionFolderLabel = document.getElementById('suggestionFolderLabel');
+const suggestionBookmarkName = document.getElementById('suggestionBookmarkName');
+const suggestionReasonResult = document.getElementById('suggestionReasonResult');
+const btnConfirmAddBookmark = document.getElementById('btnConfirmAddBookmark');
+const bookmarkTitleInput = document.getElementById('bookmarkTitleInput');
+const btnAlternativeBookmark = document.getElementById('btnAlternativeBookmark');
 
 const providerSelect = document.getElementById('provider');
 const apiUrlInput = document.getElementById('apiUrl');
 const apiKeyInput = document.getElementById('apiKey');
 const modelNameInput = document.getElementById('modelName');
+const modelSelect = document.getElementById('modelSelect');
+const btnFetchModels = document.getElementById('btnFetchModels');
 const linkCheckBatchSizeSelect = document.getElementById('linkCheckBatchSize');
 const debugModeCheckbox = document.getElementById('debugMode');
 const promptMinimalInput = document.getElementById('promptMinimal');
 const promptCompleteInput = document.getElementById('promptComplete');
+const promptSuggestInput = document.getElementById('promptSuggest');
 const btnResetPrompts = document.getElementById('btnResetPrompts');
 
 const btnSaveConfig = document.getElementById('btnSaveConfig');
@@ -170,16 +213,34 @@ const modalMessage = document.getElementById('modalMessage');
 const modalBtnCancel = document.getElementById('modalBtnCancel');
 const modalBtnConfirm = document.getElementById('modalBtnConfirm');
 
+// Add Bookmark state variables
+let activeTabUrlValue = '';
+let activeTabTitleValue = '';
+let lastAiSuggestion = null;
+let lastFoldersList = [];
+let ignoredFolderIds = [];
+
 // Default API URL and model names
 const PROVIDER_DEFAULTS = {
   openai:   { url: 'https://api.openai.com/v1',                   model: 'gpt-5.5',             maxTokens: '131072' },
   google:   { url: 'https://generativelanguage.googleapis.com',   model: 'gemini-3.5-flash',    maxTokens: '65536'  },
-  mistral:  { url: 'https://api.mistral.ai/v1',                   model: 'mistral-large-3',     maxTokens: '131072' },
-  grok:     { url: 'https://api.x.ai/v1',                         model: 'grok-4-3',            maxTokens: '8192'   },
-  claude:   { url: 'https://api.anthropic.com',                   model: 'claude-opus-4-7',     maxTokens: '131072' },
-  deepseek: { url: 'https://api.deepseek.com/v1',                 model: 'deepseek-reasoner',   maxTokens: '65536'  },
-  ollama:   { url: 'http://localhost:11434',                       model: 'llama-4-scout',       maxTokens: '131072' },
+  mistral:  { url: 'https://api.mistral.ai/v1',                   model: 'mistral-large-latest', maxTokens: '131072' },
+  grok:     { url: 'https://api.x.ai/v1',                         model: 'grok-2',              maxTokens: '8192'   },
+  claude:   { url: 'https://api.anthropic.com',                   model: 'claude-sonnet-4-6',   maxTokens: '131072' },
+  deepseek: { url: 'https://api.deepseek.com/v1',                 model: 'deepseek-chat',       maxTokens: '65536'  },
+  ollama:   { url: 'http://localhost:11434',                       model: 'llama3.1',            maxTokens: '131072' },
   custom:   { url: '',                                             model: '',                    maxTokens: '131072' }
+};
+
+const PROVIDER_MODELS = {
+  openai:   ['gpt-5.5', 'gpt-5.5-pro', 'gpt-5.4-pro', 'gpt-5.4-mini', 'gpt-4o', 'gpt-4o-mini'],
+  google:   ['gemini-3.5-flash', 'gemini-3.1-pro', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+  mistral:  ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'],
+  grok:     ['grok-2', 'grok-2-mini', 'grok-beta'],
+  claude:   ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5'],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  ollama:   ['llama3.1', 'llama3', 'mistral', 'gemma2', 'phi3', 'qwen2.5'],
+  custom:   []
 };
 
 /**
@@ -294,7 +355,27 @@ document.addEventListener('DOMContentLoaded', () => {
       apiUrlInput.value = defaults.url;
       modelNameInput.value = defaults.model;
       if (defaults.maxTokens) maxTokensSelect.value = defaults.maxTokens;
+      updateModelOptions(defaults.model);
     }
+  });
+
+  modelSelect.addEventListener('change', () => {
+    if (modelSelect.value === 'custom') {
+      modelNameInput.classList.remove('hidden');
+      modelNameInput.value = '';
+      modelNameInput.focus();
+    } else {
+      modelNameInput.classList.add('hidden');
+      modelNameInput.value = modelSelect.value;
+    }
+    saveConfig();
+  });
+
+  btnFetchModels.addEventListener('click', () => {
+    const provider = providerSelect.value;
+    const apiUrl = apiUrlInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+    fetchModelsFromApi(provider, apiUrl, apiKey);
   });
 
   btnSaveConfig.addEventListener('click', saveConfig);
@@ -343,11 +424,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   chrome.storage.local.get(['activeTab'], (res) => {
-    const activeTab = res.activeTab || 'rangement';
+    const activeTab = res.activeTab || 'add-bookmark';
     switchTab(activeTab);
   });
 
   tabRangementBtn.addEventListener('click', () => switchTab('rangement'));
+  tabAddBookmarkBtn.addEventListener('click', () => switchTab('add-bookmark'));
   tabConfigBtn.addEventListener('click', () => switchTab('config'));
   tabHistoryBtn.addEventListener('click', () => switchTab('history'));
 
@@ -367,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         height: 1050,
         left: 100,
         top: 100
-      }, (window) => {
+      }, () => {
         if (chrome.runtime.lastError) {
           console.error('Erreur lors de l\'ouverture de la fenêtre:', chrome.runtime.lastError);
         }
@@ -392,20 +474,176 @@ document.addEventListener('DOMContentLoaded', () => {
       updateApplyButtonState();
     }
   });
+
+
+
+  btnAnalyzeBookmark.addEventListener('click', () => {
+    runBookmarkAnalysis();
+  });
+
+  btnAlternativeBookmark.addEventListener('click', () => {
+    if (lastAiSuggestion) {
+      const lastId = lastAiSuggestion.action === 'create_new' 
+        ? lastAiSuggestion.newFolderParentId 
+        : lastAiSuggestion.targetFolderId;
+      if (lastId && !ignoredFolderIds.includes(lastId)) {
+        ignoredFolderIds.push(lastId);
+      }
+    }
+    runBookmarkAnalysis();
+  });
+
+  function runBookmarkAnalysis() {
+    btnAnalyzeBookmark.disabled = true;
+    btnAlternativeBookmark.disabled = true;
+    const origText = btnAnalyzeBookmark.textContent;
+    btnAnalyzeBookmark.textContent = 'Analyse de l\'IA en cours...';
+    aiBookmarkSuggestion.style.display = 'none';
+    btnConfirmAddBookmark.classList.add('hidden');
+
+    chrome.runtime.sendMessage({
+      action: 'suggest_bookmark_location',
+      bookmark: {
+        title: bookmarkTitleInput.value.trim(),
+        url: activeTabUrlValue
+      },
+      ignoredFolderIds: ignoredFolderIds
+    }, (response) => {
+      btnAnalyzeBookmark.disabled = false;
+      btnAlternativeBookmark.disabled = false;
+      btnAnalyzeBookmark.textContent = origText;
+
+      if (chrome.runtime.lastError) {
+        showToast("Erreur système d'analyse");
+        return;
+      }
+
+      if (response && response.success && response.suggestion) {
+        lastAiSuggestion = response.suggestion;
+        // Cache the folders list for path resolution
+        if (response.folders) {
+          lastFoldersList = response.folders;
+        }
+
+        // Update bookmark title if AI suggested a cleaner one
+        if (lastAiSuggestion.suggestedTitle) {
+          bookmarkTitleInput.value = lastAiSuggestion.suggestedTitle;
+        }
+
+        // --- Render bookmark name row ---
+        suggestionBookmarkName.textContent = bookmarkTitleInput.value || '-';
+
+        // --- Render target folder row ---
+        suggestionFolderResult.textContent = '';
+        if (lastAiSuggestion.action === 'create_new') {
+          suggestionFolderIcon.textContent = '📁';
+          suggestionFolderLabel.textContent = 'Nouveau dossier';
+          const parentPath = getFolderPathFromList(lastAiSuggestion.newFolderParentId, lastFoldersList);
+          suggestionFolderResult.textContent = `${lastAiSuggestion.newFolderTitle}  ←  ${parentPath}`;
+        } else {
+          suggestionFolderIcon.textContent = '📂';
+          suggestionFolderLabel.textContent = 'Dossier cible';
+          suggestionFolderResult.textContent = getFolderPathFromList(lastAiSuggestion.targetFolderId, lastFoldersList);
+        }
+
+        suggestionReasonResult.textContent = lastAiSuggestion.explanation || 'Recommandation sémantique de l\'IA.';
+        aiBookmarkSuggestion.style.display = 'block';
+        btnConfirmAddBookmark.classList.remove('hidden');
+        btnAlternativeBookmark.classList.remove('hidden');
+      } else {
+        showToast(response?.error || "Échec de l'analyse");
+      }
+    });
+  }
+
+  btnConfirmAddBookmark.addEventListener('click', () => {
+    btnConfirmAddBookmark.disabled = true;
+    const origText = btnConfirmAddBookmark.textContent;
+    btnConfirmAddBookmark.textContent = 'Enregistrement...';
+
+    chrome.runtime.sendMessage({
+      action: 'save_suggested_bookmark',
+      suggestion: lastAiSuggestion,
+      bookmark: {
+        title: bookmarkTitleInput.value.trim(),
+        url: activeTabUrlValue
+      }
+    }, (response) => {
+      btnConfirmAddBookmark.disabled = false;
+      btnConfirmAddBookmark.textContent = origText;
+
+      if (chrome.runtime.lastError) {
+        showToast("Erreur système de sauvegarde");
+        return;
+      }
+
+      if (response && response.success) {
+        showToast("Favori enregistré avec succès !");
+        switchTab('rangement');
+      } else {
+        showToast(response?.error || "Échec de l'enregistrement");
+      }
+    });
+  });
 });
+
+async function loadActiveTabDetails() {
+  bookmarkTitleInput.value = 'Chargement...';
+  activeTabUrl.textContent = '-';
+  btnAnalyzeBookmark.disabled = true;
+  aiBookmarkSuggestion.style.display = 'none';
+  btnConfirmAddBookmark.classList.add('hidden');
+  btnAlternativeBookmark.classList.add('hidden');
+  ignoredFolderIds = [];
+
+  chrome.windows.getLastFocused({ windowTypes: ['normal'] }, (win) => {
+    const queryInfo = { active: true };
+    if (win && win.id) {
+      queryInfo.windowId = win.id;
+    } else {
+      queryInfo.lastFocusedWindow = true;
+    }
+
+    chrome.tabs.query(queryInfo, (tabs) => {
+      if (chrome.runtime.lastError || !tabs?.[0]) {
+        bookmarkTitleInput.value = 'Aucun onglet actif détecté';
+        activeTabUrl.textContent = '-';
+        return;
+      }
+      activeTabTitleValue = tabs[0].title || 'Favori';
+      activeTabUrlValue = tabs[0].url || '';
+      
+      bookmarkTitleInput.value = activeTabTitleValue;
+      activeTabUrl.textContent = activeTabUrlValue;
+      
+      if (activeTabUrlValue.startsWith('http://') || activeTabUrlValue.startsWith('https://')) {
+        btnAnalyzeBookmark.disabled = false;
+      } else {
+        bookmarkTitleInput.value = 'Onglet non supporté';
+        activeTabUrl.textContent = 'Seules les pages Web HTTP/HTTPS peuvent être ajoutées.';
+      }
+    });
+  });
+}
 
 function switchTab(tabId) {
   tabRangementBtn.classList.remove('active');
+  tabAddBookmarkBtn.classList.remove('active');
   tabConfigBtn.classList.remove('active');
   tabHistoryBtn.classList.remove('active');
 
   tabRangementPanel.classList.add('hidden');
+  tabAddBookmarkPanel.classList.add('hidden');
   tabConfigPanel.classList.add('hidden');
   tabHistoryPanel.classList.add('hidden');
 
   if (tabId === 'rangement') {
     tabRangementBtn.classList.add('active');
     tabRangementPanel.classList.remove('hidden');
+  } else if (tabId === 'add-bookmark') {
+    tabAddBookmarkBtn.classList.add('active');
+    tabAddBookmarkPanel.classList.remove('hidden');
+    loadActiveTabDetails();
   } else if (tabId === 'config') {
     tabConfigBtn.classList.add('active');
     tabConfigPanel.classList.remove('hidden');
@@ -485,7 +723,7 @@ function showToast(message) {
 const maxTokensSelect = document.getElementById('maxTokens');
 
 function loadConfig() {
-  chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'promptMinimal', 'promptComplete', 'maxTokens'], (res) => {
+  chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], (res) => {
     if (res.provider) providerSelect.value = res.provider;
     apiUrlInput.value = res.apiUrl || '';
     apiKeyInput.value = res.apiKey || '';
@@ -496,6 +734,12 @@ function loadConfig() {
     debugModeCheckbox.checked = res.debugMode === true;
     promptMinimalInput.value = res.promptMinimal || PROMPT_DEFAULTS.minimal;
     promptCompleteInput.value = res.promptComplete || PROMPT_DEFAULTS.complete;
+    promptSuggestInput.value = res.promptSuggest || PROMPT_DEFAULTS.suggest;
+
+    // Dynamically update model options based on loaded value
+    const provider = res.provider || 'google';
+    const defModel = PROVIDER_DEFAULTS[provider]?.model || '';
+    updateModelOptions(res.modelName || defModel);
   });
 }
 
@@ -509,7 +753,8 @@ function saveConfig() {
     maxTokens: parseInt(maxTokensSelect.value, 10) || 32768,
     debugMode: debugModeCheckbox.checked,
     promptMinimal: promptMinimalInput.value.trim() || PROMPT_DEFAULTS.minimal,
-    promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete
+    promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete,
+    promptSuggest: promptSuggestInput.value.trim() || PROMPT_DEFAULTS.suggest
   };
 
   chrome.storage.sync.set(config, () => {
@@ -527,6 +772,8 @@ function resetConfig() {
   linkCheckBatchSizeSelect.value = '24';
   promptMinimalInput.value = PROMPT_DEFAULTS.minimal;
   promptCompleteInput.value = PROMPT_DEFAULTS.complete;
+  promptSuggestInput.value = PROMPT_DEFAULTS.suggest;
+  updateModelOptions(PROVIDER_DEFAULTS.google.model);
 
   chrome.storage.sync.clear(() => {
     chrome.storage.local.clear(() => {
@@ -540,6 +787,7 @@ function resetConfig() {
 function resetPromptsToDefaults() {
   promptMinimalInput.value = PROMPT_DEFAULTS.minimal;
   promptCompleteInput.value = PROMPT_DEFAULTS.complete;
+  promptSuggestInput.value = PROMPT_DEFAULTS.suggest;
   saveConfig();
   showToast('Prompts réinitialisés');
 }
@@ -549,10 +797,14 @@ function exportConfig() {
     const data = {
       provider: config.provider || 'google',
       apiUrl: config.apiUrl || '',
+      apiKey: config.apiKey || '',
       modelName: config.modelName || '',
-      customPrompt: config.customPrompt || '',
       checkDeadLinks: config.checkDeadLinks === true,
-      linkCheckBatchSize: config.linkCheckBatchSize || '24'
+      linkCheckBatchSize: config.linkCheckBatchSize || 24,
+      maxTokens: config.maxTokens || 32768,
+      debugMode: config.debugMode === true,
+      promptMinimal: config.promptMinimal || '',
+      promptComplete: config.promptComplete || ''
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -583,9 +835,12 @@ function importConfig(e) {
         apiUrl: config.apiUrl || '',
         apiKey: config.apiKey || '',
         modelName: config.modelName || '',
-        customPrompt: config.customPrompt || '',
         checkDeadLinks: config.checkDeadLinks === true,
-        linkCheckBatchSize: config.linkCheckBatchSize || '24'
+        linkCheckBatchSize: config.linkCheckBatchSize || 24,
+        maxTokens: config.maxTokens || 32768,
+        debugMode: config.debugMode === true,
+        promptMinimal: config.promptMinimal || '',
+        promptComplete: config.promptComplete || ''
       };
 
       chrome.storage.sync.set(configToSave, () => {
@@ -612,7 +867,8 @@ function startReorganization(mode) {
     maxTokens: parseInt(maxTokensSelect.value, 10) || 32768,
     debugMode: debugModeCheckbox.checked,
     promptMinimal: promptMinimalInput.value.trim() || PROMPT_DEFAULTS.minimal,
-    promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete
+    promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete,
+    promptSuggest: promptSuggestInput.value.trim() || PROMPT_DEFAULTS.suggest
   };
 
   if (config.provider !== 'ollama' && !config.apiKey) {
@@ -799,8 +1055,6 @@ function displayRapport(actions, explanation, mode) {
     iaExplanationText.textContent = '';
     const formatted = formatExplanation(explanation);
     const lines = formatted.split('\n');
-    let currentSection = null;
-
     for (const line of lines) {
       const trimmed = line.trim();
 
@@ -811,7 +1065,6 @@ function displayRapport(actions, explanation, mode) {
         h.className = 'expl-section';
         h.textContent = headerMatch[1];
         iaExplanationText.appendChild(h);
-        currentSection = h;
         continue;
       }
 
@@ -1181,7 +1434,7 @@ function formatExplanation(text) {
   }
 
   // Format JSON object into readable text
-  let result = [];
+  const result = [];
 
   // Summary section
   if (explanation.summary) {
@@ -1455,13 +1708,33 @@ function renderHistory() {
       undoBtn.className = 'btn btn-flat btn-rollback';
       undoBtn.setAttribute('data-id', session.id);
       undoBtn.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); color: #818cf8;';
-      undoBtn.textContent = '⏪ ' + (chrome.i18n.getMessage('btnRollback') || 'Annuler');
+      undoBtn.textContent = '⏪ ' + (chrome.i18n.getMessage('btnRollback') || 'Annuler Tout');
       undoBtn.title = chrome.i18n.getMessage('btnRollback');
-      undoBtn.setAttribute('aria-label', `Annuler la session du ${dateStr}`);
+      undoBtn.setAttribute('aria-label', `Annuler toute la session du ${dateStr}`);
 
       headerDiv.appendChild(leftContainer);
       headerDiv.appendChild(undoBtn);
       
+      sessionDiv.appendChild(headerDiv);
+
+      // AI global explanation display
+      if (session.explanation && session.explanation.trim()) {
+        const expDiv = document.createElement('div');
+        expDiv.style.cssText = 'font-size: 10px; padding: 8px; background: rgba(99, 102, 241, 0.04); border: 1px dashed rgba(99, 102, 241, 0.2); border-radius: 6px; margin-bottom: 8px; color: var(--text-main); white-space: pre-wrap; line-height: 1.4;';
+        
+        const expTitle = document.createElement('div');
+        expTitle.style.cssText = 'font-weight: 600; margin-bottom: 4px; color: #818cf8; display: flex; align-items: center; gap: 4px;';
+        expTitle.textContent = '💡 Description globale de l\'IA :';
+        expDiv.appendChild(expTitle);
+
+        const expText = document.createElement('div');
+        expText.style.color = 'var(--text-muted)';
+        expText.textContent = formatExplanation(session.explanation);
+        expDiv.appendChild(expText);
+
+        sessionDiv.appendChild(expDiv);
+      }
+
       const listDiv = document.createElement('div');
       listDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; padding-right: 4px;';
       
@@ -1470,7 +1743,10 @@ function renderHistory() {
         entryItem.style.cssText = 'font-size: 10px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; border-bottom: 1px dashed rgba(255,255,255,0.03); padding-bottom: 4px;';
         
         const topRow = document.createElement('div');
-        topRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between;';
+        topRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 8px;';
+
+        const leftContent = document.createElement('div');
+        leftContent.style.cssText = 'display: flex; align-items: center; gap: 6px;';
 
         const typeLabel = document.createElement('span');
         const entityName = document.createElement('span');
@@ -1500,8 +1776,34 @@ function renderHistory() {
           typeLabel.textContent = `${icon} Suppression`;
         }
         
-        topRow.appendChild(typeLabel);
-        topRow.appendChild(entityName);
+        leftContent.appendChild(typeLabel);
+        leftContent.appendChild(entityName);
+        topRow.appendChild(leftContent);
+
+        // Control container for entry-level rollback & deletion
+        const controlContainer = document.createElement('div');
+        controlContainer.style.cssText = 'display: flex; align-items: center; gap: 4px;';
+
+        const entryRollbackBtn = document.createElement('button');
+        entryRollbackBtn.className = 'btn-entry-rollback';
+        entryRollbackBtn.setAttribute('data-session-id', session.id);
+        entryRollbackBtn.setAttribute('data-entry-id', entry.id);
+        entryRollbackBtn.style.cssText = 'font-size: 8px; padding: 2px 4px; line-height: 1; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; border-radius: 4px; cursor: pointer;';
+        entryRollbackBtn.textContent = '⏪';
+        entryRollbackBtn.title = 'Annuler cette modification spécifique';
+
+        const entryDeleteBtn = document.createElement('button');
+        entryDeleteBtn.className = 'btn-entry-delete';
+        entryDeleteBtn.setAttribute('data-session-id', session.id);
+        entryDeleteBtn.setAttribute('data-entry-id', entry.id);
+        entryDeleteBtn.style.cssText = 'font-size: 8px; padding: 2px 4px; line-height: 1; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 4px; cursor: pointer;';
+        entryDeleteBtn.textContent = '❌';
+        entryDeleteBtn.title = 'Supprimer cette ligne de l\'historique sans l\'annuler';
+
+        controlContainer.appendChild(entryRollbackBtn);
+        controlContainer.appendChild(entryDeleteBtn);
+        topRow.appendChild(controlContainer);
+
         entryItem.appendChild(topRow);
 
         const descContainer = document.createElement('div');
@@ -1561,16 +1863,90 @@ function renderHistory() {
         listDiv.appendChild(entryItem);
       });
       
-      sessionDiv.appendChild(headerDiv);
       sessionDiv.appendChild(listDiv);
       historyListContainer.appendChild(sessionDiv);
     });
     
+    // Bind session rollback
     const rollbackBtns = historyListContainer.querySelectorAll('.btn-rollback');
     rollbackBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const sessionId = e.target.getAttribute('data-id');
-        performRollback(sessionId, e.target);
+        const sessionId = e.currentTarget.getAttribute('data-id');
+        performRollback(sessionId, e.currentTarget);
+      });
+    });
+
+    // Bind entry rollback
+    const entryRollbackBtns = historyListContainer.querySelectorAll('.btn-entry-rollback');
+    entryRollbackBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget;
+        const sessionId = target.getAttribute('data-session-id');
+        const entryId = target.getAttribute('data-entry-id');
+        
+        const title = chrome.i18n.getMessage('btnRollback') || 'Annuler la modification';
+        const message = 'Voulez-vous vraiment annuler cette modification spécifique ?';
+        const ok = await showConfirm(title, message);
+        if (!ok) return;
+
+        target.disabled = true;
+        target.textContent = '...';
+
+        chrome.runtime.sendMessage({
+          action: 'rollback_entry',
+          sessionId,
+          entryId
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            showToast("Erreur système");
+            renderHistory();
+            return;
+          }
+          if (response && response.success) {
+            showToast("Modification annulée !");
+            renderHistory();
+          } else {
+            showToast(response?.error || "Échec de l'annulation");
+            renderHistory();
+          }
+        });
+      });
+    });
+
+    // Bind entry delete
+    const entryDeleteBtns = historyListContainer.querySelectorAll('.btn-entry-delete');
+    entryDeleteBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget;
+        const sessionId = target.getAttribute('data-session-id');
+        const entryId = target.getAttribute('data-entry-id');
+        
+        const title = 'Supprimer de l\'historique';
+        const message = 'Voulez-vous supprimer cette ligne de l\'historique sans annuler la modification sur vos favoris ?';
+        const ok = await showConfirm(title, message);
+        if (!ok) return;
+
+        target.disabled = true;
+        target.textContent = '...';
+
+        chrome.runtime.sendMessage({
+          action: 'delete_entry',
+          sessionId,
+          entryId
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            showToast("Erreur système");
+            renderHistory();
+            return;
+          }
+          if (response && response.success) {
+            showToast("Ligne supprimée !");
+            renderHistory();
+          } else {
+            showToast(response?.error || "Échec de la suppression");
+            renderHistory();
+          }
+        });
       });
     });
   });
@@ -1609,4 +1985,171 @@ async function performRollback(sessionId, btnElement) {
       addLog(`Erreur de restauration : ${errorMsg}`, 'error');
     }
   });
+}
+
+/**
+ * Met à jour la liste déroulante du modèle avec les modèles prédéfinis
+ * ou dynamiquement récupérés via l'API. Gère l'option 'custom'.
+ */
+function updateModelOptions(currentModelValue) {
+  const provider = providerSelect.value;
+  modelSelect.innerHTML = '';
+
+  chrome.storage.local.get(['cachedApiModels'], (res) => {
+    const cached = res.cachedApiModels || {};
+    const apiModels = cached[provider] || [];
+    const defaults = PROVIDER_MODELS[provider] || [];
+    
+    // Combiner sans doublon
+    const combined = Array.from(new Set([...apiModels, ...defaults]));
+    
+    combined.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model;
+      opt.textContent = model;
+      modelSelect.appendChild(opt);
+    });
+
+    // Ajouter l'option personnalisée
+    const customOpt = document.createElement('option');
+    customOpt.value = 'custom';
+    customOpt.textContent = chrome.i18n.getMessage('optionCustomModel') || 'Autre (saisir manuellement)...';
+    modelSelect.appendChild(customOpt);
+
+    // Positionner la sélection
+    const match = combined.includes(currentModelValue);
+    if (currentModelValue && match) {
+      modelSelect.value = currentModelValue;
+      modelNameInput.classList.add('hidden');
+    } else if (currentModelValue) {
+      modelSelect.value = 'custom';
+      modelNameInput.value = currentModelValue;
+      modelNameInput.classList.remove('hidden');
+    } else {
+      if (combined.length > 0) {
+        modelSelect.value = combined[0];
+        modelNameInput.value = combined[0];
+        modelNameInput.classList.add('hidden');
+      } else {
+        modelSelect.value = 'custom';
+        modelNameInput.value = '';
+        modelNameInput.classList.remove('hidden');
+      }
+    }
+  });
+}
+
+/**
+ * Interroge l'API du fournisseur configuré pour lister dynamiquement
+ * les modèles de chat utilisables.
+ */
+async function fetchModelsFromApi(provider, apiUrl, apiKey) {
+  const logMsg = chrome.i18n.getMessage('logFetchingModels') || 'Récupération de la liste des modèles depuis l\'API...';
+  addLog(logMsg, 'info');
+  btnFetchModels.disabled = true;
+  btnFetchModels.textContent = '⏳';
+
+  try {
+    let models = [];
+    if (provider === 'google') {
+      if (!apiKey) throw new Error('Clé API requise pour Gemini.');
+      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (data.models) {
+        models = data.models
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => m.name.replace('models/', ''));
+      }
+    } else if (provider === 'ollama') {
+      const url = `${apiUrl.replace(/\/$/, '')}/api/tags`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (data.models) {
+        models = data.models.map(m => m.name);
+      }
+    } else {
+      // OpenAI, Grok, DeepSeek, Mistral, Claude, Custom
+      let endpoint = apiUrl.replace(/\/$/, '');
+      if (provider !== 'custom') {
+        if (!endpoint.endsWith('/models') && !endpoint.endsWith('/chat/completions')) {
+          if (endpoint.endsWith('/v1')) {
+            endpoint = `${endpoint}/models`;
+          } else {
+            endpoint = `${endpoint}/v1/models`;
+          }
+        }
+      } else {
+        if (!endpoint.endsWith('/models')) {
+          endpoint = `${endpoint}/models`;
+        }
+      }
+
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+      if (provider === 'claude') {
+        headers['x-api-key'] = apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+        headers['dangerously-allow-browser'] = 'true';
+      }
+
+      const response = await fetch(endpoint, { headers });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (data.data && Array.isArray(data.data)) {
+        const chatKeywords = ['gpt', 'grok', 'deepseek', 'mistral', 'claude', 'llama', 'qwen', 'gemini', 'chat', 'instruct', 'medium', 'large', 'small', 'codestral', 'devstral'];
+        models = data.data
+          .map(m => m.id)
+          .filter(id => {
+            const lower = id.toLowerCase();
+            if (lower.includes('embed') || lower.includes('whisper') || lower.includes('tts') || lower.includes('dall-e') || lower.includes('moderation')) {
+              return false;
+            }
+            return chatKeywords.some(kw => lower.includes(kw));
+          });
+      }
+    }
+
+    if (models.length === 0) {
+      throw new Error('Aucun modèle de chat trouvé dans la réponse.');
+    }
+
+    chrome.storage.local.get(['cachedApiModels'], (res) => {
+      const cached = res.cachedApiModels || {};
+      cached[provider] = models;
+      chrome.storage.local.set({ cachedApiModels: cached }, () => {
+        updateModelOptions(modelNameInput.value);
+        showToast(chrome.i18n.getMessage('toastModelsFetched') || 'Liste des modèles mise à jour');
+        const successMsg = chrome.i18n.getMessage('logFetchModelsSuccess', [String(models.length)]) || `${models.length} modèles récupérés avec succès.`;
+        addLog(successMsg, 'success');
+      });
+    });
+
+  } catch (err) {
+    console.error('[FavorAI] Error fetching models:', err);
+    const errMsg = chrome.i18n.getMessage('logFetchModelsError', [err.message]) || `Échec : ${err.message}`;
+    addLog(errMsg, 'error');
+    showToast('Échec de récupération');
+  } finally {
+    btnFetchModels.disabled = false;
+    btnFetchModels.textContent = '🔄';
+  }
+}
+
+
+function getFolderPathFromList(folderId, foldersList) {
+  if (!folderId) return '-';
+  if (!foldersList || foldersList.length === 0) return folderId;
+  const entry = foldersList.find(f => f.id === folderId);
+  if (!entry) return folderId;
+  const parts = entry.path.split(' > ');
+  const genericRoots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
+  if (parts.length > 1 && genericRoots.includes(parts[0])) {
+    return parts.slice(1).join(' > ');
+  }
+  return parts.join(' > ');
 }

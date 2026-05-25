@@ -23,20 +23,17 @@ export function cleanAndParseJSON(text) {
     // Tenter d'extraire le JSON depuis du texte entourant
     const fb = cleanText.indexOf('{');
     const lb = cleanText.lastIndexOf('}');
-    const fBr = cleanText.indexOf('[');
-    const lBr = cleanText.lastIndexOf(']');
-
-    let start = -1, end = -1;
-    if (fb !== -1 && lb !== -1) {
-      start = (fBr !== -1 && fBr < fb) ? fBr : fb;
-      end   = (fBr !== -1 && fBr < fb) ? lBr : lb;
-    } else if (fBr !== -1 && lBr !== -1) {
-      start = fBr; end = lBr;
+    if (fb !== -1 && lb !== -1 && lb > fb) {
+      try {
+        return JSON.parse(cleanText.substring(fb, lb + 1));
+      } catch (__) { /* ignore */ }
     }
 
-    if (start !== -1 && end > start) {
+    const fBr = cleanText.indexOf('[');
+    const lBr = cleanText.lastIndexOf(']');
+    if (fBr !== -1 && lBr !== -1 && lBr > fBr) {
       try {
-        return JSON.parse(cleanText.substring(start, end + 1));
+        return JSON.parse(cleanText.substring(fBr, lBr + 1));
       } catch (__) { /* ignore */ }
     }
     // Detect if the JSON was truncated (LLM hit max_tokens)

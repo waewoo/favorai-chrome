@@ -3,7 +3,7 @@ import { MAX_HISTORY_SESSIONS } from '../utils/constants.js';
 /**
  * Enregistre une session dans l'historique persistant (max MAX_HISTORY_SESSIONS sessions).
  */
-export function saveSessionToHistory(entries, mode) {
+export function saveSessionToHistory(entries, mode, explanation = '') {
   return new Promise((resolve) => {
     chrome.storage.local.get(['reorgHistory'], (res) => {
       const history = res.reorgHistory || [];
@@ -11,6 +11,7 @@ export function saveSessionToHistory(entries, mode) {
         id: `sess_${Date.now()}`,
         timestamp: Date.now(),
         mode: mode || 'minimal',
+        explanation: explanation,
         entries
       });
       if (history.length > MAX_HISTORY_SESSIONS) history.pop();

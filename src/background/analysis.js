@@ -325,6 +325,9 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     reorganizedTree = enforceNewTopLevel(reorganizedTree, originalMap, currentStatus);
   }
 
+  // Restauration des métadonnées (titres/URLs originaux) pour les favoris/dossiers existants
+  restoreOriginalMetadata(reorganizedTree, originalMap);
+
   // 7. Aligner les IDs
   const origFoldersByTitle = {};
   const origBookmarksByTitle = {};
@@ -484,4 +487,27 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   }
 
   return { actions, explanation };
+}
+
+/**
+ * Restaure de façon récursive les titres et les URLs des dossiers/favoris existants
+ * à partir de la structure originale. Permet de réduire la taille des réponses LLM
+ * en évitant d'inclure les champs redondants (comme le titre des favoris ou l'URL).
+ */
+export function restoreOriginalMetadata(node, originalMap) {
+  if (!node) return;
+  const orig = originalMap[node.id];
+  if (orig) {
+    if (!node.title && orig.title) {
+      node.title = orig.title;
+    }
+    if (orig.url) {
+      node.url = orig.url;
+    }
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      restoreOriginalMetadata(child, originalMap);
+    }
+  }
 }

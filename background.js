@@ -6,6 +6,9 @@
 import { runAnalysis } from './src/background/analysis.js';
 import { applyChanges } from './src/background/apply.js';
 import { rollbackSession } from './src/background/history.js';
+import { suggestBookmarkLocation } from './src/llm/index.js';
+import { cleanAndParseJSON } from './src/llm/utils.js';
+import { buildNodeMap, getPathFromMap } from './src/background/diff.js';
 
 let pendingActions = [];
 let currentAbortController = null;
@@ -53,6 +56,25 @@ function openPopupWindow(url) {
  */
 function formatErrorMessage(error) {
   if (typeof error !== 'string') return String(error);
+
+  const lowerError = error.toLowerCase();
+  if (
+    lowerError.includes('api key') ||
+    lowerError.includes('apikey') ||
+    lowerError.includes('unregistered callers') ||
+    lowerError.includes('identity') ||
+    lowerError.includes('key not valid') ||
+    lowerError.includes('invalid key') ||
+    lowerError.includes('unauthorized') ||
+    lowerError.includes('invalid_api_key') ||
+    lowerError.includes('permission_denied') ||
+    lowerError.includes('permission denied') ||
+    lowerError.includes('unauthenticated') ||
+    lowerError.includes('401') ||
+    lowerError.includes('403')
+  ) {
+    return "Problème de configuration : Clé API manquante, invalide ou non autorisée. Veuillez vérifier vos paramètres dans l'onglet Configuration.";
+  }
 
   // Essayer d'extraire et de parser le JSON
   const jsonMatch = error.match(/\{[\s\S]*\}$/);
@@ -249,9 +271,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'apply_changes') {
-    chrome.storage.local.get(['pendingActions'], (res) => {
+    chrome.storage.local.get(['pendingActions', 'extensionStatus'], (res) => {
       pendingActions = res.pendingActions || pendingActions || [];
-      applyChanges(message.approvedActionIds, pendingActions, currentStatus.mode)
+      const status = res.extensionStatus || currentStatus;
+      const explanation = status.explanation || '';
+      applyChanges(message.approvedActionIds, pendingActions, currentStatus.mode, explanation)
         .then(() => {
           currentStatus.state = 'idle';
           currentStatus.logs = [];
@@ -261,6 +285,67 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch(error => {
           sendResponse({ success: false, error: error.message });
         });
+    });
+    return true;
+  }
+
+  if (message.action === 'rollback_entry') {
+    chrome.storage.local.get(['reorgHistory'], (res) => {
+      const history = res.reorgHistory || [];
+      const sessionIndex = history.findIndex(s => s.id === message.sessionId);
+      if (sessionIndex === -1) {
+        sendResponse({ success: false, error: 'Session introuvable.' });
+        return;
+      }
+
+      const session = history[sessionIndex];
+      const entryIndex = session.entries.findIndex(e => e.id === message.entryId);
+      if (entryIndex === -1) {
+        sendResponse({ success: false, error: 'Modification introuvable.' });
+        return;
+      }
+
+      const entry = session.entries[entryIndex];
+      rollbackSession([entry])
+        .then(() => {
+          session.entries.splice(entryIndex, 1);
+          if (session.entries.length === 0) {
+            history.splice(sessionIndex, 1);
+          }
+          chrome.storage.local.set({ reorgHistory: history }, () => {
+            sendResponse({ success: true });
+          });
+        })
+        .catch(err => {
+          sendResponse({ success: false, error: err.message });
+        });
+    });
+    return true;
+  }
+
+  if (message.action === 'delete_entry') {
+    chrome.storage.local.get(['reorgHistory'], (res) => {
+      const history = res.reorgHistory || [];
+      const sessionIndex = history.findIndex(s => s.id === message.sessionId);
+      if (sessionIndex === -1) {
+        sendResponse({ success: false, error: 'Session introuvable.' });
+        return;
+      }
+
+      const session = history[sessionIndex];
+      const entryIndex = session.entries.findIndex(e => e.id === message.entryId);
+      if (entryIndex === -1) {
+        sendResponse({ success: false, error: 'Modification introuvable.' });
+        return;
+      }
+
+      session.entries.splice(entryIndex, 1);
+      if (session.entries.length === 0) {
+        history.splice(sessionIndex, 1);
+      }
+      chrome.storage.local.set({ reorgHistory: history }, () => {
+        sendResponse({ success: true });
+      });
     });
     return true;
   }
@@ -287,6 +372,82 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
     });
     return true;
+  }
+
+  if (message.action === 'suggest_bookmark_location') {
+    chrome.bookmarks.getTree((trees) => {
+      if (chrome.runtime.lastError || !trees?.[0]) {
+        sendResponse({ success: false, error: 'Impossible de lire les favoris.' });
+        return;
+      }
+      
+      const nodeMap = buildNodeMap(trees[0]);
+      const folders = [];
+      for (const id in nodeMap) {
+        const node = nodeMap[id];
+        if (!node.url && id !== '0') {
+          folders.push({
+            id: node.id,
+            path: getPathFromMap(node.id, nodeMap)
+          });
+        }
+      }
+      
+      chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
+        const fullConfig = {
+          provider: syncRes.provider || 'google',
+          apiUrl: syncRes.apiUrl || '',
+          apiKey: syncRes.apiKey || '',
+          modelName: syncRes.modelName || '',
+          debugMode: syncRes.debugMode === true,
+          maxTokens: syncRes.maxTokens || 4096,
+          promptSuggest: syncRes.promptSuggest || ''
+        };
+        
+        suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
+          .then(aiResponse => {
+            const parsed = cleanAndParseJSON(aiResponse);
+            sendResponse({ success: true, suggestion: parsed, folders });
+          })
+          .catch(err => {
+            sendResponse({ success: false, error: formatErrorMessage(err.message) });
+          });
+      });
+    });
+    return true; // async
+  }
+
+  if (message.action === 'save_suggested_bookmark') {
+    const { suggestion, bookmark } = message;
+    
+    (async () => {
+      let parentId;
+      if (suggestion.action === 'create_new') {
+        const createdFolder = await chrome.bookmarks.create({
+          parentId: suggestion.newFolderParentId || '1',
+          title: suggestion.newFolderTitle
+        });
+        parentId = createdFolder.id;
+      } else {
+        parentId = suggestion.targetFolderId || '1';
+      }
+      
+      const createdBookmark = await chrome.bookmarks.create({
+        parentId,
+        title: bookmark.title,
+        url: bookmark.url
+      });
+      
+      return createdBookmark;
+    })()
+    .then(newBookmark => {
+      sendResponse({ success: true, bookmark: newBookmark });
+    })
+    .catch(err => {
+      sendResponse({ success: false, error: err.message });
+    });
+    
+    return true; // async
   }
 
   if (message.action === 'reset_status') {

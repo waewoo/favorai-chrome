@@ -9,6 +9,8 @@ export function createChromeMock() {
       update: vi.fn().mockResolvedValue({}),
       move: vi.fn().mockResolvedValue({}),
       remove: vi.fn().mockResolvedValue(undefined),
+      removeTree: vi.fn().mockResolvedValue(undefined),
+      getChildren: vi.fn().mockResolvedValue([]),
     },
     storage: {
       local: {

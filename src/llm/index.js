@@ -25,7 +25,7 @@ CRITICAL RULES FOR OUTPUT:
    - "explanation": structured explanation of ALL changes (in the user's language)
 
 2. JSON STRUCTURE — Use this exact format:
-   - Bookmark: { "id": "string", "title": "string" }
+   - Bookmark: { "id": "string" } (CRITICAL: NEVER include the "title" or "url" for bookmarks, only the "id"!)
    - Folder:   { "id": "string", "title": "string", "children": [...] }
    - NEVER include "url", "date", or any other field
 
@@ -127,7 +127,7 @@ ABSOLUTE CONSTRAINTS:
 - NEVER restructure the hierarchy
 - NEVER mass-move or "optimize" the structure
 - NEVER act on ambiguous or unclear titles
-- Only bookmarks with score = 0 AND a clear score-2 destination may be moved
+    - Emojis / Prefix symbols: Feel free to prefix folder names with a single expressive emoji (like 💼, 🏠, 🤖, 🎨, etc.) if it represents the theme well, to make folders visually distinguishable.
 - QUICK ACCESS: any bookmark placed directly on the bookmarks bar (not inside any folder) must be moved into a "★ Quick Access" folder — create it if it doesn't exist
 
 EXPLANATION FORMAT (put in the "explanation" field):
@@ -169,6 +169,7 @@ Step 4 — GENERATE the JSON with:
   - 6–8 top-level folders max (count before returning)
 
 - BOOKMARKS BAR USAGE: exactly 6–8 top-level folders with new_ IDs — HARD MAXIMUM 8
+    - Emojis / Prefix symbols: Feel free to prefix folder names with a single expressive emoji (like 💼, 🏠, 🤖, 🎨, etc.) if it represents the theme well, to make folders visually distinguishable.
 - MERGE thin folders (< 3 bookmarks) into broader categories where appropriate.
 - NO ORPHAN FOLDERS: any original folder not included in reorganizedTree is automatically deleted.
 - QUICK ACCESS: bookmarks placed directly on the bar (not in a folder) → "★ Quick Access" (new_ ID).
@@ -262,7 +263,7 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
     case 'google':
       return queryGemini(apiUrl || 'https://generativelanguage.googleapis.com', apiKey, modelName || 'gemini-3.5-flash', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
     case 'mistral':
-      return queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-large-3', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
+      return queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-medium-latest', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
     case 'grok':
       return queryOpenAI(apiUrl || 'https://api.x.ai/v1', apiKey, modelName || 'grok-4-3', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
     case 'claude':
@@ -276,4 +277,101 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
     default:
       throw new Error(`Unknown LLM provider: ${provider}`);
   }
+}
+
+/**
+ * Recommande le meilleur emplacement pour un nouveau favori en interrogeant le LLM.
+ * @param {object} config - LLM config
+ * @param {object} bookmark - { title, url }
+ * @param {Array} folders - Liste des dossiers [{ id, path }]
+ * @param {AbortSignal} signal
+ */
+const PROMPT_SUGGEST = `You are an expert bookmark organizer. Your task is to recommend the best parent folder location for a new bookmark.
+
+Analyze the bookmark's title and URL:
+- Title: "{title}"
+- URL: "{url}"
+
+Here is a list of all existing folder paths in my bookmarks structure (in the format ID: Path):
+{folders}
+
+Instructions:
+1. If the bookmark fits into one of the existing folders, recommend "use_existing" and return the ID of that folder in "targetFolderId".
+2. If the bookmark does not fit into any existing folders, recommend "create_new". Suggest a name for a new folder (e.g. "Cooking", "Finance" - optionally including an emoji like 🍳 Cooking) in "newFolderTitle", and return the existing parent folder ID under which it should be created in "newFolderParentId".
+3. Provide a brief explanation for your recommendation in "explanation".
+4. Recommend a cleaner/better title for this bookmark (e.g. removing site name suffixes like " - Google Maps" or " | GitHub") and return it in "suggestedTitle".
+
+Your response MUST be a valid JSON object matching this schema:
+{
+  "action": "use_existing" | "create_new",
+  "targetFolderId": "ID of existing folder (if action is use_existing)",
+  "newFolderTitle": "Name of new folder (if action is create_new)",
+  "newFolderParentId": "ID of existing parent folder (if action is create_new)",
+  "suggestedTitle": "Suggested cleaner title for this bookmark",
+  "explanation": "Brief reason for this choice"
+}`;
+
+export async function suggestBookmarkLocation(config, bookmark, folders, ignoredFolderIds, signal) {
+  const { provider, apiUrl, apiKey, modelName, promptSuggest, debugMode } = config;
+
+  const foldersList = folders.map(f => `${f.id}: "${f.path}"`).join('\n');
+  const systemPrompt = `You are a strict JSON classifier. You must return ONLY a valid JSON object matching the requested schema without any markdown tags, markdown blocks, or extra conversational text.`;
+
+  const template = promptSuggest || PROMPT_SUGGEST;
+  const userPrompt = template
+    .replace('{title}', bookmark.title)
+    .replace('{url}', bookmark.url)
+    .replace('{folders}', foldersList);
+
+  if (debugMode) {
+    console.log('=== DEBUG: Suggest Bookmark Location ===');
+    console.log('Bookmark:', bookmark);
+    console.log('System Prompt:', systemPrompt);
+    console.log('User Prompt:', userPrompt);
+    console.log('========================================');
+  }
+
+  let avoidInstruction = '';
+  if (ignoredFolderIds && ignoredFolderIds.length > 0) {
+    const ignoredPaths = folders
+      .filter(f => ignoredFolderIds.includes(f.id))
+      .map(f => `${f.id}: "${f.path}"`);
+    if (ignoredPaths.length > 0) {
+      avoidInstruction = `\n\nCRITICAL CONSTRAINT: You MUST NOT recommend any of the following folders (avoid these IDs):\n${ignoredPaths.join('\n')}\nPlease recommend a DIFFERENT, alternative folder location.`;
+    }
+  }
+
+  const finalUserPrompt = userPrompt + avoidInstruction;
+
+  let response;
+  switch (provider) {
+    case 'openai':
+      response = await queryOpenAI(apiUrl || 'https://api.openai.com/v1', apiKey, modelName || 'gpt-5.5', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'google':
+      response = await queryGemini(apiUrl || 'https://generativelanguage.googleapis.com', apiKey, modelName || 'gemini-3.5-flash', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'mistral':
+      response = await queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-medium-latest', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'grok':
+      response = await queryOpenAI(apiUrl || 'https://api.x.ai/v1', apiKey, modelName || 'grok-4-3', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'claude':
+      response = await queryClaude(apiUrl || 'https://api.anthropic.com', apiKey, modelName || 'claude-opus-4-7', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'deepseek':
+      response = await queryDeepSeek(apiUrl || 'https://api.deepseek.com/v1', apiKey, modelName || 'deepseek-reasoner', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'ollama':
+      response = await queryOllama(apiUrl || 'http://localhost:11434', modelName || 'llama-4-scout', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    case 'custom':
+      response = await queryCustom(apiUrl, apiKey, modelName, finalUserPrompt, systemPrompt, signal, debugMode, 4096);
+      break;
+    default:
+      throw new Error(`Unknown LLM provider: ${provider}`);
+  }
+
+  return response;
 }

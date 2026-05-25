@@ -5,6 +5,7 @@
   "tabOrganize": { "message": "Rangement" },
   "tabConfig": { "message": "Configuration" },
   "tabHistory": { "message": "Historique" },
+  "tabAddBookmark": { "message": "Ajout Favoris" },
   "sectionLaunchTitle": { "message": "Lancer le Rangement" },
   "sectionLaunchDesc": { "message": "L'extension analysera les doublons, liens morts, et interrogera l'IA pour ranger vos favoris." },
   "privacyNote": { "message": "Pour réorganiser vos favoris, leurs titres et structure (sans les URLs) sont transmis au service d'IA configuré. Aucune donnée n'est collectée par FavorAI." },
@@ -98,5 +99,21 @@
   "labelCustomPrompt": { "message": "Instructions personnalisées (Prompt LLM additionnel)" },
   "placeholderCustomPrompt": { "message": "Ex: Ne pas toucher au dossier 'Pro'. Placer les favoris de cuisine sous 'Personnel > Recettes'..." },
   "placeholderApiKey": { "message": "sk-... ou clé" },
-  "btnSaveConfig": { "message": "Enregistrer la configuration" }
+  "btnSaveConfig": { "message": "Enregistrer la configuration" },
+  "titleFetchModels": { "message": "Charger les modèles disponibles depuis l'API" },
+  "logFetchingModels": { "message": "Récupération de la liste des modèles depuis l'API..." },
+  "logFetchModelsSuccess": {
+    "message": "$count$ modèles récupérés avec succès depuis l'API.",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "logFetchModelsError": {
+    "message": "Échec de la récupération des modèles depuis l'API : $error$",
+    "placeholders": {
+      "error": { "content": "$1" }
+    }
+  },
+  "toastModelsFetched": { "message": "Liste des modèles mise à jour" },
+  "optionCustomModel": { "message": "Autre (saisir manuellement)..." }
 }
