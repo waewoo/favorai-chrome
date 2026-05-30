@@ -4,11 +4,17 @@ import { saveSessionToHistory } from './history.js';
 
 /**
  * Résout l'ID réel d'un parent (gestion des IDs temporaires new_).
+ * Retourne null si un new_ ID n'a pas été résolu (création du dossier parent échouée).
+ * Les appelants doivent vérifier null et ignorer l'opération plutôt que de laisser
+ * Chrome placer silencieusement le nœud à la racine de la barre de favoris.
  */
 export function resolveParentId(id, idMap) {
   if (!id || String(id) === '0') return '1'; // '0' = racine virtuelle Chrome, pas un parent valide
   const s = String(id);
-  return s.startsWith(NEW_FOLDER_PREFIX) ? (idMap[s] || '1') : s;
+  if (s.startsWith(NEW_FOLDER_PREFIX)) {
+    return idMap[s] || null;
+  }
+  return s;
 }
 
 /**
@@ -35,13 +41,16 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
 
   for (const act of creates) {
     const parentId = resolveParentId(act.params.parentId, idMap);
+    if (parentId === null) {
+      console.warn(`[FavorAI] applyChanges: skipping folder creation "${act.params.title}" — parent ${act.params.parentId} was not created`);
+      continue;
+    }
     try {
       const created = await chrome.bookmarks.create({ parentId, title: act.params.title });
       idMap[act.params.tempId] = created.id;
       history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (err) {
       // Failed to create folder - continue
-      // // console.error(`Error creating folder "${act.params.title}":`, err);
     }
   }
 
@@ -68,6 +77,10 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
   for (const act of toRun.filter(a => a.type === 'move_bookmark' || a.type === 'move_folder')) {
     const realId  = idMap[act.params.nodeId] || act.params.nodeId;
     const realPid = resolveParentId(act.params.newParentId, idMap);
+    if (realPid === null) {
+      console.warn(`[FavorAI] applyChanges: skipping move of "${act.title}" — target parent ${act.params.newParentId} was not created`);
+      continue;
+    }
     let oldPid = '', title = '', isFolder = false;
     try {
       const nodes = await chrome.bookmarks.get(realId);
@@ -78,7 +91,6 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
     } catch (err) {
       // Failed to move - continue
-      // // console.error(`Error moving ${realId} → ${realPid}:`, err);
     }
   }
 
