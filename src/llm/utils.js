@@ -136,17 +136,23 @@ export function cleanAndParseJSON(text) {
 
     const fBr = cleanText.indexOf('[');
     if (fBr !== -1) {
-      // Compter les brackets pour trouver le vrai end
+      // Bracket-counting with string-awareness (mirrors the brace extraction above)
+      // to avoid a "]" inside a string value prematurely closing the array.
       let bracketCount = 0;
       let idx = fBr;
       let endIdx = -1;
+      let inStr = false;
+      let escNext = false;
       while (idx < cleanText.length) {
-        if (cleanText[idx] === '[') bracketCount++;
-        else if (cleanText[idx] === ']') {
-          bracketCount--;
-          if (bracketCount === 0) {
-            endIdx = idx;
-            break;
+        const ch = cleanText[idx];
+        if (escNext) { escNext = false; idx++; continue; }
+        if (ch === '\\') { escNext = true; idx++; continue; }
+        if (ch === '"') { inStr = !inStr; idx++; continue; }
+        if (!inStr) {
+          if (ch === '[') bracketCount++;
+          else if (ch === ']') {
+            bracketCount--;
+            if (bracketCount === 0) { endIdx = idx; break; }
           }
         }
         idx++;
