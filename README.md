@@ -35,7 +35,7 @@ FavorAI is a Chrome and Chromium-based browser extension that helps you clean up
 1. Open Chrome and navigate to `chrome://extensions/`.
 2. Toggle **Developer mode** in the top right.
 3. Click **Load unpacked** in the top left.
-4. Select the root folder of this project (`ExtentionChromiumGestionFavoris`).
+4. Select the root folder of this project (`favorai-chrome`).
 
 ### Local Development
 To run tests, check linting, or package the extension, you can use either the npm scripts or the provided `Makefile`:

@@ -100,7 +100,7 @@ All logical utility components must maintain **100% coverage** across **all metr
 **Per-file requirement**: Each utility file (`src/background/*.js`, `src/llm/*.js`, `src/utils/*.js`) must individually meet the 100% threshold for all four coverage metrics. No exceptions, no trade-offs.
 
 ### 1. Mocking Chrome APIs
-When writing unit tests under `tests/unit/`, do not invoke real browser APIs. A global mock system is pre-configured in [tests/setup.js](file:///d:/Travail/Projet/ExtentionChromiumGestionFavoris/tests/setup.js) using the mocks defined in [tests/mocks/chrome.js](file:///d:/Travail/Projet/ExtentionChromiumGestionFavoris/tests/mocks/chrome.js).
+When writing unit tests under `tests/unit/`, do not invoke real browser APIs. A global mock system is pre-configured in [tests/setup.js](file:///d:/Travail/Projet/favorai-chrome/tests/setup.js) using the mocks defined in [tests/mocks/chrome.js](file:///d:/Travail/Projet/favorai-chrome/tests/mocks/chrome.js).
 Ensure you mock return values explicitly inside your test cases when test targets make Chrome API calls:
 ```javascript
 // Example of mocking Chrome API inside a test case
