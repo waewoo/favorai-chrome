@@ -9,8 +9,7 @@ export const extensionPath = path.resolve(__dirname, '../../');
 
 /**
  * Launches a Chromium instance with the extension loaded.
- * Uses --headless=new (Chrome's new headless mode that supports extensions).
- * headless: false prevents Playwright from injecting its own --headless flag.
+ * Uses optimized arguments for faster startup.
  */
 export async function launchExtension() {
   // Store in os.tmpdir() to avoid polluting the testDir (Playwright scans it for specs)
@@ -23,7 +22,10 @@ export async function launchExtension() {
       `--load-extension=${extensionPath}`,
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--headless=new'
+      '--headless=new',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--js-flags="--max-opt-level=2"'
     ]
   });
 
@@ -40,14 +42,12 @@ export async function launchExtension() {
 
 /**
  * Navigates to the extension popup and waits for the page to be interactive.
- * Always call this instead of raw page.goto() to avoid acting on a partially
- * loaded page (the most common cause of e2e timeouts).
  */
 export async function gotoPopup(page, extensionId, file = 'popup.html') {
   await page.goto(`chrome-extension://${extensionId}/${file}`);
   await page.waitForLoadState('domcontentloaded');
-  // Small stabilization wait for the extension's JS initialization
-  await page.waitForTimeout(150);
+  // 120ms stabilization wait is a stable compromise for fast local runs
+  await page.waitForTimeout(120);
 }
 
 export async function cleanup(context, tmpDir) {

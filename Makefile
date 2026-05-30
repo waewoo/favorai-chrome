@@ -91,5 +91,5 @@ clean-e2e:
 # Kill any orphaned Playwright-spawned Chrome processes (--load-extension flag is the fingerprint)
 kill-e2e:
 	@echo "Killing stuck Playwright Chrome processes..."
-	@powershell -Command "Get-CimInstance Win32_Process | Where-Object { \$$_.Name -eq 'chrome.exe' -and \$$_.CommandLine -match 'load-extension' } | ForEach-Object { Stop-Process -Id \$$_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID \$$(\$$_.ProcessId)\" }" 2>/dev/null || true
+	@powershell -Command "Get-CimInstance Win32_Process | Where-Object { $$_.Name -eq 'chrome.exe' -and $$_.CommandLine -match 'load-extension' } | ForEach-Object { Stop-Process -Id $$_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $$($$_.ProcessId)\" }" || exit 0
 	@echo "Done."

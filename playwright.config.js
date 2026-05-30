@@ -9,8 +9,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   testIgnore: ['**/tmp-user-data-*/**', '**/tmp-user-data-*'],
   timeout: 60000,  // 60s — each test spawns a Chrome instance with extension load
-  retries: 1,      // 1 automatic retry for transient launch/timing failures
-  workers: 2,      // Limit concurrent Chrome instances to reduce resource contention
+  retries: 1,      // 1 retry to handle timing fluctuations under load
+  workers: process.env.PLAYWRIGHT_WORKERS ? parseInt(process.env.PLAYWRIGHT_WORKERS) : (process.env.CI ? 2 : 4),      // Optimized to 4 workers locally to prevent CPU lockup while maintaining speed
   use: {
     headless: false, // Extensions require non-headless mode
   },
