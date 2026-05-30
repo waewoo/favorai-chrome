@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Politique de confidentialité — FavorAI</title>
+  <title>Privacy Policy — FavorAI</title>
   <link rel="stylesheet" href="fonts/fonts.css">
   <style>
     :root {
@@ -195,98 +195,97 @@
       <img src="icons/icon48.png" alt="FavorAI logo" />
     </div>
     <div>
-      <h1>FavorAI — Politique de confidentialité</h1>
-      <p class="subtitle">Dernière mise à jour : mai 2026 · Version de l'extension : 1.2.0</p>
+      <h1>FavorAI — Privacy Policy</h1>
+      <p class="subtitle">Last updated: May 2026 · Extension version: 1.2.0</p>
     </div>
   </header>
 
-  <button class="back-btn" onclick="window.close()">← Fermer</button>
+  <button class="back-btn" onclick="window.close()">← Close</button>
 
-  <!-- Résumé -->
+  <!-- Summary -->
   <div class="highlight-box success">
-    <p><strong>✅ En résumé :</strong> FavorAI ne collecte <strong>aucune donnée personnelle</strong> pour son propre compte. Il ne possède aucun serveur, aucune base de données, aucune télémétrie. Votre clé API et vos favoris ne quittent jamais votre appareil sauf pour être envoyés au service d'IA <strong>que vous avez vous-même configuré</strong>.</p>
+    <p><strong>✅ Summary:</strong> FavorAI collects <strong>no personal data</strong> on its own behalf. It has no server, no database, no telemetry. Your API key and bookmarks never leave your device except to be sent to the AI service <strong>you configured yourself</strong>.</p>
   </div>
 
-  <!-- 1. Qui sommes-nous -->
-  <h2>1. Qui sommes-nous ?</h2>
-  <p>FavorAI est une extension de navigateur développée à titre personnel / indépendant. Elle est publiée sur le Microsoft Edge Add-ons Store et le Chrome Web Store. Le code source est disponible pour audit.</p>
-  <p>Contact : <strong><a href="mailto:ftzpr-chrome@yahoo.com">ftzpr-chrome@yahoo.com</a></strong> · <a href="https://github.com/waewoo/favorai-chrome" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+  <!-- 1. About -->
+  <h2>1. About FavorAI</h2>
+  <p>FavorAI is a browser extension developed independently by an individual developer. It is published on the Chrome Web Store and the Microsoft Edge Add-ons Store.</p>
+  <p><strong>Contact:</strong> <a href="mailto:ftzpr-chrome@yahoo.com">ftzpr-chrome@yahoo.com</a></p>
 
-  <!-- 2. Données traitées -->
-  <h2>2. Quelles données sont traitées ?</h2>
+  <!-- 2. Data processed -->
+  <h2>2. What data is processed?</h2>
 
   <table>
     <thead>
       <tr>
-        <th>Donnée</th>
-        <th>Stockage</th>
-        <th>Transmis à un tiers ?</th>
-        <th>Nécessaire ?</th>
+        <th>Data</th>
+        <th>Storage</th>
+        <th>Sent to a third party?</th>
+        <th>Required?</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><strong>Clé API LLM</strong><br>(OpenAI, Gemini, Mistral, etc.)</td>
-        <td>Stockée localement dans <code>chrome.storage.sync</code> (chiffré par le navigateur)</td>
-        <td>Non — uniquement utilisée en en-tête des requêtes vers l'API que vous avez configurée</td>
-        <td>✅ Oui — authentification LLM</td>
+        <td><strong>LLM API Key</strong><br>(OpenAI, Gemini, Mistral, etc.)</td>
+        <td>Stored locally in <code>chrome.storage.sync</code> (encrypted by the browser)</td>
+        <td>No — only used as a header in requests to the API you configured</td>
+        <td>✅ Yes — LLM authentication</td>
       </tr>
       <tr>
-        <td><strong>Titres et structure des favoris</strong><br>(hiérarchie de dossiers + noms)</td>
-        <td>Non persisté — utilisé uniquement pendant l'analyse en mémoire vive</td>
-        <td>✅ <strong>Oui</strong> — envoyé au service LLM configuré par l'utilisateur (voir ci-dessous)</td>
-        <td>✅ Oui — nécessaire pour la réorganisation IA</td>
+        <td><strong>Bookmark titles &amp; structure</strong><br>(folder hierarchy + names)</td>
+        <td>Not persisted — used only in memory during analysis</td>
+        <td>✅ <strong>Yes</strong> — sent to the LLM service configured by the user (see below)</td>
+        <td>✅ Yes — required for AI reorganization</td>
       </tr>
       <tr>
-        <td><strong>URLs des favoris</strong></td>
-        <td>Non persisté par FavorAI</td>
-        <td>❌ Non — les URLs ne sont <strong>jamais</strong> transmises au LLM (supprimées avant envoi)</td>
-        <td>Partiellement — utilisées en local pour la vérification des liens morts</td>
+        <td><strong>Bookmark URLs</strong></td>
+        <td>Not persisted by FavorAI</td>
+        <td>✅ <strong>Yes</strong> — URLs are included in the payload sent to the LLM to help with semantic classification</td>
+        <td>Partial — also used locally to check for dead links (optional)</td>
       </tr>
       <tr>
-        <td><strong>Historique des sessions</strong></td>
-        <td>Stocké localement dans <code>chrome.storage.local</code></td>
-        <td>❌ Non</td>
-        <td>✅ Oui — pour permettre le rollback</td>
+        <td><strong>Session history</strong></td>
+        <td>Stored locally in <code>chrome.storage.local</code></td>
+        <td>❌ No</td>
+        <td>✅ Yes — to allow session rollback</td>
       </tr>
       <tr>
-        <td><strong>Configuration (provider, modèle, prompt custom)</strong></td>
+        <td><strong>Configuration</strong><br>(provider, model, custom prompt)</td>
         <td><code>chrome.storage.sync</code></td>
-        <td>❌ Non</td>
-        <td>✅ Oui — préférences utilisateur</td>
+        <td>❌ No</td>
+        <td>✅ Yes — user preferences</td>
       </tr>
     </tbody>
   </table>
 
-  <!-- 3. Transmission au LLM -->
-  <h2>3. Transmission de données à votre service d'IA</h2>
+  <!-- 3. LLM transmission -->
+  <h2>3. Data transmitted to your AI service</h2>
   <div class="highlight-box warning">
-    <p><strong>⚠️ Point important :</strong> Lorsque vous lancez une réorganisation, FavorAI construit un fichier JSON contenant les <strong>titres</strong> et la <strong>structure hiérarchique</strong> de vos favoris, puis l'envoie au service d'IA que <strong>vous avez configuré</strong> dans l'onglet Configuration (OpenAI, Google Gemini, Mistral, Grok, Ollama ou un endpoint personnalisé).</p>
-    <p>FavorAI n'a aucun contrôle sur la politique de confidentialité de ces services tiers. Nous vous encourageons à consulter la politique de confidentialité du fournisseur que vous utilisez :</p>
+    <p><strong>⚠️ Important:</strong> When you launch a reorganization, FavorAI builds a JSON payload containing your bookmark <strong>titles, URLs, and folder structure</strong>, then sends it to the AI service <strong>you configured</strong> in the Configuration tab (OpenAI, Google Gemini, Mistral, Grok, Ollama, or a custom endpoint).</p>
+    <p>FavorAI has no control over the privacy policy of these third-party services. We encourage you to review the privacy policy of the provider you use:</p>
   </div>
 
   <ul>
-    <li><a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer">OpenAI — Politique de confidentialité</a></li>
-    <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google (Gemini) — Politique de confidentialité</a></li>
-    <li><a href="https://mistral.ai/privacy/" target="_blank" rel="noopener noreferrer">Mistral AI — Politique de confidentialité</a></li>
-    <li><a href="https://x.ai/legal/privacy-policy" target="_blank" rel="noopener noreferrer">xAI (Grok) — Politique de confidentialité</a></li>
-    <li>Ollama (local) — Aucune transmission externe ; le modèle s'exécute entièrement sur votre machine</li>
+    <li><a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener noreferrer">OpenAI — Privacy Policy</a></li>
+    <li><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google (Gemini) — Privacy Policy</a></li>
+    <li><a href="https://mistral.ai/privacy/" target="_blank" rel="noopener noreferrer">Mistral AI — Privacy Policy</a></li>
+    <li><a href="https://x.ai/legal/privacy-policy" target="_blank" rel="noopener noreferrer">xAI (Grok) — Privacy Policy</a></li>
+    <li>Ollama (local) — No external transmission; the model runs entirely on your machine</li>
   </ul>
 
-  <!-- 4. Ce que nous ne faisons PAS -->
-  <h2>4. Ce que FavorAI ne fait jamais</h2>
+  <!-- 4. What we never do -->
+  <h2>4. What FavorAI never does</h2>
   <ul>
-    <li>Nous <strong>n'avons aucun serveur propre</strong> — FavorAI n'a pas de backend, pas de base de données, pas de compte utilisateur</li>
-    <li>Nous <strong>ne collectons aucune donnée</strong> à des fins d'analyse, de publicité ou de profilage</li>
-    <li>Nous <strong>n'utilisons aucune telémétrie</strong>, aucun tracker, aucun pixel de suivi</li>
-    <li>Nous <strong>ne partageons aucune donnée</strong> avec des partenaires tiers autres que le LLM que vous avez vous-même configuré</li>
-    <li>Nous <strong>ne stockons pas les URLs</strong> de vos favoris — elles restent sur votre appareil</li>
-    <li>Nous <strong>ne lisons pas vos onglets ouverts</strong>, votre historique de navigation, vos cookies ou vos mots de passe</li>
-    <li>Nous <strong>n'injectons aucun script</strong> dans les pages que vous visitez</li>
+    <li>We <strong>have no server of our own</strong> — FavorAI has no backend, no database, no user accounts</li>
+    <li>We <strong>collect no data</strong> for analytics, advertising or profiling purposes</li>
+    <li>We <strong>use no telemetry</strong>, no trackers, no tracking pixels</li>
+    <li>We <strong>share no data</strong> with third-party partners other than the LLM you configured yourself</li>
+    <li>We <strong>do not read your open tabs</strong>, browsing history, cookies or passwords</li>
+    <li>We <strong>inject no scripts</strong> into the pages you visit</li>
   </ul>
 
   <!-- 5. Permissions -->
-  <h2>5. Pourquoi ces permissions ?</h2>
+  <h2>5. Why these permissions?</h2>
 
   <table>
     <thead>
@@ -298,50 +297,57 @@
     <tbody>
       <tr>
         <td><code>bookmarks</code></td>
-        <td>Lire, déplacer, renommer et supprimer des favoris — la fonction principale de l'extension</td>
+        <td>Read, move, rename and delete bookmarks — the core functionality of the extension</td>
       </tr>
       <tr>
         <td><code>storage</code></td>
-        <td>Stocker votre configuration (clé API, préférences) et l'historique des sessions localement dans votre navigateur</td>
+        <td>Store your configuration (API key, preferences) and session history locally in your browser</td>
       </tr>
       <tr>
-        <td><code>&lt;all_urls&gt;</code></td>
+        <td><code>alarms</code></td>
+        <td>Keep the background service worker alive during long AI processing operations</td>
+      </tr>
+      <tr>
+        <td><code>tabs</code></td>
+        <td>Detect the active tab URL when you use the "Add Bookmark" feature</td>
+      </tr>
+      <tr>
+        <td><code>&lt;all_urls&gt;</code> <em>(optional)</em></td>
         <td>
-          Deux usages : (1) vérifier si les URLs de vos favoris sont accessibles (liens morts) en envoyant des requêtes HEAD/GET aux sites concernés, et (2) communiquer avec l'API LLM que vous avez configurée, qui peut pointer vers n'importe quel domaine (y compris un serveur local)
+          Requested only when you enable "Check dead links": sends HEAD/GET requests to your bookmark URLs to detect broken links. Also required to communicate with custom LLM endpoints on any domain. You can deny this permission — all other features remain functional.
         </td>
       </tr>
     </tbody>
   </table>
 
-  <!-- 6. Sécurité de la clé API -->
-  <h2>6. Sécurité de votre clé API</h2>
+  <!-- 6. API Key security -->
+  <h2>6. API Key security</h2>
   <div class="highlight-box info">
-    <p>Votre clé API est stockée dans <code>chrome.storage.sync</code>. Ce stockage est <strong>chiffré par le navigateur</strong> et synchronisé entre vos appareils connectés au même compte Microsoft/Google Edge/Chrome. FavorAI ne peut pas lire votre clé en dehors du contexte de l'extension.</p>
-    <p>Recommandation : Créez une clé API dédiée à FavorAI avec un quota limité chez votre fournisseur LLM.</p>
+    <p>Your API key is stored in <code>chrome.storage.sync</code>. This storage is <strong>encrypted by the browser</strong> and synced across devices signed in to the same Chrome/Edge account. FavorAI cannot read your key outside the extension context.</p>
+    <p>Recommendation: Create a dedicated API key for FavorAI with a limited quota at your LLM provider.</p>
   </div>
 
-  <!-- 7. Droits RGPD -->
-  <h2>7. Vos droits (RGPD)</h2>
-  <p>Puisque FavorAI ne collecte aucune donnée personnelle pour son propre compte, les droits d'accès, de rectification et de suppression s'appliquent directement à votre navigateur :</p>
+  <!-- 7. Your rights -->
+  <h2>7. Your rights (GDPR)</h2>
+  <p>Since FavorAI collects no personal data on its own behalf, rights of access, rectification and deletion apply directly to your browser:</p>
   <ul>
-    <li><strong>Supprimer vos données</strong> : Utilisez le bouton « Vider » dans l'onglet Historique, ou désinstallez l'extension (toutes les données locales sont effacées)</li>
-    <li><strong>Exporter votre configuration</strong> : Utilisez le bouton « Exporter » dans l'onglet Configuration</li>
-    <li><strong>Exercer vos droits auprès du LLM</strong> : Contactez directement votre fournisseur d'IA (OpenAI, Google, Mistral, etc.) pour les données qu'ils ont pu traiter</li>
+    <li><strong>Delete your data:</strong> Use the "Clear History" button in the History tab, or uninstall the extension (all local data is wiped)</li>
+    <li><strong>Export your configuration:</strong> Use the "Export" button in the Configuration tab</li>
+    <li><strong>Exercise your rights with the LLM provider:</strong> Contact your AI provider directly (OpenAI, Google, Mistral, etc.) for any data they may have processed</li>
   </ul>
 
-  <!-- 8. Modifications -->
-  <h2>8. Modifications de cette politique</h2>
-  <p>Toute modification significative de cette politique sera signalée dans les notes de version de l'extension. La date de dernière mise à jour est indiquée en haut de cette page.</p>
+  <!-- 8. Changes -->
+  <h2>8. Changes to this policy</h2>
+  <p>Any significant changes to this policy will be noted in the extension's release notes. The last update date is shown at the top of this page.</p>
 
   <!-- 9. Contact -->
   <h2>9. Contact</h2>
-  <p>Pour toute question relative à la confidentialité de vos données dans le cadre de l'utilisation de FavorAI :</p>
-  <p><strong>Email :</strong> <a href="mailto:ftzpr-chrome@yahoo.com">ftzpr-chrome@yahoo.com</a></p>
-  <p><strong>GitHub :</strong> <a href="https://github.com/waewoo/favorai-chrome" target="_blank" rel="noopener noreferrer">https://github.com/waewoo/favorai-chrome</a></p>
+  <p>For any questions regarding the privacy of your data when using FavorAI:</p>
+  <p><strong>Email:</strong> <a href="mailto:ftzpr-chrome@yahoo.com">ftzpr-chrome@yahoo.com</a></p>
 
   <footer>
-    <p>FavorAI v1.2.0 · Politique de confidentialité · Dernière mise à jour : mai 2026</p>
-    <p style="margin-top: 4px;">Cette politique est disponible en ligne à l'adresse : <a href="https://waewoo.github.io/favorai-privacy/privacy_policy.html" style="color: inherit;">https://waewoo.github.io/favorai-privacy/privacy_policy.html</a></p>
+    <p>FavorAI v1.2.0 · Privacy Policy · Last updated: May 2026</p>
+    <p style="margin-top: 4px;">This policy is also available online at: <a href="https://waewoo.github.io/favorai-privacy/privacy_policy.html" style="color: inherit;">https://waewoo.github.io/favorai-privacy/privacy_policy.html</a></p>
   </footer>
 </body>
 </html>
