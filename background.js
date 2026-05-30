@@ -11,8 +11,24 @@ import { cleanAndParseJSON } from './src/llm/utils.js';
 import { buildNodeMap, getPathFromMap } from './src/background/diff.js';
 
 let pendingActions = [];
+// currentAbortController is intentionally not persisted: if the SW is killed mid-analysis
+// the get_current_status handler detects state=analyzing + no controller and resets to idle.
 let currentAbortController = null;
+// popupWindowId is persisted to chrome.storage.local so it survives SW restarts.
 let popupWindowId = null;
+
+// Restore popupWindowId from storage on SW startup and verify the window still exists.
+chrome.storage.local.get(['popupWindowId'], (res) => {
+  if (res.popupWindowId != null) {
+    chrome.windows.get(res.popupWindowId, (win) => {
+      if (chrome.runtime.lastError || !win) {
+        chrome.storage.local.remove('popupWindowId');
+      } else {
+        popupWindowId = res.popupWindowId;
+      }
+    });
+  }
+});
 
 chrome.action.onClicked.addListener(() => {
   const popupUrl = chrome.runtime.getURL('popup.html');
@@ -20,6 +36,7 @@ chrome.action.onClicked.addListener(() => {
     chrome.windows.get(popupWindowId, (win) => {
       if (chrome.runtime.lastError || !win) {
         popupWindowId = null;
+        chrome.storage.local.remove('popupWindowId');
         openPopupWindow(popupUrl);
       } else {
         chrome.windows.update(popupWindowId, { focused: true });
@@ -41,9 +58,11 @@ function openPopupWindow(url) {
   }, (win) => {
     if (!chrome.runtime.lastError && win) {
       popupWindowId = win.id;
+      chrome.storage.local.set({ popupWindowId: win.id });
       chrome.windows.onRemoved.addListener(function onRemoved(id) {
         if (id === popupWindowId) {
           popupWindowId = null;
+          chrome.storage.local.remove('popupWindowId');
           chrome.windows.onRemoved.removeListener(onRemoved);
         }
       });
