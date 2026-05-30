@@ -417,7 +417,7 @@
 
           <!-- How It Works Section -->
           <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">⚙️ How It Works</p>
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsHowItWorks">⚙️ How It Works</p>
             <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; white-space: pre-wrap; line-height: 1.7; color: var(--text-main);" data-i18n="docsWorkflow">
               1. Configure an LLM provider (OpenAI, Gemini, etc.) in the Configuration tab
               2. Click "Minimal" or "Complete" to start analysis
@@ -433,109 +433,63 @@
 
             <!-- OpenAI -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(249, 115, 22, 0.08);">🟠 OpenAI <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(249, 115, 22, 0.2);">
-                1. Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #f97316; text-decoration: underline; cursor: pointer;">platform.openai.com/api-keys</a><br/>
-                2. Log in or create a free account<br/>
-                3. Click "Create new secret key"<br/>
-                4. Copy the key and paste it in FavorAI Configuration<br/>
-                5. Free trial includes $5 credit for testing
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(249, 115, 22, 0.08);">🟠 <span data-i18n="docsOpenAITitle">OpenAI</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(249, 115, 22, 0.2); white-space: pre-wrap;" data-i18n="docsOpenAIText">
               </div>
             </details>
 
             <!-- Gemini -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(59, 130, 246, 0.08);">🔵 Google Gemini <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(59, 130, 246, 0.2);">
-                1. Visit <a href="https://aistudio.google.com" target="_blank" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">aistudio.google.com</a> (Google AI Studio)<br/>
-                2. Click "Get API Key" or "Create new API key"<br/>
-                3. Select a Google Cloud project or create a new one<br/>
-                4. Copy the API key and paste it in FavorAI Configuration<br/>
-                5. Free tier: 60 requests per minute
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(59, 130, 246, 0.08);">🔵 <span data-i18n="docsGeminiTitle">Google Gemini</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(59, 130, 246, 0.2); white-space: pre-wrap;" data-i18n="docsGeminiText">
               </div>
             </details>
 
             <!-- Mistral -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);">🟣 Mistral AI <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(168, 85, 247, 0.2);">
-                1. Visit <a href="https://console.mistral.ai" target="_blank" style="color: #a855f7; text-decoration: underline; cursor: pointer;">console.mistral.ai</a><br/>
-                2. Log in or create a free account<br/>
-                3. Go to API Keys section<br/>
-                4. Click "Create new API key"<br/>
-                5. Copy the key and paste it in FavorAI Configuration<br/>
-                6. Free trial: Limited credits for testing
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);">🟣 <span data-i18n="docsMistralTitle">Mistral AI</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(168, 85, 247, 0.2); white-space: pre-wrap;" data-i18n="docsMistralText">
               </div>
             </details>
 
             <!-- Claude -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚡ Anthropic Claude <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
-                1. Visit <a href="https://console.anthropic.com" target="_blank" style="color: #6366f1; text-decoration: underline; cursor: pointer;">console.anthropic.com</a><br/>
-                2. Sign in or create a free account<br/>
-                3. Go to API Keys section<br/>
-                4. Click "Create key"<br/>
-                5. Copy the key and paste it in FavorAI Configuration<br/>
-                6. Free trial: Limited credits for testing
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚡ <span data-i18n="docsClaudeTitle">Anthropic Claude</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2); white-space: pre-wrap;" data-i18n="docsClaudeText">
               </div>
-            </div>
+            </details>
 
             <!-- DeepSeek -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(16, 185, 129, 0.08);">🟢 DeepSeek <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(16, 185, 129, 0.2);">
-                1. Visit <a href="https://platform.deepseek.com" target="_blank" style="color: #10b981; text-decoration: underline; cursor: pointer;">platform.deepseek.com</a><br/>
-                2. Log in or create a free account<br/>
-                3. Go to API Keys section<br/>
-                4. Click "Create key"<br/>
-                5. Copy the key and paste it in FavorAI Configuration<br/>
-                6. Free tier available for testing
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(16, 185, 129, 0.08);">🟢 <span data-i18n="docsDeepSeekTitle">DeepSeek</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(16, 185, 129, 0.2); white-space: pre-wrap;" data-i18n="docsDeepSeekText">
               </div>
             </details>
 
             <!-- Grok -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(139, 92, 246, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(139, 92, 246, 0.08);">🤖 Grok (xAI) <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(139, 92, 246, 0.2);">
-                1. Visit <a href="https://x.ai" target="_blank" style="color: #8b5cf6; text-decoration: underline; cursor: pointer;">x.ai</a><br/>
-                2. Log in or create a free account<br/>
-                3. Navigate to API section<br/>
-                4. Create a new API key<br/>
-                5. Copy the key and paste it in FavorAI Configuration<br/>
-                6. Limited free tier available
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(139, 92, 246, 0.08);">🤖 <span data-i18n="docsGrokTitle">Grok (xAI)</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(139, 92, 246, 0.2); white-space: pre-wrap;" data-i18n="docsGrokText">
               </div>
             </details>
 
             <!-- Ollama -->
             <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(236, 72, 153, 0.3); background: rgba(236, 72, 153, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(236, 72, 153, 0.08);">🏠 Ollama (Local) <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(236, 72, 153, 0.2);">
-                1. Download Ollama from <a href="https://ollama.ai" target="_blank" style="color: #ec4899; text-decoration: underline; cursor: pointer;">ollama.ai</a><br/>
-                2. Install and run Ollama on your computer<br/>
-                3. Open Terminal/CMD and pull a model: <code style="background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 3px;">ollama pull llama2</code><br/>
-                4. Ollama runs at <code style="background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 3px;">http://localhost:11434</code><br/>
-                5. In FavorAI Configuration: Set provider to Ollama, URL to http://localhost:11434<br/>
-                6. Completely free and private ✅
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(236, 72, 153, 0.08);">🏠 <span data-i18n="docsOllamaTitle">Ollama (Local)</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(236, 72, 153, 0.2); white-space: pre-wrap;" data-i18n="docsOllamaText">
               </div>
             </details>
           </div>
 
           <!-- Privacy & Security Section -->
           <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;">🔒 Privacy & Security</p>
-            <ul style="margin: 0; padding-left: 16px; font-size: 10px; line-height: 1.7; color: var(--text-muted);">
-              <li style="margin-bottom: 4px;">✓ Only titles and folder structure (no URLs) are sent to AI providers</li>
-              <li style="margin-bottom: 4px;">✓ Your API key is stored locally in your browser</li>
-              <li style="margin-bottom: 4px;">✓ No data is sent to FavorAI servers</li>
-              <li style="margin-bottom: 4px;">✓ Analysis happens in your browser</li>
-              <li>✓ You maintain full control over your bookmarks</li>
-            </ul>
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;" data-i18n="docsPrivacy">🔒 Privacy & Security</p>
+            <p style="margin: 0; font-size: 10px; line-height: 1.7; color: var(--text-muted); white-space: pre-wrap;" data-i18n="docsPrivacyText"></p>
           </div>
 
           <!-- Tips & Best Practices Section -->
           <div style="margin-bottom: 0;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">💡 Tips & Best Practices</p>
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsTips">💡 Tips & Best Practices</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
                 <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip1">🔍 Start with "Minimal" mode to review changes first</p>
