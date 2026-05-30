@@ -60,4 +60,5 @@ Output goes to `store-assets/output/`.
 - [ ] Privacy Policy URL: https://waewoo.github.io/favorai-privacy/privacy_policy.html
 - [ ] `<all_urls>` justification → see `listing/store-listing.md` section 6
 - [ ] Category: Productivity
-- [ ] Price: $4.99 (one-time)
+- [ ] Price: Free
+- [ ] Support link: https://buymeacoffee.com/waewoo

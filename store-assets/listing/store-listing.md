@@ -115,11 +115,12 @@ FavorAI is built with a strict privacy-first architecture:
 • The "Check dead links" option slows analysis but is worth running every few months on large libraries.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💳 PRICING
+☕ SUPPORT THE PROJECT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-$4.99 — one-time purchase. No subscription, no recurring fees. All future updates included.
-You bring your own API key from your chosen provider (OpenAI, Gemini, etc.).
+FavorAI is free to use. You bring your own API key from your chosen provider (OpenAI, Gemini, etc.).
+If FavorAI saves you time, consider supporting the project:
+https://buymeacoffee.com/waewoo
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -243,7 +244,8 @@ LLM productivity
 | **Name** | FavorAI — AI Bookmark Manager |
 | **Category** | Productivity |
 | **Language** | English (primary) · French |
-| **Price** | $4.99 (one-time) |
+| **Price** | Free |
+| **Support** | https://buymeacoffee.com/waewoo |
 | **Privacy Policy URL** | https://waewoo.github.io/favorai-privacy/privacy_policy.html |
 | **Website / Support** | https://github.com/waewoo/favorai-chrome |
 | **Contact email** | ftzpr-chrome@yahoo.com |
