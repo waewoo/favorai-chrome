@@ -94,7 +94,10 @@
 
         <!-- STATUS & LOGS PANEL -->
         <section class="section status-panel">
-          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px;" data-i18n="sectionStatus">💻 Status Console</div>
+          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span data-i18n="sectionStatus">💻 Status Console</span>
+            <button id="btnCopyLogs" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 4px; padding: 3px 8px; font-size: 9px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: var(--font-family); font-weight: 500;" data-i18n="btnCopyLogs">Copier les logs</button>
+          </div>
           <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-label="Analysis Status Console">
             <div class="log-entry info" data-i18n="logReady">&gt; Ready to analyze your bookmarks. Save your API key then launch a reorganization.</div>
           </div>
@@ -115,6 +118,14 @@
           <div class="explanation-block" id="explanationBlock" style="display: none;">
             <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #818cf8; letter-spacing: 0.5px;" data-i18n="explanationAITitle">AI EXPLANATION</p>
             <div id="iaExplanationText" style="font-size: 11px; line-height: 1.5; color: var(--text-muted);"></div>
+          </div>
+
+          <!-- ACTION FILTERS -->
+          <div class="action-filters">
+            <button class="filter-btn active" data-filter="all" data-i18n="filterAll">Tous</button>
+            <button class="filter-btn" data-filter="clean" data-i18n="filterClean">Nettoyage</button>
+            <button class="filter-btn" data-filter="structure" data-i18n="filterStructure">Dossiers</button>
+            <button class="filter-btn" data-filter="move" data-i18n="filterMove">Déplacements</button>
           </div>
 
           <div class="action-header-bar">

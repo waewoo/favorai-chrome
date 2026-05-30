@@ -251,5 +251,11 @@
   "docsTip4": { "message": "🔌 Différents fournisseurs d'IA peuvent suggérer des organisations différentes — expérimentez !" },
   "configMissingWarning": { "message": "⚠️ LLM non configuré" },
   "configMissingDesc": { "message": "Aucune clé API ou fournisseur trouvé. Allez à l'onglet Configuration pour configurer votre fournisseur d'IA (OpenAI, Gemini, Mistral, etc.)" },
-  "explanationAITitle": { "message": "EXPLICATION DE L'IA" }
+  "explanationAITitle": { "message": "EXPLICATION DE L'IA" },
+  "filterAll": { "message": "Tous" },
+  "filterClean": { "message": "Nettoyage" },
+  "filterStructure": { "message": "Dossiers" },
+  "filterMove": { "message": "Déplacements" },
+  "btnCopyLogs": { "message": "Copier les logs" },
+  "toastLogsCopied": { "message": "Logs copiés dans le presse-papiers !" }
 }

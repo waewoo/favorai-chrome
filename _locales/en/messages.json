@@ -251,5 +251,11 @@
   "docsTip4": { "message": "🔌 Different AI providers may suggest different organizations — experiment!" },
   "configMissingWarning": { "message": "⚠️ LLM not configured" },
   "configMissingDesc": { "message": "No API key or provider found. Go to Configuration tab to set up your AI provider (OpenAI, Gemini, Mistral, etc.)" },
-  "explanationAITitle": { "message": "AI EXPLANATION" }
+  "explanationAITitle": { "message": "AI EXPLANATION" },
+  "filterAll": { "message": "All" },
+  "filterClean": { "message": "Cleanup" },
+  "filterStructure": { "message": "Folders" },
+  "filterMove": { "message": "Moves" },
+  "btnCopyLogs": { "message": "Copy logs" },
+  "toastLogsCopied": { "message": "Logs copied to clipboard!" }
 }

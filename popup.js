@@ -515,6 +515,30 @@ document.addEventListener('DOMContentLoaded', () => {
       updateApplyButtonState();
     }
   });
+
+  // Copy Logs button listener
+  const btnCopyLogs = document.getElementById('btnCopyLogs');
+  if (btnCopyLogs) {
+    btnCopyLogs.addEventListener('click', () => {
+      const logLines = Array.from(logContainer.querySelectorAll('.log-entry')).map(el => el.textContent).join('\n');
+      navigator.clipboard.writeText(logLines)
+        .then(() => {
+          showToast(chrome.i18n.getMessage('toastLogsCopied') || 'Logs copiés !');
+        })
+        .catch(err => console.error('Failed to copy logs:', err));
+    });
+  }
+
+  // Action Filters listener
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filterValue = btn.getAttribute('data-filter');
+      applyActionFilter(filterValue);
+    });
+  });
 });
 
   tabAboutBtn.classList.remove('active');
@@ -1016,6 +1040,16 @@ function displayRapport(actions, explanation, mode) {
   actionCountSpan.textContent = chrome.i18n.getMessage('actionCount', [String(actions.length)]) || `${actions.length} modifications proposées`;
   actionListContainer.textContent = '';
 
+  // Reset active filter pills state
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(b => {
+    if (b.getAttribute('data-filter') === 'all') {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+
   if (actions.length === 0) {
     addLog(chrome.i18n.getMessage('bgNoChangesNeeded') || 'Aucun changement nécessaire.', 'success');
     showView('main');
@@ -1068,6 +1102,7 @@ function displayRapport(actions, explanation, mode) {
     for (const act of group.list) {
       const itemDiv = document.createElement('div');
       itemDiv.className = 'action-item';
+      itemDiv.setAttribute('data-category', act.category);
 
       let badgeClass = 'badge-move';
       let badgeText = 'Déplacer';
@@ -1278,8 +1313,37 @@ function displayRapport(actions, explanation, mode) {
   console.log('=== displayRapport Complete ===');
 }
 
+function applyActionFilter(filterValue) {
+  const groups = actionListContainer.querySelectorAll('.action-group');
+  let visibleCount = 0;
+
+  groups.forEach(group => {
+    const items = group.querySelectorAll('.action-item');
+    let groupHasVisibleItems = false;
+
+    items.forEach(item => {
+      const cat = item.getAttribute('data-category');
+      if (filterValue === 'all' || cat === filterValue) {
+        item.classList.remove('hidden');
+        groupHasVisibleItems = true;
+        visibleCount++;
+      } else {
+        item.classList.add('hidden');
+      }
+    });
+
+    if (groupHasVisibleItems) {
+      group.classList.remove('hidden');
+    } else {
+      group.classList.add('hidden');
+    }
+  });
+
+  actionCountSpan.textContent = chrome.i18n.getMessage('actionCount', [String(visibleCount)]) || `${visibleCount} modifications proposées`;
+}
+
 function toggleAllCheckboxes(checked) {
-  const checkboxes = actionListContainer.querySelectorAll('.action-checkbox');
+  const checkboxes = actionListContainer.querySelectorAll('.action-item:not(.hidden) .action-checkbox');
   checkboxes.forEach(cb => cb.checked = checked);
 }
 
