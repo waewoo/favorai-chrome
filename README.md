@@ -66,6 +66,9 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and reports |
 | `make kill-e2e` | Kill any stuck Playwright-spawned Chrome processes |
 | `make package` | Package the extension into a ZIP for the Chrome Web Store |
+| `make upload` | Build ZIP and upload to Chrome Web Store (draft, no publish) |
+| `make publish` | Build ZIP, upload and publish to all users |
+| `make publish-testers` | Build ZIP, upload and publish to trusted testers only |
 
 #### Recommended workflow before committing
 
@@ -78,6 +81,22 @@ For UI or integration changes, also run e2e tests:
 ```bash
 make lint && make test && make test-e2e
 ```
+
+#### Publishing to the Chrome Web Store
+
+```bash
+# One-time setup (do this once):
+cp .env.example .env          # fill in WEBSTORE_CLIENT_ID + WEBSTORE_CLIENT_SECRET
+node scripts/get-refresh-token.mjs   # opens browser → paste token in .env
+# Add WEBSTORE_EXTENSION_ID from the store dashboard URL
+
+# Then on each release:
+make publish                  # build ZIP + upload + publish to all users
+make publish-testers          # or publish to trusted testers first
+make upload                   # or just upload as a draft without publishing
+```
+
+Credentials are stored in `.env` (gitignored). See `.env.example` for the full setup instructions.
 
 #### Using npm scripts directly
 

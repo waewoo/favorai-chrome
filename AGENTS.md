@@ -121,6 +121,9 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and test reports |
 | `make kill-e2e` | Kill any orphaned Playwright-spawned Chrome processes |
 | `make package` | Package the extension into a ZIP for the Chrome Web Store |
+| `make upload` | Build ZIP + upload to Chrome Web Store as draft (no publish) |
+| `make publish` | Build ZIP + upload + publish to all users |
+| `make publish-testers` | Build ZIP + upload + publish to trusted testers only |
 
 **Recommended workflow before committing:**
 ```bash

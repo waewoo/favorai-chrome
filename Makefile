@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers
 
 # Default goal: show help instructions
 help:
@@ -17,6 +17,9 @@ help:
 	@echo "  make test-e2e-ui           Execute UI E2E tests only (structure, navigation, forms)"
 	@echo "  make test-e2e-integration  Execute Integration E2E tests only (workflows, flows)"
 	@echo "  make package               Package the extension into a ZIP file for Chrome Store"
+	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
+	@echo "  make publish               Build ZIP, upload and publish to all users"
+	@echo "  make publish-testers       Build ZIP, upload and publish to trusted testers only"
 	@echo "  make clean                 Remove reports, zip packages, and temporary folders"
 	@echo "  make clean-e2e             Remove leftover Playwright tmp dirs and test-results"
 	@echo "  make kill-e2e              Kill any stuck Playwright/Chrome processes from e2e runs"
@@ -54,6 +57,18 @@ test-e2e-integration: clean-e2e
 
 package:
 	npm run package
+
+# Upload the ZIP to Chrome Web Store (draft — does not publish)
+upload: package
+	node scripts/publish.mjs
+
+# Upload + publish to all users
+publish: package
+	node scripts/publish.mjs --publish
+
+# Upload + publish to trusted testers only
+publish-testers: package
+	node scripts/publish.mjs --testers
 
 clean: clean-e2e
 	@echo "Cleaning up generated directories and files..."
