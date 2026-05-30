@@ -7,6 +7,7 @@ const extensionPath = __dirname;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: ['**/tmp-user-data-*/**', '**/tmp-user-data-*'],
   timeout: 60000,  // 60s — each test spawns a Chrome instance with extension load
   retries: 1,      // 1 automatic retry for transient launch/timing failures
   workers: 2,      // Limit concurrent Chrome instances to reduce resource contention

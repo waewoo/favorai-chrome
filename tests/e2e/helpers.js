@@ -2,6 +2,7 @@ import { chromium } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import os from 'os';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const extensionPath = path.resolve(__dirname, '../../');
@@ -12,7 +13,8 @@ export const extensionPath = path.resolve(__dirname, '../../');
  * headless: false prevents Playwright from injecting its own --headless flag.
  */
 export async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
+  // Store in os.tmpdir() to avoid polluting the testDir (Playwright scans it for specs)
+  const tmpDir = path.join(os.tmpdir(), 'favorai-e2e-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
 
   const context = await chromium.launchPersistentContext(tmpDir, {
     headless: false,
