@@ -58,6 +58,12 @@ function formatErrorMessage(error) {
   if (typeof error !== 'string') return String(error);
 
   const lowerError = error.toLowerCase();
+
+  // Check for rate limit first (applies to all providers)
+  if (error.includes('429') || lowerError.includes('rate limit') || lowerError.includes('rate_limited')) {
+    return '⚠️ Limite de requêtes dépassée. Votre fournisseur API a atteint son quota. Veuillez attendre quelques minutes avant de réessayer.';
+  }
+
   if (
     lowerError.includes('api key') ||
     lowerError.includes('apikey') ||
@@ -82,9 +88,9 @@ function formatErrorMessage(error) {
     try {
       const parsed = JSON.parse(jsonMatch[0]);
 
-      // Cas rate limit
-      if (parsed.code === '1300' || parsed.type === 'rate_limited' || error.includes('429')) {
-        return 'Limite de requêtes dépassée. Veuillez attendre quelques minutes avant de réessayer.';
+      // Cas rate limit (double check)
+      if (parsed.code === '1300' || parsed.type === 'rate_limited') {
+        return '⚠️ Limite de requêtes dépassée. Votre fournisseur API a atteint son quota. Veuillez attendre quelques minutes avant de réessayer.';
       }
 
       // Extraire le message d'erreur pertinent
@@ -380,9 +386,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: 'Impossible de lire les favoris.' });
         return;
       }
-      
+
       const nodeMap = buildNodeMap(trees[0]);
       const folders = [];
+      let existingDuplicate = null;
+
       for (const id in nodeMap) {
         const node = nodeMap[id];
         if (!node.url && id !== '0') {
@@ -390,9 +398,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             id: node.id,
             path: getPathFromMap(node.id, nodeMap)
           });
+        } else if (node.url === message.bookmark.url && node.url) {
+          existingDuplicate = {
+            id: node.id,
+            title: node.title,
+            folderId: node.parentId,
+            folderPath: getPathFromMap(node.parentId, nodeMap)
+          };
         }
       }
-      
+
       chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
         const fullConfig = {
           provider: syncRes.provider || 'google',
@@ -403,11 +418,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           maxTokens: syncRes.maxTokens || 4096,
           promptSuggest: syncRes.promptSuggest || ''
         };
-        
+
         suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
           .then(aiResponse => {
             const parsed = cleanAndParseJSON(aiResponse);
-            sendResponse({ success: true, suggestion: parsed, folders });
+            sendResponse({ success: true, suggestion: parsed, folders, existingDuplicate });
           })
           .catch(err => {
             sendResponse({ success: false, error: formatErrorMessage(err.message) });

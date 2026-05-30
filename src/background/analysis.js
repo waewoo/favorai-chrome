@@ -14,6 +14,29 @@ function countNodes(node) {
   return count;
 }
 
+/**
+ * Restaure les enfants originaux pour les dossiers dont le LLM a retourné [] à la place de [...]
+ * (abréviation invalide que cleanAndParseJSON remplace par []).
+ * Un dossier avec children:[] dans le résultat LLM mais avec des children dans l'original
+ * est traité comme "inchangé" — ses enfants originaux sont restaurés.
+ */
+function restorePreservedChildren(node, originalMap) {
+  if (!Array.isArray(node.children)) return;
+
+  // Si le dossier a des children vides mais que l'original en avait, restaurer les originaux
+  if (node.children.length === 0) {
+    const origNode = originalMap[String(node.id)];
+    if (origNode && Array.isArray(origNode.children) && origNode.children.length > 0) {
+      node.children = origNode.children.map(c => ({ ...c }));
+      // Recursion sur les enfants restaurés
+      for (const child of node.children) restorePreservedChildren(child, originalMap);
+      return;
+    }
+  }
+
+  for (const child of node.children) restorePreservedChildren(child, originalMap);
+}
+
 /** Cède le contrôle à l'event loop pour permettre le rendu UI entre deux étapes lourdes. */
 function yieldToUI() {
   return new Promise(resolve => setTimeout(resolve, 0));
@@ -273,7 +296,15 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   } catch (err) {
     clearInterval(heartbeatInterval);
     if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    const e = new Error(`${chrome.i18n.getMessage('bgLLMCallFailed')}: ${err.message}`);
+    // Extract clean error message (remove redundant "Erreur Gemini (XXX):" prefix if already in message)
+    const msg = err.message || 'Unknown error';
+    if (msg.startsWith('Erreur Gemini (') || msg.startsWith('Erreur OpenAI (')) {
+      // Already formatted by provider - don't add redundant prefix
+      const e = new Error(msg);
+      if (err.isRateLimit) e.isRateLimit = true;
+      throw e;
+    }
+    const e = new Error(`${chrome.i18n.getMessage('bgLLMCallFailed')}: ${msg}`);
     if (err.isRateLimit) e.isRateLimit = true;
     throw e;
   }
@@ -319,6 +350,9 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     const root = reorganizedTree.find(n => String(n.id) === '0');
     reorganizedTree = root ?? { id: '0', title: 'root', children: reorganizedTree };
   }
+
+  // Restaurer les enfants originaux pour les dossiers où le LLM a utilisé [...] → []
+  restorePreservedChildren(reorganizedTree, originalMap);
 
   // Validation: forcer les anciens dossiers top-level hors de la racine (mode complete)
   if (mode === 'complete') {

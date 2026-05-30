@@ -1,5 +1,33 @@
 import { LLM_TIMEOUT_MS } from '../utils/constants.js';
 
+const HTTP_STATUS_MESSAGES = {
+  400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found',
+  429: 'Rate Limited', 500: 'Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout'
+};
+
+/**
+ * Extrait un message d'erreur du payload ou retourne la description HTTP.
+ * @param {string} provider - Nom du fournisseur (Gemini, OpenAI, etc.)
+ * @param {number} status - Code HTTP
+ * @param {string} responseText - Réponse brute du serveur
+ * @returns {string}
+ */
+export function formatErrorMessage(provider, status, responseText) {
+  let detail = HTTP_STATUS_MESSAGES[status] || 'Unknown Error';
+  try {
+    const json = JSON.parse(responseText);
+    const message = json.error?.message || json.message || json.error || null;
+    if (message && typeof message === 'string' && message.length < 200) {
+      detail = message;
+    }
+  } catch {
+    if (responseText.length > 0 && responseText.length < 200 && !responseText.includes('<')) {
+      detail = responseText;
+    }
+  }
+  return `Erreur ${provider} (${status}: ${detail})`;
+}
+
 /**
  * Nettoie et parse robustement une chaîne JSON renvoyée par le LLM.
  * Gère les blocs markdown ```json``` et le texte environnant.
@@ -17,24 +45,118 @@ export function cleanAndParseJSON(text) {
     cleanText = markdownMatch[1].trim();
   }
 
+  // Sanitize smart quotes using charCodeAt-based replacement to avoid linter issues
+  // with raw Unicode characters in source code
+  cleanText = cleanText.split('').map(ch => {
+    const code = ch.charCodeAt(0);
+    if (code === 0x201C || code === 0x201D) return '"';  // "" -> "
+    if (code === 0x2018 || code === 0x2019) return "'";  // '' -> '
+    if (code === 0x2013 || code === 0x2014) return '-';  // –— -> -
+    if (code === 0x2026) return '...';                    // … -> ...
+    return ch;
+  }).join('');
+
+  // Normalize line endings and tabs
+  cleanText = cleanText.replace(/\r\n/g, '\n').replace(/\t/g, ' ');
+
+  // Fix LLM shorthand: replace [...] (invalid JSON) with [] (valid empty array)
+  // This happens when the LLM uses [...] to mean "same children as before"
+  cleanText = cleanText.replace(/\[\s*\.\.\.\s*\]/g, '[]');
+
   try {
     return JSON.parse(cleanText);
-  } catch (_) {
-    // Tenter d'extraire le JSON depuis du texte entourant
+  } catch (e) {
+    // Log the exact parsing error
+    console.error('[FavorAI] JSON.parse error:', e.message);
+    if (e.message.includes('position')) {
+      const posMatch = e.message.match(/position (\d+)/);
+      if (posMatch) {
+        const pos = parseInt(posMatch[1]);
+        const start = Math.max(0, pos - 50);
+        const end = Math.min(cleanText.length, pos + 50);
+        console.error(`[FavorAI] Error at position ${pos}. Context:`);
+        console.error(`[FavorAI] ...${cleanText.substring(start, end)}...`);
+      }
+    }
+    // Tenter d'extraire le JSON depuis du texte entourant - avec correspondance de braces
+    // en respectant les limites des strings
     const fb = cleanText.indexOf('{');
-    const lb = cleanText.lastIndexOf('}');
-    if (fb !== -1 && lb !== -1 && lb > fb) {
-      try {
-        return JSON.parse(cleanText.substring(fb, lb + 1));
-      } catch (__) { /* ignore */ }
+    if (fb !== -1) {
+      // Compter les braces pour trouver le vrai end, en ignorant les braces dans les strings
+      let braceCount = 0;
+      let idx = fb;
+      let endIdx = -1;
+      let inString = false;
+      let escapeNext = false;
+
+      while (idx < cleanText.length) {
+        const char = cleanText[idx];
+
+        if (escapeNext) {
+          escapeNext = false;
+          idx++;
+          continue;
+        }
+
+        if (char === '\\') {
+          escapeNext = true;
+          idx++;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          idx++;
+          continue;
+        }
+
+        if (!inString) {
+          if (char === '{') braceCount++;
+          else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              endIdx = idx;
+              break;
+            }
+          }
+        }
+
+        idx++;
+      }
+
+      if (endIdx !== -1) {
+        try {
+          const jsonStr = cleanText.substring(fb, endIdx + 1);
+          return JSON.parse(jsonStr);
+        } catch (err) {
+          console.error('[FavorAI] Failed to parse extracted JSON:', err.message);
+        }
+      }
     }
 
     const fBr = cleanText.indexOf('[');
-    const lBr = cleanText.lastIndexOf(']');
-    if (fBr !== -1 && lBr !== -1 && lBr > fBr) {
-      try {
-        return JSON.parse(cleanText.substring(fBr, lBr + 1));
-      } catch (__) { /* ignore */ }
+    if (fBr !== -1) {
+      // Compter les brackets pour trouver le vrai end
+      let bracketCount = 0;
+      let idx = fBr;
+      let endIdx = -1;
+      while (idx < cleanText.length) {
+        if (cleanText[idx] === '[') bracketCount++;
+        else if (cleanText[idx] === ']') {
+          bracketCount--;
+          if (bracketCount === 0) {
+            endIdx = idx;
+            break;
+          }
+        }
+        idx++;
+      }
+
+      if (endIdx !== -1) {
+        try {
+          return JSON.parse(cleanText.substring(fBr, endIdx + 1));
+        } catch (__) { /* ignore */ }
+      }
     }
     // Detect if the JSON was truncated (LLM hit max_tokens)
     const trimmed = text.trimEnd();
@@ -42,7 +164,8 @@ export function cleanAndParseJSON(text) {
       !trimmed.endsWith('}') && !trimmed.endsWith(']');
 
     if (isLikelyTruncated) {
-      console.error('[FavorAI] LLM response truncated (max_tokens reached). Full response:', text);
+      console.error('[FavorAI] LLM response truncated (max_tokens reached).');
+      console.error('[FavorAI] Response ends with:', trimmed.substring(Math.max(0, trimmed.length - 200)));
       const e = new Error(
         'La réponse de l\'IA est incomplète : le modèle a atteint sa limite de tokens.\n' +
         '→ Solutions : réduire le nombre de favoris analysés (choisir un sous-dossier), ' +
@@ -52,7 +175,11 @@ export function cleanAndParseJSON(text) {
       throw e;
     }
 
-    console.error('[FavorAI] Invalid JSON response:', text.substring(0, 500));
+    // Log detailed parsing error
+    console.error('[FavorAI] JSON parsing failed. Response length:', text.length);
+    console.error('[FavorAI] Response starts with:', text.substring(0, 200));
+    console.error('[FavorAI] Response ends with:', text.substring(Math.max(0, text.length - 200)));
+    console.error('[FavorAI] Full response:', text);
     throw new Error(`Réponse de l'IA invalide (non JSON). Voir la console pour le détail.`);
   }
 }

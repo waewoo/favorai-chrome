@@ -26,7 +26,9 @@ CRITICAL RULES FOR OUTPUT:
 
 2. JSON STRUCTURE — Use this exact format:
    - Bookmark: { "id": "string" } (CRITICAL: NEVER include the "title" or "url" for bookmarks, only the "id"!)
-   - Folder:   { "id": "string", "title": "string", "children": [...] }
+   - Folder:   { "id": "string", "title": "string", "children": [ ... actual children here ... ] }
+   - CRITICAL: ALWAYS include the FULL children array for every folder — NEVER use "[...]" or "..." as a placeholder
+   - Every folder in the output MUST include ALL its children explicitly, even if they are unchanged
    - NEVER include "url", "date", or any other field
 
 3. DATA INTEGRITY — CRITICAL:
@@ -131,16 +133,20 @@ ABSOLUTE CONSTRAINTS:
 - QUICK ACCESS: any bookmark placed directly on the bookmarks bar (not inside any folder) must be moved into a "★ Quick Access" folder — create it if it doesn't exist
 
 EXPLANATION FORMAT (put in the "explanation" field):
-Structure your explanation as follows:
+Structure your explanation as follows (CRITICAL: use bookmark TITLES only, NO IDs):
 
 **MOVED BOOKMARKS**
-For each move: "Moved '[title]' from '[source]' to '[target]' — [semantic mismatch reason]."
+For each move: "Moved '[title]' from '[source folder name]' to '[target folder name]' — [semantic mismatch reason]."
 
 **NEW FOLDERS CREATED** (if any)
-"Created '[name]' because [justification]."
+"Created '[folder name]' because [justification]."
 
 **BORDERLINE CASES** (optional but valuable)
-"Kept '[title]' in '[folder]' despite [ambiguity] — [why it was not moved]."`;
+"Kept '[title]' in '[folder name]' despite [ambiguity] — [why it was not moved]."
+
+CRITICAL LANGUAGE INSTRUCTION:
+⚠️ Your explanation text MUST respond in the user's language (detected from browser settings).
+Do NOT use English. Do NOT mix languages. Use ONLY the user's language for all explanations.`;
 
 const PROMPT_COMPLETE = `MODE: Complete reorganization.
 Specific rules:
@@ -173,7 +179,28 @@ Step 4 — GENERATE the JSON with:
 - MERGE thin folders (< 3 bookmarks) into broader categories where appropriate.
 - NO ORPHAN FOLDERS: any original folder not included in reorganizedTree is automatically deleted.
 - QUICK ACCESS: bookmarks placed directly on the bar (not in a folder) → "★ Quick Access" (new_ ID).
-- Follow the structured explanation format defined in the system prompt.`;
+
+EXPLANATION FORMAT (CRITICAL: use bookmark TITLES only, NO IDs):
+Structure your explanation with these sections:
+
+**STRUCTURE OVERVIEW**
+List the 6-8 new top-level folders and their purpose.
+
+**SEMANTIC MISMATCHES FIXED**
+"Moved '[title]' from '[old folder name]' to '[new folder name]' because [reason]."
+
+**MERGES PERFORMED**
+"Merged '[Folder A]' and '[Folder B]' into '[New Folder]' because [reason]."
+
+**NEW FOLDERS CREATED**
+"Created '[folder name]' to group [description]."
+
+**DUPLICATES REMOVED**
+"Removed duplicate '[title]' — kept in '[folder name]'."
+
+CRITICAL LANGUAGE INSTRUCTION:
+⚠️ Your explanation text MUST respond in the user's language (detected from browser settings).
+Do NOT use English. Do NOT mix languages. Use ONLY the user's language for all explanations.`;
 
 // ─── Context helpers ───────────────────────────────────────────────────────
 
@@ -208,6 +235,25 @@ function detectUserProfile(tree) {
   return 'MIXED';
 }
 
+function getLanguageInstruction() {
+  const uiLanguage = chrome.i18n.getUILanguage();
+  const languageMap = {
+    'en': 'English',
+    'fr': 'French',
+    'de': 'German',
+    'es': 'Spanish',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'ja': 'Japanese',
+    'zh': 'Chinese',
+    'ru': 'Russian',
+    'ko': 'Korean'
+  };
+
+  const language = languageMap[uiLanguage] || languageMap[uiLanguage.split('-')[0]] || 'English';
+  return `IMPORTANT: Respond in ${language}. Your entire response (explanation, folder names, everything) must be in ${language}.`;
+}
+
 function buildContextBlock(tree) {
   const total = countBookmarks(tree);
   const topFolders = getTopLevelFolders(tree);
@@ -233,7 +279,8 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
   const { provider, apiUrl, apiKey, modelName, promptMinimal, promptComplete, debugMode, maxTokens } = config;
   const resolvedMaxTokens = parseInt(maxTokens, 10) || 131072;
 
-  const systemPrompt = SYSTEM_PROMPT_COMMON;
+  const languageInstruction = getLanguageInstruction();
+  const systemPrompt = `${SYSTEM_PROMPT_COMMON}\n\n${languageInstruction}`;
 
   const modeInstruction = mode === 'complete'
     ? (promptComplete || PROMPT_COMPLETE)
@@ -243,18 +290,18 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
   const userPrompt = `${modeInstruction}\n\n${contextBlock}\n\nHere is the JSON of my current bookmarks to reorganize:\n\n${JSON.stringify(bookmarksTree)}`;
 
   if (debugMode) {
-    console.log('=== DEBUG: LLM Query ===');
-    console.log('Provider:', provider);
-    console.log('Model:', modelName);
-    console.log('Mode:', mode);
-    console.log('Context:', contextBlock);
-    console.log('--- System Prompt ---');
-    console.log(systemPrompt);
-    console.log('--- Mode Instruction ---');
-    console.log(modeInstruction);
-    console.log('--- User Prompt (Preview) ---');
-    console.log(userPrompt.substring(0, 500) + '...');
-    console.log('========================');
+    // console.log('=== DEBUG: LLM Query ===');
+    // console.log('Provider:', provider);
+    // console.log('Model:', modelName);
+    // console.log('Mode:', mode);
+    // console.log('Context:', contextBlock);
+    // console.log('--- System Prompt ---');
+    // console.log(systemPrompt);
+    // console.log('--- Mode Instruction ---');
+    // console.log(modeInstruction);
+    // console.log('--- User Prompt (Preview) ---');
+    // console.log(userPrompt.substring(0, 500) + '...');
+    // console.log('========================');
   }
 
   switch (provider) {
@@ -315,7 +362,8 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
   const { provider, apiUrl, apiKey, modelName, promptSuggest, debugMode } = config;
 
   const foldersList = folders.map(f => `${f.id}: "${f.path}"`).join('\n');
-  const systemPrompt = `You are a strict JSON classifier. You must return ONLY a valid JSON object matching the requested schema without any markdown tags, markdown blocks, or extra conversational text.`;
+  const languageInstruction = getLanguageInstruction();
+  const systemPrompt = `You are a strict JSON classifier. You must return ONLY a valid JSON object matching the requested schema without any markdown tags, markdown blocks, or extra conversational text. ${languageInstruction}`;
 
   const template = promptSuggest || PROMPT_SUGGEST;
   const userPrompt = template
@@ -324,11 +372,11 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
     .replace('{folders}', foldersList);
 
   if (debugMode) {
-    console.log('=== DEBUG: Suggest Bookmark Location ===');
-    console.log('Bookmark:', bookmark);
-    console.log('System Prompt:', systemPrompt);
-    console.log('User Prompt:', userPrompt);
-    console.log('========================================');
+    // console.log('=== DEBUG: Suggest Bookmark Location ===');
+    // console.log('Bookmark:', bookmark);
+    // console.log('System Prompt:', systemPrompt);
+    // console.log('User Prompt:', userPrompt);
+    // console.log('========================================');
   }
 
   let avoidInstruction = '';

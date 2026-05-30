@@ -29,6 +29,7 @@ let activeUrl = '';
 let lastSuggestion = null;
 let lastFolders = [];
 let ignoredIds = [];
+let lastDuplicate = null;
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const elTitle      = document.getElementById('lightBookmarkTitle');
@@ -41,6 +42,8 @@ const elFolderLbl  = document.getElementById('lightFolderLabel');
 const elFolderPath = document.getElementById('lightFolderPath');
 const elReason     = document.getElementById('lightSuggestionReason');
 const elToast      = document.getElementById('lightToast');
+const elDuplicateWarning = document.getElementById('lightDuplicateWarning');
+const elDuplicateLocation = document.getElementById('lightDuplicateLocation');
 
 const btnAnalyze          = document.getElementById('btnLightAnalyze');
 const btnAlternative      = document.getElementById('btnLightAlternative');
@@ -155,9 +158,9 @@ function loadActiveTab() {
       if (activeUrl.startsWith('http://') || activeUrl.startsWith('https://')) {
         btnAnalyze.disabled = false;
       } else {
-        elTitle.value = 'Onglet non supporté';
-        elUrl.textContent = 'Seules les pages HTTP/HTTPS peuvent être ajoutées.';
-        showError('⚠️ Cet onglet ne peut pas être ajouté aux favoris. Naviguez vers une page web (http/https).');
+        elTitle.value = chrome.i18n.getMessage('lightTabNotSupported');
+        elUrl.textContent = chrome.i18n.getMessage('lightOnlyHttps');
+        showError(chrome.i18n.getMessage('lightTabNotSupportedError'));
       }
     });
   });
@@ -202,6 +205,7 @@ function runAnalysis() {
 
     lastSuggestion = response.suggestion;
     if (response.folders) lastFolders = response.folders;
+    if (response.existingDuplicate) lastDuplicate = response.existingDuplicate;
 
     // Update title if AI suggests a cleaner one
     if (lastSuggestion.suggestedTitle) {
@@ -212,18 +216,40 @@ function runAnalysis() {
     elName.textContent = elTitle.value || '-';
 
     // Render folder
+    let suggestedFolderId = null;
     if (lastSuggestion.action === 'create_new') {
       elFolderIcon.textContent = '📁';
       elFolderLbl.textContent = 'Nouveau dossier';
       const parentPath = resolveFolder(lastSuggestion.newFolderParentId);
       elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
+      suggestedFolderId = 'new_folder';
     } else {
       elFolderIcon.textContent = '📂';
       elFolderLbl.textContent = chrome.i18n.getMessage('lightFolderLabel');
       elFolderPath.textContent = resolveFolder(lastSuggestion.targetFolderId);
+      suggestedFolderId = lastSuggestion.targetFolderId;
     }
 
     elReason.textContent = lastSuggestion.explanation || 'Recommandation sémantique de l\'IA.';
+
+    // Handle duplicate warning
+    if (lastDuplicate) {
+      elDuplicateLocation.textContent = `📂 Emplacement actuel : ${lastDuplicate.folderPath}`;
+      elDuplicateWarning.style.display = 'block';
+
+      // Disable confirm button if same location
+      if (suggestedFolderId === lastDuplicate.folderId) {
+        btnConfirm.disabled = true;
+        btnConfirm.title = 'Choisissez un emplacement différent pour éviter les doublons';
+      } else {
+        btnConfirm.disabled = false;
+        btnConfirm.title = '';
+      }
+    } else {
+      elDuplicateWarning.style.display = 'none';
+      btnConfirm.disabled = false;
+      btnConfirm.title = '';
+    }
 
     elCard.classList.remove('hidden');
     btnConfirm.classList.remove('hidden');
@@ -234,6 +260,37 @@ function runAnalysis() {
 // ── Confirm save (AI suggestion) ──────────────────────────────────────────────
 function confirmSave() {
   if (!lastSuggestion) return;
+
+  // If duplicate exists, ask user where to keep it
+  if (lastDuplicate) {
+    const targetPath = lastSuggestion.action === 'create_new'
+      ? lastSuggestion.newFolderTitle
+      : resolveFolder(lastSuggestion.targetFolderId);
+    const message = `Ce lien existe déjà dans :\n  ${lastDuplicate.folderPath}\n\nOù préférez-vous le garder ?\n\n[Nouveau] ${targetPath}\n[Actuel] ${lastDuplicate.folderPath}`;
+
+    // Simple choice: use confirm dialog
+    const choice = confirm(`${message}\n\n(OK = Garder au nouvel emplacement, Annuler = Garder à l'emplacement actuel)`);
+
+    if (!choice) {
+      // User wants to keep at existing location
+      showToast('✅ Le lien reste à son emplacement');
+      setTimeout(() => loadActiveTab(), 1200);
+      return;
+    }
+    // User wants new location - delete old one
+    chrome.bookmarks.remove(lastDuplicate.id, () => {
+      if (chrome.runtime.lastError) {
+        showError('❌ Erreur lors de la suppression du doublons.');
+        return;
+      }
+      saveNewBookmark();
+    });
+  } else {
+    saveNewBookmark();
+  }
+}
+
+function saveNewBookmark() {
   btnConfirm.disabled = true;
   const orig = btnConfirm.textContent;
   btnConfirm.textContent = 'Enregistrement…';

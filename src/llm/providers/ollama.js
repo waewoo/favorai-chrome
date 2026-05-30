@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
 
 export async function queryOllama(url, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   const endpoint = `${url.replace(/\/$/, '')}/api/chat`;
@@ -32,7 +32,7 @@ export async function queryOllama(url, model, prompt, systemPrompt, signal, debu
   });
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`Erreur Ollama (${response.status}): ${err}`);
+    throw new Error(formatErrorMessage('Ollama', response.status, err));
   }
   const data = await response.json();
   return cleanAndParseJSON(data.message.content);

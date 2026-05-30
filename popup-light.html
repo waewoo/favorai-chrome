@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -272,8 +272,8 @@
       <img src="icons/icon48.png" alt="FavorAI" />
       <h1>FavorAI</h1>
     </div>
-    <button class="btn-advanced" id="btnOpenAdvanced" data-i18n="lightOpenAdvancedTitle" data-i18n-attr="title" data-i18n-text="lightOpenAdvanced">
-      ⚡ Interface complète
+    <button class="btn-advanced" id="btnOpenAdvanced" data-i18n="lightOpenAdvancedTitle" data-i18n-attr="title" data-i18n="lightOpenAdvanced">
+      ⚡ Mode Avancé
     </button>
   </div>
 
@@ -320,6 +320,23 @@
       </div>
     </div>
 
+    <!-- Duplicate warning -->
+    <div id="lightDuplicateWarning" style="
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid #ef4444;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: #fca5a5;
+      line-height: 1.5;
+    ">
+      <div style="font-weight: 700; margin-bottom: 4px;">⚠️ Ce lien existe déjà</div>
+      <div id="lightDuplicateLocation" style="color: #fda29b; margin-bottom: 6px;"></div>
+      <div style="font-size: 10px; color: #f87171;">Vous devez choisir un emplacement différent pour éviter les doublons</div>
+    </div>
+
     <!-- AI Suggestion card -->
     <div id="lightSuggestionCard" class="suggestion-card hidden">
       <div class="suggestion-label" data-i18n="lightSuggestionLabel"></div>
@@ -335,7 +352,7 @@
       <div class="suggestion-row folder-row">
         <span class="icon" id="lightFolderIcon">📂</span>
         <div class="info">
-          <div class="sublabel" data-i18n="lightFolderLabel"></div>
+          <div class="sublabel" id="lightFolderLabel" data-i18n="lightFolderLabel"></div>
           <div class="suggestion-folder" id="lightFolderPath"></div>
         </div>
       </div>

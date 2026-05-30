@@ -23,7 +23,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     const trees = await chrome.bookmarks.getTree();
     nodeMap = buildNodeMap(trees[0]);
   } catch (e) {
-    console.error('Error reading bookmark tree for history:', e);
+    // Silently continue if unable to read tree
   }
 
   const idMap = {};
@@ -40,7 +40,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       idMap[act.params.tempId] = created.id;
       history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (err) {
-      console.error(`Error creating folder "${act.params.title}":`, err);
+      // Failed to create folder - continue
+      // // console.error(`Error creating folder "${act.params.title}":`, err);
     }
   }
 
@@ -58,7 +59,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       await chrome.bookmarks.update(realId, update);
       history.push({ type: 'rename', nodeId: realId, oldTitle, newTitle: act.params.newTitle, oldUrl, newUrl: update.url || null, isFolder: !oldUrl, parentPath: getPathFromMap(parentId, nodeMap) });
     } catch (err) {
-      console.error(`Error renaming ${realId}:`, err);
+      // Failed to rename - continue
+      // // console.error(`Error renaming ${realId}:`, err);
     }
   }
 
@@ -75,7 +77,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       await chrome.bookmarks.move(realId, { parentId: realPid });
       history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
     } catch (err) {
-      console.error(`Error moving ${realId} → ${realPid}:`, err);
+      // Failed to move - continue
+      // // console.error(`Error moving ${realId} → ${realPid}:`, err);
     }
   }
 
@@ -102,7 +105,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       }
       if (old) history.push({ type: 'delete', nodeId: realId, title: old.title, url: old.url || null, parentId: old.parentId, isFolder: !old.url, sourcePath: getPathFromMap(old.parentId, nodeMap) });
     } catch (err) {
-      console.error(`Error deleting ${realId}:`, err);
+      // Failed to delete - continue
+      // // console.error(`Error deleting ${realId}:`, err);
     }
   }
 
@@ -154,7 +158,8 @@ async function removeEmptyFoldersRecursive(parentId, history) {
           url: null, parentId, isFolder: true, sourcePath: 'post-cleanup (dossier vide)'
         });
       } catch (err) {
-        console.error(`Post-cleanup: impossible de supprimer le dossier vide "${child.title}" (${child.id}):`, err);
+        // Post-cleanup error - continue
+        // // console.error(`Post-cleanup: impossible de supprimer le dossier vide "${child.title}" (${child.id}):`, err);
       }
     }
   }

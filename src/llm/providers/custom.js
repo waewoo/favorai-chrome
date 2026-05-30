@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
 
 export async function queryCustom(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   let endpoint = url.trim();
@@ -36,7 +36,7 @@ export async function queryCustom(url, key, model, prompt, systemPrompt, signal,
   });
   if (!response.ok) {
     const err = await response.text();
-    const e = new Error(`Erreur Endpoint Custom (${response.status}): ${err}`);
+    const e = new Error(formatErrorMessage('Endpoint Custom', response.status, err));
     if (response.status === 429) e.isRateLimit = true;
     throw e;
   }

@@ -146,4 +146,68 @@ describe('llm/index.js', () => {
     const config = { provider: 'unknown-provider' };
     await expect(queryLLM(config, techTree, 'minimal', null)).rejects.toThrow(/Unknown LLM provider/);
   });
+
+  it('should use custom prompts when provided in config', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      promptComplete: 'Custom complete prompt',
+      promptMinimal: 'Custom minimal prompt'
+    };
+
+    await queryLLM(config, techTree, 'complete', null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    // callArgs[3] is the prompt (userPrompt parameter)
+    expect(callArgs[3]).toContain('Custom complete prompt');
+  });
+
+  it('should use default prompts when custom ones are not provided', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key'
+    };
+
+    await queryLLM(config, techTree, 'minimal', null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    // Should contain default prompt content
+    expect(callArgs[3]).toBeDefined();
+  });
+
+  it('should apply maxTokens config correctly', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      maxTokens: 5000
+    };
+
+    await queryLLM(config, techTree, 'complete', null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    // callArgs[7] is maxTokens parameter
+    expect(callArgs[7]).toBe(5000);
+  });
+
+  it('should use default maxTokens when not provided or invalid', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      maxTokens: 'invalid'
+    };
+
+    await queryLLM(config, techTree, 'complete', null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    // callArgs[7] is maxTokens, should default to 131072 when invalid
+    expect(callArgs[7]).toBe(131072);
+  });
 });

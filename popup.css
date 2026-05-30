@@ -177,10 +177,29 @@
       color: var(--text-main);
     }
 
+    select option:checked {
+      background: linear-gradient(#6366f1, #6366f1);
+      background-color: #6366f1;
+    }
+
     select:focus, input:focus {
       border-color: var(--accent-color);
       background: rgba(255, 255, 255, 0.05);
       box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* Links */
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
     }
 
     /* Buttons */

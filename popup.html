@@ -30,10 +30,11 @@
 
     <!-- TAB NAVIGATION -->
     <div class="tab-nav">
-      <button class="tab-btn active" id="tabAddBookmarkBtn" data-i18n="tabAddBookmark">➕ Add Bookmark</button>
-      <button class="tab-btn" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
+      <button class="tab-btn active" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
       <button class="tab-btn" id="tabConfigBtn" data-i18n="tabConfig">⚙️ Configuration</button>
       <button class="tab-btn" id="tabHistoryBtn" data-i18n="tabHistory">📜 History</button>
+      <button class="tab-btn" id="tabDocsBtn" data-i18n="tabDocumentation">📖 Docs</button>
+      <button class="tab-btn" id="tabAboutBtn" data-i18n="tabAbout">ℹ️ About</button>
     </div>
 
     <!-- TAB PANELS -->
@@ -42,7 +43,7 @@
       <div id="mainView" class="view">
         <!-- EXECUTION SECTION -->
         <section class="section">
-          <div class="section-title" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
+          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px;" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
           <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="sectionLaunchDesc">
             The extension will analyze duplicates, dead links, and query AI to organize your bookmarks.
           </p>
@@ -52,6 +53,17 @@
             <span style="font-size: 13px; flex-shrink: 0;">ℹ️</span>
             <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0;" data-i18n="privacyNote">
               To reorganize your bookmarks, their titles and structure (without URLs) are transmitted to the AI service you configured. No data is collected by FavorAI.
+            </p>
+          </div>
+
+          <!-- Config Missing Warning -->
+          <div id="configMissingAlert" style="display: none; flex-direction: column; gap: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 13px; flex-shrink: 0;">⚠️</span>
+              <p style="font-size: 11px; font-weight: 600; color: #ef4444; margin: 0;" data-i18n="configMissingWarning">⚠️ LLM not configured</p>
+            </div>
+            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0; margin-left: 21px;" data-i18n="configMissingDesc">
+              No API key or provider found. Go to Configuration tab to set up your AI provider (OpenAI, Gemini, Mistral, etc.)
             </p>
           </div>
 
@@ -82,7 +94,7 @@
 
         <!-- STATUS & LOGS PANEL -->
         <section class="section status-panel">
-          <div class="section-title" data-i18n="sectionStatus">💻 Status Console</div>
+          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px;" data-i18n="sectionStatus">💻 Status Console</div>
           <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-label="Analysis Status Console">
             <div class="log-entry info" data-i18n="logReady">&gt; Ready to analyze your bookmarks. Save your API key then launch a reorganization.</div>
           </div>
@@ -101,8 +113,8 @@
           </div>
 
           <div class="explanation-block" id="explanationBlock" style="display: none;">
-            <strong data-i18n="explanationTitle">Explication de l'IA</strong>
-            <div id="iaExplanationText"></div>
+            <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #818cf8; letter-spacing: 0.5px;" data-i18n="explanationAITitle">AI EXPLANATION</p>
+            <div id="iaExplanationText" style="font-size: 11px; line-height: 1.5; color: var(--text-muted);"></div>
           </div>
 
           <div class="action-header-bar">
@@ -130,14 +142,14 @@
     <div id="tabConfigPanel" class="tab-panel hidden">
       <!-- CONFIGURATION SECTION -->
       <section class="section" id="configSection">
-        <div class="section-title" id="configHeader" style="user-select: none;">
-          <span data-i18n="sectionConfigTitle">⚙️ LLM Configuration</span>
+        <div class="section-title" id="configHeader" style="user-select: none; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid rgba(99, 102, 241, 0.3); padding-bottom: 12px; margin-bottom: 16px;">
+          <span style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="sectionConfigTitle">⚙️ LLM Configuration</span>
           <div style="display: flex; gap: 8px; font-size: 9px; align-items: center;" id="configHeaderActions">
-            <span style="cursor: pointer; color: var(--accent-color);" id="btnExportConfig" data-i18n="btnExport">Export</span>
+            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnExportConfig" data-i18n="btnExport">Export</span>
             <span style="color: var(--border-color);">|</span>
-            <span style="cursor: pointer; color: var(--accent-color);" id="btnImportConfig" data-i18n="btnImport">Import</span>
+            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnImportConfig" data-i18n="btnImport">Import</span>
             <span style="color: var(--border-color);">|</span>
-            <span style="cursor: pointer; color: var(--accent-color);" id="btnResetConfig" data-i18n="btnReset">Reset</span>
+            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnResetConfig" data-i18n="btnReset">Reset</span>
           </div>
         </div>
         <!-- Hidden input for JSON config import -->
@@ -177,9 +189,9 @@
           </div>
 
           <!-- Paramètres avancés -->
-          <details style="margin-top: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,0.01);">
-            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryAdvanced">⚙️ Paramètres avancés</summary>
-            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+          <details style="margin-top: 10px; margin-bottom: 10px; padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
+            <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);" data-i18n="summaryAdvanced">⚙️ Paramètres avancés</summary>
+            <div style="margin-top: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; border-top: 1px solid rgba(99, 102, 241, 0.2);">
 
               <div class="form-group" style="margin-bottom: 0;">
                 <label for="apiUrl" data-i18n="labelApiUrl">URL de l'API</label>
@@ -221,9 +233,9 @@
           </details>
 
           <!-- Personnalisation des prompts -->
-          <details style="margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: rgba(255,255,255,0.01);">
-            <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; outline: none;" data-i18n="summaryPrompts"></summary>
-            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+          <details style="margin-bottom: 10px; padding: 0; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05); border-radius: 6px; overflow: hidden;">
+            <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);" data-i18n="summaryPrompts"></summary>
+            <div style="margin-top: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; border-top: 1px solid rgba(168, 85, 247, 0.2);">
               <div class="form-group" style="margin-bottom: 0;">
                 <label for="promptMinimal" style="font-size: 11px; font-weight: 600;" data-i18n="promptMinimal"></label>
                 <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
@@ -236,11 +248,11 @@
                 <label for="promptSuggest" style="font-size: 11px; font-weight: 600;" data-i18n="promptSuggest"></label>
                 <textarea id="promptSuggest" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
               </div>
-              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto;" data-i18n="btnReset">Réinitialiser les prompts</button>
+              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #c084fc;" data-i18n="btnReset">Réinitialiser les prompts</button>
             </div>
           </details>
 
-          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; font-size: 11px; padding: 6px 12px;" data-i18n="btnSaveConfig">💾 Sauvegarder</button>
+          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; font-size: 11px; padding: 8px 12px; margin-top: 8px; border-color: var(--border-color); color: var(--accent-color);" data-i18n="btnSaveConfig">💾 Sauvegarder</button>
         </div>
       </section>
     </div>
@@ -249,87 +261,297 @@
     <div id="tabHistoryPanel" class="tab-panel hidden">
       <!-- HISTORIQUE SECTION -->
       <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; max-height: 480px;">
-        <div class="section-title">
+        <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid rgba(99, 102, 241, 0.3); padding-bottom: 12px; margin-bottom: 16px;">
           <span data-i18n="historyTitle">📜 Session History</span>
-          <button class="btn btn-flat btn-danger" id="btnClearHistory" style="font-size: 9px; padding: 2px 6px; height: auto;" data-i18n="btnClearHistory">Clear</button>
+          <button class="btn btn-flat btn-danger" id="btnClearHistory" style="font-size: 9px; padding: 3px 8px; height: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);" data-i18n="btnClearHistory">Clear</button>
         </div>
-        
+
         <div class="action-list-container" id="historyListContainer" style="max-height: 400px; margin-bottom: 0;">
           <!-- History sessions will be rendered here -->
         </div>
       </section>
     </div>
 
-    <!-- ADD BOOKMARK PANEL (TAB ADD BOOKMARK) -->
-    <div id="tabAddBookmarkPanel" class="tab-panel">
-      <section class="section">
-        <div class="section-title" data-i18n="addBookmarkTitle"></div>
-        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="addBookmarkDesc">
-          Analyze the active browser tab and use AI to automatically determine the best folder location for this bookmark.
-        </p>
+    <!-- ABOUT PANEL (TAB ABOUT) -->
+    <div id="tabAboutPanel" class="tab-panel hidden">
+      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto;">
+        <div class="section-title" data-i18n="aboutTitle">ℹ️ About FavorAI</div>
 
-        <div id="activeTabDetails" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 16px;">
-          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;" data-i18n="bookmarkTitleLabel"></div>
-          <input type="text" id="bookmarkTitleInput" style="width: 100%; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; font-size: 12px; color: var(--text-main); font-family: var(--font-family); margin-bottom: 8px;" />
-          <div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace;" id="activeTabUrl">-</div>
-        </div>
-
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-          <button class="btn btn-primary" id="btnAnalyzeBookmark" style="flex: 1; margin-bottom: 0;" data-i18n="suggestLocationBtn"></button>
-          <button class="btn btn-flat hidden" id="btnAlternativeBookmark" style="border: 1px solid var(--border-color); font-size: 11px; padding: 0 12px; margin-top: 0; box-shadow: none;" data-i18n="alternativeBtn"></button>
-        </div>
-
-        <!-- Manual save button -->
-        <button class="btn btn-flat" id="btnManualAddBookmark" data-i18n="lightManualSaveBtn" style="width: 100%; margin-bottom: 12px; border: 1px solid var(--border-color);"></button>
-
-        <!-- Manual save section (hidden by default) -->
-        <div id="manualAddSection" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;" data-i18n="lightManualSaveTitle"></div>
-
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div>
-              <label for="manualAddTitle" style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="bookmarkTitleLabel"></label>
-              <input type="text" id="manualAddTitle" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none;" />
-            </div>
-
-            <div>
-              <label for="manualAddFolder" style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="lightFolderLabel"></label>
-              <select id="manualAddFolder" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none;">
-                <option value="" data-i18n="lightSelectFolder"></option>
-              </select>
-            </div>
-
-            <button class="btn btn-success" id="btnManualAddConfirm" data-i18n="confirmSaveBtn" style="margin-top: 4px;"></button>
+        <div style="font-size: 11px; line-height: 1.6; color: var(--text-main); padding: 4px;">
+          <!-- Header with Icon -->
+          <div style="margin-bottom: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; text-align: center;">
+            <img src="icons/icon48.png" alt="FavorAI" style="width: 48px; height: 48px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);" />
+            <p style="margin: 0 0 4px 0; font-weight: 700; font-size: 13px; color: #818cf8;">FavorAI v1.2.0</p>
+            <p style="margin: 0; font-size: 10px; color: var(--text-muted);" data-i18n="appTagline">Intelligent bookmark management</p>
           </div>
-        </div>
 
-        <!-- AI SUGGESTION RESULTS -->
-        <div id="aiBookmarkSuggestion" style="display: none; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
-          <div style="font-size: 10px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;" data-i18n="suggestionLabel"></div>
-
-          <!-- Bookmark name row -->
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 8px 10px; margin-bottom: 8px;">
-            <span style="font-size: 15px; flex-shrink: 0;">🔖</span>
-            <div style="min-width: 0;">
-              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;" data-i18n="bookmarkNameLabel"></div>
-              <div id="suggestionBookmarkName" style="font-size: 13px; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+          <!-- Description Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutTitle">✨ What is FavorAI?</p>
+            <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; line-height: 1.5; color: var(--text-main);" data-i18n="aboutDescription">
+              FavorAI is a Chrome extension that uses artificial intelligence to intelligently organize your bookmarks. It analyzes your bookmark structure, detects duplicates and dead links, then proposes or applies semantic reorganization.
             </div>
           </div>
 
-          <!-- Target folder row -->
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 7px; padding: 8px 10px; margin-bottom: 10px;">
-            <span id="suggestionFolderIcon" style="font-size: 15px; flex-shrink: 0;">📂</span>
-            <div style="min-width: 0;">
-              <div id="suggestionFolderLabel" style="font-size: 10px; color: #6ee7b7; margin-bottom: 2px;" data-i18n="targetFolderLabel"></div>
-              <div id="suggestionFolderResult" style="font-size: 13px; font-weight: 700; color: #10b981; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+          <!-- Features Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutFeatures">🎯 Core Features</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDuplicates">🔍 Duplicate detection</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDeadLinks">🔗 Dead link detection</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(168, 85, 247, 0.08); border-left: 3px solid #a855f7; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureAIOrganization">🤖 AI-powered organization</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(249, 115, 22, 0.08); border-left: 3px solid #f97316; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureHistory">📜 Organization history & rollback</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(79, 70, 229, 0.08); border-left: 3px solid #4f46e5; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureMultiProvider">🔌 Support for multiple AI providers</p>
+              </div>
             </div>
           </div>
 
-          <!-- Explanation -->
-          <div style="font-size: 10px; color: var(--text-muted); line-height: 1.5; padding: 0 2px;" id="suggestionReasonResult"></div>
-        </div>
+          <!-- Supported Providers Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutProviders">🔗 Supported Providers</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="padding: 8px; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟠 OpenAI</div>
+              <div style="padding: 8px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🔵 Google Gemini</div>
+              <div style="padding: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟣 Mistral</div>
+              <div style="padding: 8px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">⚡ Claude</div>
+              <div style="padding: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟢 DeepSeek</div>
+              <div style="padding: 8px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🤖 Grok</div>
+              <div style="padding: 8px; background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🏠 Ollama</div>
+            </div>
+          </div>
 
-        <button class="btn btn-success hidden" id="btnConfirmAddBookmark" style="width: 100%;" data-i18n="confirmSaveBtn"></button>
+          <!-- Privacy & Security Section -->
+          <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;">🔒 Privacy & Security</p>
+            <ul style="margin: 0; padding-left: 16px; font-size: 10px; line-height: 1.7; color: var(--text-muted);">
+              <li style="margin-bottom: 4px;">✓ Only titles and folder structure (no URLs) are sent to AI providers</li>
+              <li style="margin-bottom: 4px;">✓ Your API key is stored locally in your browser</li>
+              <li style="margin-bottom: 4px;">✓ No data is sent to FavorAI servers</li>
+              <li style="margin-bottom: 4px;">✓ Analysis happens in your browser</li>
+              <li>✓ You maintain full control over your bookmarks</li>
+            </ul>
+          </div>
+
+          <!-- Quick Tips Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">💡 Quick Tips</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <details style="padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
+                <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">👉 Getting Started</summary>
+                <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
+                  1. Go to Configuration tab and select your LLM provider<br/>
+                  2. Enter your API key (get one free from any provider)<br/>
+                  3. Click "Minimal" to start your first reorganization<br/>
+                  4. Review changes in the checklist before applying
+                </div>
+              </details>
+              <details style="padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
+                <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚙️ Configuration Tips</summary>
+                <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
+                  • Try different providers — they suggest different organizations<br/>
+                  • Enable "Check dead links" for thorough analysis<br/>
+                  • Use "Minimal" mode to review changes first<br/>
+                  • Check History tab to rollback changes if needed
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- Links Section -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-bottom: 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutLinks">🔗 Resources</p>
+            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
+              <a href="https://github.com/anthropics/claude-code" target="_blank" style="color: var(--accent-color); text-decoration: none; font-weight: 500;">📱 GitHub Project</a>
+              <span style="color: var(--border-color);">•</span>
+              <a href="#" id="btnPrivacyLink" style="color: var(--accent-color); text-decoration: none; font-weight: 500;" data-i18n="btnPrivacyPolicy">📄 Privacy Policy</a>
+            </div>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); text-align: center; font-size: 10px; color: var(--text-muted);">
+              <p style="margin: 0;" data-i18n="aboutThankYou">Thank you for using FavorAI! 💜</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- DOCUMENTATION PANEL (TAB DOCS) -->
+    <div id="tabDocumentationPanel" class="tab-panel hidden">
+      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto;">
+        <div class="section-title" data-i18n="docsTitle">📖 Documentation</div>
+
+        <div style="font-size: 11px; line-height: 1.6; color: var(--text-main); padding: 4px;">
+          <!-- Overview Section -->
+          <div style="margin-bottom: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px;">
+            <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 12px; color: #818cf8;" data-i18n="docsOverviewTitle">✨ What is FavorAI?</p>
+            <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.5;" data-i18n="docsOverviewText">
+              FavorAI is an intelligent bookmark manager that uses artificial intelligence to organize your Chrome bookmarks automatically. It analyzes your bookmark structure, detects duplicates and dead links, and proposes semantic reorganization.
+            </p>
+          </div>
+
+          <!-- Features Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsFeatures">🎯 Core Features</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature1">📊 Duplicate Detection</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature2">🔗 Dead Link Detection</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(168, 85, 247, 0.08); border-left: 3px solid #a855f7; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature3">🤖 AI Organization</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(249, 115, 22, 0.08); border-left: 3px solid #f97316; border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature4">📜 History & Rollback</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- How It Works Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">⚙️ How It Works</p>
+            <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; white-space: pre-wrap; line-height: 1.7; color: var(--text-main);" data-i18n="docsWorkflow">
+              1. Configure an LLM provider (OpenAI, Gemini, etc.) in the Configuration tab
+              2. Click "Minimal" or "Complete" to start analysis
+              3. Review proposed changes in the checklist
+              4. Apply selected changes to your bookmarks
+              5. Track changes in the History tab
+            </div>
+          </div>
+
+          <!-- Getting API Tokens Section -->
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 12px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsGettingTokens">🔑 Getting API Tokens</p>
+
+            <!-- OpenAI -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(249, 115, 22, 0.08);">🟠 OpenAI <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(249, 115, 22, 0.2);">
+                1. Visit <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #f97316; text-decoration: underline; cursor: pointer;">platform.openai.com/api-keys</a><br/>
+                2. Log in or create a free account<br/>
+                3. Click "Create new secret key"<br/>
+                4. Copy the key and paste it in FavorAI Configuration<br/>
+                5. Free trial includes $5 credit for testing
+              </div>
+            </details>
+
+            <!-- Gemini -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(59, 130, 246, 0.08);">🔵 Google Gemini <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(59, 130, 246, 0.2);">
+                1. Visit <a href="https://aistudio.google.com" target="_blank" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">aistudio.google.com</a> (Google AI Studio)<br/>
+                2. Click "Get API Key" or "Create new API key"<br/>
+                3. Select a Google Cloud project or create a new one<br/>
+                4. Copy the API key and paste it in FavorAI Configuration<br/>
+                5. Free tier: 60 requests per minute
+              </div>
+            </details>
+
+            <!-- Mistral -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);">🟣 Mistral AI <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(168, 85, 247, 0.2);">
+                1. Visit <a href="https://console.mistral.ai" target="_blank" style="color: #a855f7; text-decoration: underline; cursor: pointer;">console.mistral.ai</a><br/>
+                2. Log in or create a free account<br/>
+                3. Go to API Keys section<br/>
+                4. Click "Create new API key"<br/>
+                5. Copy the key and paste it in FavorAI Configuration<br/>
+                6. Free trial: Limited credits for testing
+              </div>
+            </details>
+
+            <!-- Claude -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚡ Anthropic Claude <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
+                1. Visit <a href="https://console.anthropic.com" target="_blank" style="color: #6366f1; text-decoration: underline; cursor: pointer;">console.anthropic.com</a><br/>
+                2. Sign in or create a free account<br/>
+                3. Go to API Keys section<br/>
+                4. Click "Create key"<br/>
+                5. Copy the key and paste it in FavorAI Configuration<br/>
+                6. Free trial: Limited credits for testing
+              </div>
+            </div>
+
+            <!-- DeepSeek -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(16, 185, 129, 0.08);">🟢 DeepSeek <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(16, 185, 129, 0.2);">
+                1. Visit <a href="https://platform.deepseek.com" target="_blank" style="color: #10b981; text-decoration: underline; cursor: pointer;">platform.deepseek.com</a><br/>
+                2. Log in or create a free account<br/>
+                3. Go to API Keys section<br/>
+                4. Click "Create key"<br/>
+                5. Copy the key and paste it in FavorAI Configuration<br/>
+                6. Free tier available for testing
+              </div>
+            </details>
+
+            <!-- Grok -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(139, 92, 246, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(139, 92, 246, 0.08);">🤖 Grok (xAI) <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(139, 92, 246, 0.2);">
+                1. Visit <a href="https://x.ai" target="_blank" style="color: #8b5cf6; text-decoration: underline; cursor: pointer;">x.ai</a><br/>
+                2. Log in or create a free account<br/>
+                3. Navigate to API section<br/>
+                4. Create a new API key<br/>
+                5. Copy the key and paste it in FavorAI Configuration<br/>
+                6. Limited free tier available
+              </div>
+            </details>
+
+            <!-- Ollama -->
+            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(236, 72, 153, 0.3); background: rgba(236, 72, 153, 0.05); border-radius: 6px; overflow: hidden;">
+              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(236, 72, 153, 0.08);">🏠 Ollama (Local) <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;">Click to expand</span></summary>
+              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(236, 72, 153, 0.2);">
+                1. Download Ollama from <a href="https://ollama.ai" target="_blank" style="color: #ec4899; text-decoration: underline; cursor: pointer;">ollama.ai</a><br/>
+                2. Install and run Ollama on your computer<br/>
+                3. Open Terminal/CMD and pull a model: <code style="background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 3px;">ollama pull llama2</code><br/>
+                4. Ollama runs at <code style="background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 3px;">http://localhost:11434</code><br/>
+                5. In FavorAI Configuration: Set provider to Ollama, URL to http://localhost:11434<br/>
+                6. Completely free and private ✅
+              </div>
+            </details>
+          </div>
+
+          <!-- Privacy & Security Section -->
+          <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;">🔒 Privacy & Security</p>
+            <ul style="margin: 0; padding-left: 16px; font-size: 10px; line-height: 1.7; color: var(--text-muted);">
+              <li style="margin-bottom: 4px;">✓ Only titles and folder structure (no URLs) are sent to AI providers</li>
+              <li style="margin-bottom: 4px;">✓ Your API key is stored locally in your browser</li>
+              <li style="margin-bottom: 4px;">✓ No data is sent to FavorAI servers</li>
+              <li style="margin-bottom: 4px;">✓ Analysis happens in your browser</li>
+              <li>✓ You maintain full control over your bookmarks</li>
+            </ul>
+          </div>
+
+          <!-- Tips & Best Practices Section -->
+          <div style="margin-bottom: 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">💡 Tips & Best Practices</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip1">🔍 Start with "Minimal" mode to review changes first</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip2">⚙️ Check "Dead Links" option for large libraries</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip3">💾 History keeps your last 50 sessions</p>
+              </div>
+              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip4">🔌 Try different providers — they suggest different organizations</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   </div>

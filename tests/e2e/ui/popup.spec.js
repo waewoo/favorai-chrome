@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../');
+const extensionPath = path.resolve(__dirname, '../../../');
 
 test('Extension popup loads successfully', async () => {
   // Create a temporary user data directory for the persistent context
@@ -36,6 +36,14 @@ test('Extension popup loads successfully', async () => {
     // Assert that h1 contains 'FavorAI'
     const title = page.locator('h1');
     await expect(title).toHaveText('FavorAI');
+
+    // Navigate to Rangement tab to access reorganization buttons
+    const tabRangementBtn = page.locator('#tabRangementBtn');
+    await tabRangementBtn.click();
+
+    // Wait for the Rangement tab panel to be visible
+    const tabRangementPanel = page.locator('#tabRangementPanel');
+    await expect(tabRangementPanel).toBeVisible();
 
     // Assert that minimal and complete reorganization buttons are present
     const minBtn = page.locator('#btnMinReorg');

@@ -55,7 +55,8 @@ export async function rollbackSession(historyEntries) {
         idMap[entry.nodeId] = created.id;
       }
     } catch (err) {
-      console.error('Rollback error for entry:', entry, err);
+      // Rollback error - continue
+      // // console.error('Rollback error for entry:', entry, err);
     }
   }
 }

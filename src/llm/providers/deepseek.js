@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
 
 export async function queryDeepSeek(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 65536) {
   const endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
@@ -29,7 +29,7 @@ export async function queryDeepSeek(url, key, model, prompt, systemPrompt, signa
   });
   if (!response.ok) {
     const err = await response.text();
-    const e = new Error(`Erreur DeepSeek (${response.status}): ${err}`);
+    const e = new Error(formatErrorMessage('DeepSeek', response.status, err));
     if (response.status === 429) e.isRateLimit = true;
     throw e;
   }

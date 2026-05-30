@@ -142,29 +142,14 @@ const btnDetach = document.getElementById('btnDetach');
 const tabRangementBtn = document.getElementById('tabRangementBtn');
 const tabConfigBtn = document.getElementById('tabConfigBtn');
 const tabHistoryBtn = document.getElementById('tabHistoryBtn');
+const tabAboutBtn = document.getElementById("tabAboutBtn");
+const tabDocsBtn = document.getElementById('tabDocsBtn');
 
 const tabRangementPanel = document.getElementById('tabRangementPanel');
 const tabConfigPanel = document.getElementById('tabConfigPanel');
 const tabHistoryPanel = document.getElementById('tabHistoryPanel');
-const tabAddBookmarkPanel = document.getElementById('tabAddBookmarkPanel');
-
-const tabAddBookmarkBtn = document.getElementById('tabAddBookmarkBtn');
-const activeTabUrl = document.getElementById('activeTabUrl');
-const btnAnalyzeBookmark = document.getElementById('btnAnalyzeBookmark');
-const aiBookmarkSuggestion = document.getElementById('aiBookmarkSuggestion');
-const suggestionFolderResult = document.getElementById('suggestionFolderResult');
-const suggestionFolderIcon = document.getElementById('suggestionFolderIcon');
-const suggestionFolderLabel = document.getElementById('suggestionFolderLabel');
-const suggestionBookmarkName = document.getElementById('suggestionBookmarkName');
-const suggestionReasonResult = document.getElementById('suggestionReasonResult');
-const btnConfirmAddBookmark = document.getElementById('btnConfirmAddBookmark');
-const bookmarkTitleInput = document.getElementById('bookmarkTitleInput');
-const btnAlternativeBookmark = document.getElementById('btnAlternativeBookmark');
-const btnManualAddBookmark = document.getElementById('btnManualAddBookmark');
-const manualAddSection = document.getElementById('manualAddSection');
-const manualAddTitle = document.getElementById('manualAddTitle');
-const manualAddFolder = document.getElementById('manualAddFolder');
-const btnManualAddConfirm = document.getElementById('btnManualAddConfirm');
+const tabAboutPanel = document.getElementById("tabAboutPanel");
+const tabDocumentationPanel = document.getElementById('tabDocumentationPanel');
 
 const providerSelect = document.getElementById('provider');
 const apiUrlInput = document.getElementById('apiUrl');
@@ -218,13 +203,6 @@ const modalMessage = document.getElementById('modalMessage');
 const modalBtnCancel = document.getElementById('modalBtnCancel');
 const modalBtnConfirm = document.getElementById('modalBtnConfirm');
 
-// Add Bookmark state variables
-let activeTabUrlValue = '';
-let activeTabTitleValue = '';
-let lastAiSuggestion = null;
-let bookmarkFolders = [];
-let lastFoldersList = [];
-let ignoredFolderIds = [];
 
 // Default API URL and model names
 const PROVIDER_DEFAULTS = {
@@ -282,78 +260,6 @@ function translatePage() {
   });
 }
 
-/**
- * Load folders for manual bookmark save
- */
-function loadBookmarkFoldersForUI() {
-  chrome.runtime.sendMessage({ action: 'get_folders' }, (response) => {
-    if (response && response.folders) {
-      bookmarkFolders = response.folders;
-      populateManualFolderSelect();
-    }
-  });
-}
-
-/**
- * Populate the manual folder select
- */
-function populateManualFolderSelect() {
-  manualAddFolder.innerHTML = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');
-  manualAddFolder.appendChild(placeholder);
-
-  bookmarkFolders.forEach(folder => {
-    const option = document.createElement('option');
-    option.value = folder.id;
-    const parts = folder.path.split(' > ');
-    const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
-    const displayPath = parts.length > 1 && roots.includes(parts[0]) ? parts.slice(1).join(' > ') : parts.join(' > ');
-    option.textContent = displayPath;
-    manualAddFolder.appendChild(option);
-  });
-}
-
-/**
- * Save bookmark manually
- */
-function saveManualBookmarkPopup() {
-  const title = manualAddTitle.value.trim();
-  const folderId = manualAddFolder.value;
-  const url = activeTabUrl.textContent;
-
-  if (!title) {
-    alert('Veuillez entrer un titre.');
-    return;
-  }
-  if (!folderId) {
-    alert('Veuillez sélectionner un dossier.');
-    return;
-  }
-  if (!url || url === '-') {
-    alert('URL invalide.');
-    return;
-  }
-
-  btnManualAddConfirm.disabled = true;
-
-  chrome.runtime.sendMessage({
-    action: 'save_manual_bookmark',
-    bookmark: { title, url, parentId: folderId }
-  }, (response) => {
-    btnManualAddConfirm.disabled = false;
-
-    if (response && response.success) {
-      showToast(chrome.i18n.getMessage('lightSaveSuccess'));
-      manualAddSection.style.display = 'none';
-      manualAddTitle.value = '';
-      manualAddFolder.value = '';
-    } else {
-      showToast(chrome.i18n.getMessage('lightSaveFailed'));
-    }
-  });
-}
 
 /**
  * Custom Confirmation Modal using Promise
@@ -421,13 +327,34 @@ function loadBookmarkFolders() {
   });
 }
 
+function checkConfigStatus() {
+  const configMissingAlert = document.getElementById('configMissingAlert');
+  if (!configMissingAlert) return;
+
+  const provider = providerSelect.value;
+  const apiKey = apiKeyInput.value.trim();
+
+  // Show alert if:
+  // 1. No provider selected
+  // 2. No API key provided (except for Ollama which is local)
+  // 3. API URL is missing for non-standard providers
+  const shouldShowAlert = !provider ||
+                         (provider !== 'ollama' && !apiKey) ||
+                         (provider === 'custom' && !apiUrlInput.value.trim());
+
+  if (shouldShowAlert) {
+    configMissingAlert.style.display = 'flex';
+  } else {
+    configMissingAlert.style.display = 'none';
+  }
+}
+
 // Bind DOM Events on startup
 document.addEventListener('DOMContentLoaded', () => {
   translatePage();
   loadConfig();
   restoreStatus();
   loadBookmarkFolders();
-  loadBookmarkFoldersForUI();
 
   // Set manifest version
   const appVersionEl = document.getElementById('appVersion');
@@ -448,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (defaults.maxTokens) maxTokensSelect.value = defaults.maxTokens;
       updateModelOptions(defaults.model);
     }
+    checkConfigStatus();
   });
 
   modelSelect.addEventListener('change', () => {
@@ -460,6 +388,14 @@ document.addEventListener('DOMContentLoaded', () => {
       modelNameInput.value = modelSelect.value;
     }
     saveConfig();
+  });
+
+  apiKeyInput.addEventListener('input', () => {
+    checkConfigStatus();
+  });
+
+  apiUrlInput.addEventListener('input', () => {
+    checkConfigStatus();
   });
 
   btnFetchModels.addEventListener('click', () => {
@@ -515,14 +451,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   chrome.storage.local.get(['activeTab'], (res) => {
-    const activeTab = res.activeTab || 'add-bookmark';
+    const activeTab = res.activeTab || 'rangement';
     switchTab(activeTab);
   });
 
   tabRangementBtn.addEventListener('click', () => switchTab('rangement'));
-  tabAddBookmarkBtn.addEventListener('click', () => switchTab('add-bookmark'));
   tabConfigBtn.addEventListener('click', () => switchTab('config'));
+  tabAboutBtn.addEventListener('click', () => switchTab('about'));
   tabHistoryBtn.addEventListener('click', () => switchTab('history'));
+  tabDocsBtn.addEventListener('click', () => switchTab('docs'));
 
   if (btnPrivacyPolicy) {
     btnPrivacyPolicy.addEventListener('click', (e) => {
@@ -565,195 +502,39 @@ document.addEventListener('DOMContentLoaded', () => {
       updateApplyButtonState();
     }
   });
-
-
-
-  btnAnalyzeBookmark.addEventListener('click', () => {
-    runBookmarkAnalysis();
-  });
-
-  btnAlternativeBookmark.addEventListener('click', () => {
-    if (lastAiSuggestion) {
-      const lastId = lastAiSuggestion.action === 'create_new' 
-        ? lastAiSuggestion.newFolderParentId 
-        : lastAiSuggestion.targetFolderId;
-      if (lastId && !ignoredFolderIds.includes(lastId)) {
-        ignoredFolderIds.push(lastId);
-      }
-    }
-    runBookmarkAnalysis();
-  });
-
-  function runBookmarkAnalysis() {
-    btnAnalyzeBookmark.disabled = true;
-    btnAlternativeBookmark.disabled = true;
-    const origText = btnAnalyzeBookmark.textContent;
-    btnAnalyzeBookmark.textContent = 'Analyse de l\'IA en cours...';
-    aiBookmarkSuggestion.style.display = 'none';
-    btnConfirmAddBookmark.classList.add('hidden');
-
-    chrome.runtime.sendMessage({
-      action: 'suggest_bookmark_location',
-      bookmark: {
-        title: bookmarkTitleInput.value.trim(),
-        url: activeTabUrlValue
-      },
-      ignoredFolderIds: ignoredFolderIds
-    }, (response) => {
-      btnAnalyzeBookmark.disabled = false;
-      btnAlternativeBookmark.disabled = false;
-      btnAnalyzeBookmark.textContent = origText;
-
-      if (chrome.runtime.lastError) {
-        showToast("Erreur système d'analyse");
-        return;
-      }
-
-      if (response && response.success && response.suggestion) {
-        lastAiSuggestion = response.suggestion;
-        // Cache the folders list for path resolution
-        if (response.folders) {
-          lastFoldersList = response.folders;
-        }
-
-        // Update bookmark title if AI suggested a cleaner one
-        if (lastAiSuggestion.suggestedTitle) {
-          bookmarkTitleInput.value = lastAiSuggestion.suggestedTitle;
-        }
-
-        // --- Render bookmark name row ---
-        suggestionBookmarkName.textContent = bookmarkTitleInput.value || '-';
-
-        // --- Render target folder row ---
-        suggestionFolderResult.textContent = '';
-        if (lastAiSuggestion.action === 'create_new') {
-          suggestionFolderIcon.textContent = '📁';
-          suggestionFolderLabel.textContent = 'Nouveau dossier';
-          const parentPath = getFolderPathFromList(lastAiSuggestion.newFolderParentId, lastFoldersList);
-          suggestionFolderResult.textContent = `${lastAiSuggestion.newFolderTitle}  ←  ${parentPath}`;
-        } else {
-          suggestionFolderIcon.textContent = '📂';
-          suggestionFolderLabel.textContent = chrome.i18n.getMessage('targetFolderLabel');
-          suggestionFolderResult.textContent = getFolderPathFromList(lastAiSuggestion.targetFolderId, lastFoldersList);
-        }
-
-        suggestionReasonResult.textContent = lastAiSuggestion.explanation || chrome.i18n.getMessage('suggestionLabel');
-        aiBookmarkSuggestion.style.display = 'block';
-        btnConfirmAddBookmark.classList.remove('hidden');
-        btnAlternativeBookmark.classList.remove('hidden');
-      } else {
-        showToast(response?.error || "Échec de l'analyse");
-      }
-    });
-  }
-
-  btnManualAddBookmark.addEventListener('click', () => {
-    if (manualAddSection.style.display === 'none') {
-      manualAddSection.style.display = 'block';
-      manualAddTitle.value = bookmarkTitleInput.value;
-      manualAddTitle.focus();
-    } else {
-      manualAddSection.style.display = 'none';
-    }
-  });
-
-  btnManualAddConfirm.addEventListener('click', saveManualBookmarkPopup);
-
-  btnConfirmAddBookmark.addEventListener('click', () => {
-    btnConfirmAddBookmark.disabled = true;
-    const origText = btnConfirmAddBookmark.textContent;
-    btnConfirmAddBookmark.textContent = 'Enregistrement...';
-
-    chrome.runtime.sendMessage({
-      action: 'save_suggested_bookmark',
-      suggestion: lastAiSuggestion,
-      bookmark: {
-        title: bookmarkTitleInput.value.trim(),
-        url: activeTabUrlValue
-      }
-    }, (response) => {
-      btnConfirmAddBookmark.disabled = false;
-      btnConfirmAddBookmark.textContent = origText;
-
-      if (chrome.runtime.lastError) {
-        showToast("Erreur système de sauvegarde");
-        return;
-      }
-
-      if (response && response.success) {
-        showToast("Favori enregistré avec succès !");
-        switchTab('rangement');
-      } else {
-        showToast(response?.error || "Échec de l'enregistrement");
-      }
-    });
-  });
 });
 
-async function loadActiveTabDetails() {
-  bookmarkTitleInput.value = 'Chargement...';
-  activeTabUrl.textContent = '-';
-  btnAnalyzeBookmark.disabled = true;
-  aiBookmarkSuggestion.style.display = 'none';
-  btnConfirmAddBookmark.classList.add('hidden');
-  btnAlternativeBookmark.classList.add('hidden');
-  ignoredFolderIds = [];
-
-  chrome.windows.getLastFocused({ windowTypes: ['normal'] }, (win) => {
-    const queryInfo = { active: true };
-    if (win && win.id) {
-      queryInfo.windowId = win.id;
-    } else {
-      queryInfo.lastFocusedWindow = true;
-    }
-
-    chrome.tabs.query(queryInfo, (tabs) => {
-      if (chrome.runtime.lastError || !tabs?.[0]) {
-        bookmarkTitleInput.value = 'Aucun onglet actif détecté';
-        activeTabUrl.textContent = '-';
-        return;
-      }
-      activeTabTitleValue = tabs[0].title || 'Favori';
-      activeTabUrlValue = tabs[0].url || '';
-      
-      bookmarkTitleInput.value = activeTabTitleValue;
-      activeTabUrl.textContent = activeTabUrlValue;
-      
-      if (activeTabUrlValue.startsWith('http://') || activeTabUrlValue.startsWith('https://')) {
-        btnAnalyzeBookmark.disabled = false;
-      } else {
-        bookmarkTitleInput.value = 'Onglet non supporté';
-        activeTabUrl.textContent = 'Seules les pages Web HTTP/HTTPS peuvent être ajoutées.';
-      }
-    });
-  });
-}
-
+  tabAboutBtn.classList.remove('active');
+  tabDocsBtn.classList.remove('active');
 function switchTab(tabId) {
   tabRangementBtn.classList.remove('active');
-  tabAddBookmarkBtn.classList.remove('active');
   tabConfigBtn.classList.remove('active');
   tabHistoryBtn.classList.remove('active');
+  tabAboutBtn.classList.remove('active');
+  tabDocsBtn.classList.remove('active');
 
   tabRangementPanel.classList.add('hidden');
-  tabAddBookmarkPanel.classList.add('hidden');
   tabConfigPanel.classList.add('hidden');
   tabHistoryPanel.classList.add('hidden');
+  tabAboutPanel.classList.add('hidden');
+  tabDocumentationPanel.classList.add('hidden');
 
   if (tabId === 'rangement') {
     tabRangementBtn.classList.add('active');
     tabRangementPanel.classList.remove('hidden');
-  } else if (tabId === 'add-bookmark') {
-    tabAddBookmarkBtn.classList.add('active');
-    tabAddBookmarkPanel.classList.remove('hidden');
-    loadActiveTabDetails();
   } else if (tabId === 'config') {
     tabConfigBtn.classList.add('active');
     tabConfigPanel.classList.remove('hidden');
+  } else if (tabId === 'about') {
+    tabAboutBtn.classList.add('active');
+    tabAboutPanel.classList.remove('hidden');
   } else if (tabId === 'history') {
     tabHistoryBtn.classList.add('active');
     tabHistoryPanel.classList.remove('hidden');
     renderHistory();
+  } else if (tabId === 'docs') {
+    tabDocsBtn.classList.add('active');
+    tabDocumentationPanel.classList.remove('hidden');
   }
 
   chrome.storage.local.set({ activeTab: tabId });
@@ -843,6 +624,9 @@ function loadConfig() {
     const provider = res.provider || 'google';
     const defModel = PROVIDER_DEFAULTS[provider]?.model || '';
     updateModelOptions(res.modelName || defModel);
+
+    // Check config status AFTER loading data into inputs
+    checkConfigStatus();
   });
 }
 
@@ -863,6 +647,7 @@ function saveConfig() {
   chrome.storage.sync.set(config, () => {
     showToast(chrome.i18n.getMessage('toastConfigSaved'));
     addLog('> Configuration sauvegardée avec succès.', 'success');
+    checkConfigStatus();
   });
 }
 
@@ -1124,6 +909,10 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     setControlsDisabled(false);
 
     addLog(`Échec : ${message.error}`, 'error');
+
+    // Check if the error is configuration-related and ensure alert is visible
+    checkConfigStatus();
+
     if (message.retryable) {
       showRetryButton(message.mode);
     }
@@ -1704,23 +1493,26 @@ function startInlineEdit(actionId, itemDiv) {
       placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder') || 'Sélectionner un dossier...';
       folderSelect.appendChild(placeholder);
 
-      if (bookmarkFolders && bookmarkFolders.length > 0) {
-        bookmarkFolders.forEach(folder => {
-          const option = document.createElement('option');
-          option.value = folder.id;
-          const parts = folder.path.split(' > ');
-          const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
-          const displayPath = parts.length > 1 && roots.includes(parts[0]) ? parts.slice(1).join(' > ') : parts.join(' > ');
-          option.textContent = displayPath;
-          folderSelect.appendChild(option);
-        });
+      // Load folders on demand for inline editing
+      chrome.runtime.sendMessage({ action: 'get_folders' }, (response) => {
+        if (response && response.folders && response.folders.length > 0) {
+          response.folders.forEach(folder => {
+            const option = document.createElement('option');
+            option.value = folder.id;
+            const parts = folder.path.split(' > ');
+            const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
+            const displayPath = parts.length > 1 && roots.includes(parts[0]) ? parts.slice(1).join(' > ') : parts.join(' > ');
+            option.textContent = displayPath;
+            folderSelect.appendChild(option);
+          });
 
-        // Pre-select target folder
-        const targetId = act.params?.targetParentId || act.params?.parentId;
-        if (targetId) {
-          folderSelect.value = targetId;
+          // Pre-select target folder
+          const targetId = act.params?.targetParentId || act.params?.parentId;
+          if (targetId) {
+            folderSelect.value = targetId;
+          }
         }
-      }
+      });
 
       groupFolder.appendChild(labelFolder);
       groupFolder.appendChild(folderSelect);
@@ -2296,18 +2088,4 @@ async function fetchModelsFromApi(provider, apiUrl, apiKey) {
     btnFetchModels.disabled = false;
     btnFetchModels.textContent = '🔄';
   }
-}
-
-
-function getFolderPathFromList(folderId, foldersList) {
-  if (!folderId) return '-';
-  if (!foldersList || foldersList.length === 0) return folderId;
-  const entry = foldersList.find(f => f.id === folderId);
-  if (!entry) return folderId;
-  const parts = entry.path.split(' > ');
-  const genericRoots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
-  if (parts.length > 1 && genericRoots.includes(parts[0])) {
-    return parts.slice(1).join(' > ');
-  }
-  return parts.join(' > ');
 }

@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
 
 export async function queryGemini(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   const base = url.replace(/\/$/, '');
@@ -28,14 +28,47 @@ export async function queryGemini(url, key, model, prompt, systemPrompt, signal,
   });
   if (!response.ok) {
     const err = await response.text();
-    const e = new Error(`Erreur Gemini (${response.status}): ${err}`);
+    const e = new Error(formatErrorMessage('Gemini', response.status, err));
     if (response.status === 429) e.isRateLimit = true;
     throw e;
   }
   const data = await response.json();
+
+  if (debugMode) {
+    console.log('=== DEBUG: Gemini Raw Response ===');
+    console.log('Response object keys:', Object.keys(data));
+    console.log('Candidates length:', data.candidates?.length);
+    if (data.candidates?.[0]) {
+      console.log('Candidates[0] keys:', Object.keys(data.candidates[0]));
+      if (data.candidates[0].content) {
+        console.log('Content keys:', Object.keys(data.candidates[0].content));
+        console.log('Parts length:', data.candidates[0].content.parts?.length);
+        if (data.candidates[0].content.parts?.[0]) {
+          console.log('Parts[0] keys:', Object.keys(data.candidates[0].content.parts[0]));
+          console.log('Text type:', typeof data.candidates[0].content.parts[0].text);
+          if (typeof data.candidates[0].content.parts[0].text === 'string') {
+            console.log('Text preview:', data.candidates[0].content.parts[0].text.substring(0, 300));
+          }
+        }
+      }
+    }
+    console.log('==================================');
+  }
+
   try {
-    return cleanAndParseJSON(data.candidates[0].content.parts[0].text);
-  } catch {
-    throw new Error(`Gemini: format de réponse invalide: ${JSON.stringify(data)}`);
+    // Extract text from Gemini response structure
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text || typeof text !== 'string') {
+      throw new Error(`Missing or invalid text: ${typeof text}`);
+    }
+    return cleanAndParseJSON(text);
+  } catch (e) {
+    if (debugMode) {
+      console.error('=== DEBUG: Gemini Parse Error ===');
+      console.error('Error:', e.message);
+      console.error('Full data:', data);
+      console.error('==================================');
+    }
+    throw new Error(`Gemini: ${e.message}`);
   }
 }

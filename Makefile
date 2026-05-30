@@ -1,21 +1,23 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e package clean
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean
 
 # Default goal: show help instructions
 help:
 	@echo "========================================================================"
 	@echo " FavorAI Bookmark Manager Extension - Available Commands"
 	@echo "========================================================================"
-	@echo "  make install         Install project dependencies (npm install)"
-	@echo "  make lint            Run ESLint code validation checks"
-	@echo "  make lint-fix        Auto-fix linter warnings and format violations"
-	@echo "  make test            Execute all Vitest unit tests"
-	@echo "  make test-watch      Execute Vitest in interactive watch mode"
-	@echo "  make test-coverage   Run Vitest tests and generate code coverage report"
-	@echo "  make test-e2e        Execute E2E integration tests with Playwright"
-	@echo "  make package         Package the extension into a ZIP file for Chrome Store"
-	@echo "  make clean           Remove reports, zip packages, and temporary folders"
+	@echo "  make install               Install project dependencies (npm install)"
+	@echo "  make lint                  Run ESLint code validation checks"
+	@echo "  make lint-fix              Auto-fix linter warnings and format violations"
+	@echo "  make test                  Execute all Vitest unit tests (95%+ coverage)"
+	@echo "  make test-watch            Execute Vitest in interactive watch mode"
+	@echo "  make test-coverage         Run Vitest tests and generate code coverage report"
+	@echo "  make test-e2e              Execute ALL E2E tests with Playwright (UI + Integration)"
+	@echo "  make test-e2e-ui           Execute UI E2E tests only (structure, navigation, forms)"
+	@echo "  make test-e2e-integration  Execute Integration E2E tests only (workflows, flows)"
+	@echo "  make package               Package the extension into a ZIP file for Chrome Store"
+	@echo "  make clean                 Remove reports, zip packages, and temporary folders"
 	@echo "========================================================================"
 
 install:
@@ -39,6 +41,14 @@ test-coverage:
 
 test-e2e:
 	npm run test:e2e
+
+test-e2e-ui:
+	@echo "Running UI E2E tests..."
+	npx playwright test tests/e2e/ui
+
+test-e2e-integration:
+	@echo "Running Integration E2E tests..."
+	npx playwright test tests/e2e/integration
 
 package:
 	npm run package

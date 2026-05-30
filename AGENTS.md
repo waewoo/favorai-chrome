@@ -91,7 +91,13 @@ The LLM response must be a valid JSON object containing a `reorganizedTree` and 
 
 ## 🧪 Testing & Mocking Architecture
 
-All logical utility components must maintain **95%+ unit test coverage**. 
+All logical utility components must maintain **100% coverage** across **all metrics**:
+- **Statements**: 100%
+- **Branch**: 100%
+- **Functions**: 100%
+- **Lines**: 100%
+
+**Per-file requirement**: Each utility file (`src/background/*.js`, `src/llm/*.js`, `src/utils/*.js`) must individually meet the 100% threshold for all four coverage metrics. No exceptions, no trade-offs.
 
 ### 1. Mocking Chrome APIs
 When writing unit tests under `tests/unit/`, do not invoke real browser APIs. A global mock system is pre-configured in [tests/setup.js](file:///d:/Travail/Projet/ExtentionChromiumGestionFavoris/tests/setup.js) using the mocks defined in [tests/mocks/chrome.js](file:///d:/Travail/Projet/ExtentionChromiumGestionFavoris/tests/mocks/chrome.js).
@@ -102,12 +108,40 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 ```
 
 ### 2. Available Commands
-AI agents should run these tasks to validate code changes:
-- `make lint` : Validates coding styles and scans for syntax errors.
-- `make test` : Runs the entire Vitest unit test suite.
+**CRITICAL: Always run the full test suite before committing changes.**
+
+AI agents must run these tasks to validate code changes:
+- `make lint` : Validates coding styles and scans for syntax errors. **Run this first**.
+- `make test` : Runs the entire Vitest unit test suite (95%+ coverage required). **Run after lint**.
 - `make test-coverage` : Runs unit tests and prints the formatted global coverage summary.
-- `make test-e2e` : Runs Playwright integration tests. Run this to check popup loading flows in a real Chromium context.
+- `make test-e2e` : Runs Playwright end-to-end tests (93 tests covering UI structure, navigation, forms, i18n, and error handling). **Run after unit tests**. This validates actual browser behavior in Chromium context.
 - `make clean` : Cleans temporary report folders, build files, and package zips.
+
+**Recommended test workflow before committing:**
+```bash
+make lint && make test && make test-e2e
+```
+
+### 3. Test Coverage Requirements
+
+**Unit Tests** (95%+ coverage):
+- Located in `tests/unit/`
+- Test utility functions, analysis logic, LLM parsing, diff calculations
+- Mock Chrome APIs using `tests/mocks/chrome.js`
+- Run with: `make test`
+
+**E2E Tests** (93 tests, 7 test files):
+- Located in `tests/e2e/`
+- Test UI components, navigation, form inputs, internationalization, error handling
+- Currently cover: popup structure, tab navigation, configuration forms, history display, reorganization UI, popup-light interface, error states
+- **Add tests for new features**: When implementing a new feature, add corresponding e2e tests to `tests/e2e/` to catch integration errors early
+- Run with: `make test-e2e`
+
+**Best Practice: Test-Driven Development**
+1. When adding a new feature, write the e2e test first
+2. Implement the feature
+3. Run full test suite (`make lint && make test && make test-e2e`)
+4. All tests must pass before committing
 
 ---
 

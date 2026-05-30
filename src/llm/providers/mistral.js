@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
 
 export async function queryMistral(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   const endpoint = `${url.replace(/\/$/, '')}/chat/completions`;
@@ -28,7 +28,7 @@ export async function queryMistral(url, key, model, prompt, systemPrompt, signal
   });
   if (!response.ok) {
     const err = await response.text();
-    const e = new Error(`Erreur Mistral (${response.status}): ${err}`);
+    const e = new Error(formatErrorMessage('Mistral', response.status, err));
     if (response.status === 429) e.isRateLimit = true;
     throw e;
   }
