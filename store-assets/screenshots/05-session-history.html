@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>FavorAI — Session History</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:1280px;height:800px;overflow:hidden;background:radial-gradient(ellipse at 30% 50%,#0e0e1f 0%,#090a0f 60%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
+.window{width:920px;height:740px;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.12);}
+.titlebar{height:40px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:8px;}
+.dot{width:12px;height:12px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.title-text{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;}
+.app{display:flex;flex-direction:column;height:calc(100% - 40px);}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-name{font-size:17px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.tab{padding:7px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
+.tab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
+.content{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+.history-header{display:flex;align-items:center;justify-content:space-between;}
+.h-title{font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);}
+.btn-clear{font-size:10px;color:rgba(239,68,68,0.7);background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;}
+.session{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;}
+.session-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.session-meta{display:flex;align-items:center;gap:8px;}
+.mode-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:10px;}
+.mode-complete{background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);}
+.mode-minimal{background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.25);}
+.session-date{font-size:11px;color:rgba(255,255,255,0.35);}
+.btn-rollback{font-size:10px;font-weight:600;color:#818cf8;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);padding:5px 12px;border-radius:6px;}
+.session-stats{display:flex;gap:16px;margin-bottom:8px;}
+.stat{font-size:10px;color:rgba(255,255,255,0.4);}
+.stat strong{color:rgba(255,255,255,0.7);font-weight:600;}
+.session-changes{display:flex;flex-direction:column;gap:3px;}
+.change-row{display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(255,255,255,0.4);}
+.ch-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ch-dot.move{background:#fbbf24;}.ch-dot.del{background:#f87171;}.ch-dot.create{background:#34d399;}.ch-dot.rename{background:#818cf8;}
+.session-explanation{margin-top:8px;padding:8px 10px;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.12);border-radius:6px;font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="title-text">FavorAI — Intelligent Bookmark Manager</div>
+  </div>
+  <div class="app">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">🔖</div>
+        <div class="logo-name">FavorAI</div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab">⚡ Organization</div>
+      <div class="tab">⚙️ Config</div>
+      <div class="tab active">📜 History</div>
+      <div class="tab">📖 Docs</div>
+      <div class="tab">ℹ️ About</div>
+    </div>
+    <div class="content">
+      <div class="history-header">
+        <div class="h-title">📜 Session History</div>
+        <div class="btn-clear">🗑 Clear History</div>
+      </div>
+
+      <div class="session">
+        <div class="session-header">
+          <div>
+            <div class="session-meta">
+              <div class="mode-badge mode-complete">Complete</div>
+              <div class="session-date">May 30, 2026 · 16:42</div>
+            </div>
+          </div>
+          <div class="btn-rollback">↩ Rollback session</div>
+        </div>
+        <div class="session-stats">
+          <div class="stat"><strong>14</strong> changes applied</div>
+          <div class="stat"><strong>7</strong> moved</div>
+          <div class="stat"><strong>3</strong> deleted</div>
+          <div class="stat"><strong>4</strong> created</div>
+        </div>
+        <div class="session-changes">
+          <div class="change-row"><div class="ch-dot create"></div>Created "💻 Development" (top-level)</div>
+          <div class="change-row"><div class="ch-dot move"></div>Moved "React Documentation" → 💻 Development / Frontend</div>
+          <div class="change-row"><div class="ch-dot del"></div>Removed dead link: deprecated-api.io (timeout)</div>
+          <div class="change-row"><div class="ch-dot del"></div>Deleted duplicate: github.com/trending</div>
+          <div class="change-row" style="color:rgba(255,255,255,0.25);">+ 10 more changes…</div>
+        </div>
+      </div>
+
+      <div class="session">
+        <div class="session-header">
+          <div>
+            <div class="session-meta">
+              <div class="mode-badge mode-minimal">Minimal</div>
+              <div class="session-date">May 28, 2026 · 11:15</div>
+            </div>
+          </div>
+          <div class="btn-rollback">↩ Rollback session</div>
+        </div>
+        <div class="session-stats">
+          <div class="stat"><strong>6</strong> changes applied</div>
+          <div class="stat"><strong>5</strong> moved</div>
+          <div class="stat"><strong>1</strong> renamed</div>
+        </div>
+        <div class="session-changes">
+          <div class="change-row"><div class="ch-dot move"></div>Moved "Docker Cheatsheet" → DevOps (was in Personal)</div>
+          <div class="change-row"><div class="ch-dot move"></div>Moved "Python Tutorial" → Development (was in Misc)</div>
+          <div class="change-row"><div class="ch-dot rename"></div>Renamed "Links" → "📚 References"</div>
+        </div>
+      </div>
+
+      <div class="session">
+        <div class="session-header">
+          <div>
+            <div class="session-meta">
+              <div class="mode-badge mode-complete">Complete</div>
+              <div class="session-date">May 25, 2026 · 09:03</div>
+            </div>
+          </div>
+          <div class="btn-rollback">↩ Rollback session</div>
+        </div>
+        <div class="session-stats">
+          <div class="stat"><strong>23</strong> changes applied</div>
+          <div class="stat"><strong>12</strong> moved</div>
+          <div class="stat"><strong>5</strong> deleted</div>
+          <div class="stat"><strong>6</strong> created</div>
+        </div>
+        <div class="session-explanation">
+          Full restructuring: created 8 top-level folders with emoji prefixes. Removed 4 duplicates and 1 dead link. Moved 12 bookmarks to semantically correct folders.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>FavorAI — Validation Checklist</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:1280px;height:800px;overflow:hidden;background:radial-gradient(ellipse at 30% 50%,#0e0e1f 0%,#090a0f 60%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
+.window{width:960px;height:750px;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.12);}
+.titlebar{height:40px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:8px;}
+.dot{width:12px;height:12px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.title-text{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;}
+.app{display:flex;flex-direction:column;height:calc(100% - 40px);}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.logo-name{font-size:16px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.badge-count{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:10px;padding:2px 9px;border-radius:10px;font-weight:600;}
+.validation-header{padding:12px 16px 8px;display:flex;align-items:center;justify-content:space-between;}
+.val-title{font-size:13px;font-weight:700;color:rgba(255,255,255,0.85);}
+.sel-btns{display:flex;gap:8px;}
+.sel-btn{font-size:10px;color:#818cf8;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);padding:4px 10px;border-radius:6px;cursor:pointer;}
+.items-list{flex:1;overflow:hidden;padding:0 12px;display:flex;flex-direction:column;gap:4px;}
+.item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;}
+.item:hover{background:rgba(255,255,255,0.05);}
+.item.clean{border-color:rgba(239,68,68,0.15);}
+.item.struct{border-color:rgba(99,102,241,0.15);}
+.item.move{border-color:rgba(245,158,11,0.15);}
+.cb{width:15px;height:15px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.cb.on{background:#6366f1;border:1.5px solid #818cf8;color:#fff;font-size:9px;}
+.cb.off{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.15);}
+.item-icon{font-size:13px;flex-shrink:0;}
+.item-body{flex:1;min-width:0;}
+.item-main{font-size:11px;color:rgba(255,255,255,0.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-sub{font-size:10px;color:rgba(255,255,255,0.35);margin-top:1px;}
+.item-tag{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;flex-shrink:0;}
+.tag-clean{background:rgba(239,68,68,0.12);color:#f87171;}
+.tag-struct{background:rgba(99,102,241,0.12);color:#818cf8;}
+.tag-move{background:rgba(245,158,11,0.12);color:#fbbf24;}
+.tag-create{background:rgba(16,185,129,0.12);color:#34d399;}
+.footer{padding:10px 16px;border-top:1px solid rgba(255,255,255,0.06);}
+.footer-info{font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:8px;text-align:center;}
+.footer-btns{display:flex;gap:10px;}
+.btn{flex:1;padding:9px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;}
+.btn-cancel{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);}
+.btn-apply{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+.explanation{margin:6px 12px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:8px;padding:10px 12px;}
+.exp-title{font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.exp-text{font-size:10px;color:rgba(255,255,255,0.45);line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <div class="title-text">FavorAI — Intelligent Bookmark Manager</div>
+  </div>
+  <div class="app">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">🔖</div>
+        <div class="logo-name">FavorAI</div>
+      </div>
+      <div class="badge-count">✓ 14 changes proposed</div>
+    </div>
+    <div class="validation-header">
+      <div class="val-title">📋 Proposed Changes — Review &amp; Apply</div>
+      <div class="sel-btns">
+        <div class="sel-btn">Select all</div>
+        <div class="sel-btn">Deselect</div>
+      </div>
+    </div>
+    <div class="items-list">
+      <div class="item struct">
+        <div class="cb on">✓</div><div class="item-icon">📁</div>
+        <div class="item-body"><div class="item-main">Create folder "💻 Development"</div><div class="item-sub">New top-level folder</div></div>
+        <div class="item-tag tag-create">Create</div>
+      </div>
+      <div class="item move">
+        <div class="cb on">✓</div><div class="item-icon">📄</div>
+        <div class="item-body"><div class="item-main">Move "React Documentation" → 💻 Development / Frontend</div><div class="item-sub">From: Misc</div></div>
+        <div class="item-tag tag-move">Move</div>
+      </div>
+      <div class="item move">
+        <div class="cb on">✓</div><div class="item-icon">📄</div>
+        <div class="item-body"><div class="item-main">Move "Docker Cheatsheet" → 💻 Development / DevOps</div><div class="item-sub">From: Personal</div></div>
+        <div class="item-tag tag-move">Move</div>
+      </div>
+      <div class="item clean">
+        <div class="cb on">✓</div><div class="item-icon">🗑️</div>
+        <div class="item-body"><div class="item-main">Delete duplicate: github.com/trending</div><div class="item-sub">Already in 💻 Development — kept best copy</div></div>
+        <div class="item-tag tag-clean">Duplicate</div>
+      </div>
+      <div class="item clean">
+        <div class="cb on">✓</div><div class="item-icon">💀</div>
+        <div class="item-body"><div class="item-main">Remove dead link: oldsite.blogspot.com</div><div class="item-sub">HTTP 404 — link unreachable</div></div>
+        <div class="item-tag tag-clean">Dead link</div>
+      </div>
+      <div class="item struct">
+        <div class="cb on">✓</div><div class="item-icon">✏️</div>
+        <div class="item-body"><div class="item-main">Rename "Misc" → "📚 References"</div><div class="item-sub">Existing folder at root</div></div>
+        <div class="item-tag tag-struct">Rename</div>
+      </div>
+      <div class="item clean">
+        <div class="cb off"></div><div class="item-icon">💀</div>
+        <div class="item-body"><div class="item-main">Remove dead link: deprecated-api.io</div><div class="item-sub">Connection timeout — unreachable</div></div>
+        <div class="item-tag tag-clean">Dead link</div>
+      </div>
+    </div>
+    <div class="explanation">
+      <div class="exp-title">🤖 AI Explanation</div>
+      <div class="exp-text"><strong style="color:rgba(255,255,255,0.65);">Structure overview:</strong> Created 6 top-level folders (💻 Dev, 🎨 Design, 💰 Finance, 🏠 Personal, 📚 References, ⚡ Quick Access). Moved 8 misplaced bookmarks and removed 3 duplicates + 2 dead links.</div>
+    </div>
+    <div class="footer">
+      <div class="footer-info">13 of 14 changes selected</div>
+      <div class="footer-btns">
+        <div class="btn btn-cancel">← Back</div>
+        <div class="btn btn-apply">✓ Apply 13 selected changes</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

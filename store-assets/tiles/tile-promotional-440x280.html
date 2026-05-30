@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=440">
+<title>FavorAI — Promotional Tile 440×280</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:440px;height:280px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0a0b12;}
+.bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,#1a1040 0%,#0a0b12 65%);}
+.glow-1{position:absolute;width:280px;height:280px;background:radial-gradient(circle,rgba(99,102,241,0.18) 0%,transparent 65%);top:-60px;left:-40px;pointer-events:none;}
+.glow-2{position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(139,92,246,0.1) 0%,transparent 65%);bottom:-40px;right:20px;pointer-events:none;}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.03) 1px,transparent 1px);background-size:28px 28px;}
+.content{position:relative;z-index:10;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 32px;text-align:center;}
+.icon-wrap{width:52px;height:52px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:14px;box-shadow:0 0 30px rgba(99,102,241,0.4);}
+.brand{font-size:30px;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,#fff 30%,#c084fc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.tagline{font-size:13px;font-weight:500;color:rgba(255,255,255,0.55);letter-spacing:0.2px;margin-bottom:16px;}
+.divider{width:40px;height:1px;background:linear-gradient(90deg,transparent,rgba(129,140,248,0.5),transparent);margin:0 auto 14px;}
+.providers{display:flex;align-items:center;gap:0;justify-content:center;}
+.prov{font-size:9.5px;color:rgba(255,255,255,0.3);font-weight:500;padding:0 7px;border-right:1px solid rgba(255,255,255,0.1);}
+.prov:last-child{border-right:none;}
+.badge-row{display:flex;gap:8px;justify-content:center;margin-top:12px;}
+.badge{font-size:9px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.b1{background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.2);}
+.b2{background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.2);}
+.b3{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.2);}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="grid"></div>
+<div class="content">
+  <div class="icon-wrap">🔖</div>
+  <div class="brand">FavorAI</div>
+  <div class="tagline">AI-powered bookmark cleanup &amp; organization</div>
+  <div class="divider"></div>
+  <div class="providers">
+    <div class="prov">OpenAI</div>
+    <div class="prov">Gemini</div>
+    <div class="prov">Claude</div>
+    <div class="prov">Mistral</div>
+    <div class="prov">Ollama</div>
+  </div>
+  <div class="badge-row">
+    <div class="badge b1">✓ Duplicate removal</div>
+    <div class="badge b2">✓ AI reorganization</div>
+    <div class="badge b3">✓ Dead link check</div>
+  </div>
+</div>
+</body>
+</html>

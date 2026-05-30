@@ -19,6 +19,9 @@ playwright-report/
 test-results/
 tests/e2e/tmp-user-data-*/
 
+# Store assets — generated PNGs (HTML sources are committed, PNGs regenerated via make screenshots)
+store-assets/output/
+
 # Environment variables
 .env
 .env.local

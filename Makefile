@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots
 
 # Default goal: show help instructions
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  make test-e2e-ui           Execute UI E2E tests only (structure, navigation, forms)"
 	@echo "  make test-e2e-integration  Execute Integration E2E tests only (workflows, flows)"
 	@echo "  make package               Package the extension into a ZIP file for Chrome Store"
+	@echo "  make screenshots           Generate all store asset PNGs from HTML sources"
 	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
 	@echo "  make publish               Build ZIP, upload and publish to all users"
 	@echo "  make publish-testers       Build ZIP, upload and publish to trusted testers only"
@@ -57,6 +58,10 @@ test-e2e-integration: clean-e2e
 
 package:
 	npm run package
+
+# Generate all store asset PNGs (screenshots + tiles) from HTML sources
+screenshots:
+	node store-assets/generate.mjs
 
 # Upload the ZIP to Chrome Web Store (draft — does not publish)
 upload: package

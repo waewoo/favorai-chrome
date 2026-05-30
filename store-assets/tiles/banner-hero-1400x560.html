@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400">
+<title>FavorAI — Hero Banner 1400×560</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:1400px;height:560px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#090a0f;}
+.bg{position:absolute;inset:0;background:linear-gradient(125deg,#0f0b1e 0%,#0a0b12 45%,#090a0f 100%);}
+.glow-left{position:absolute;width:700px;height:600px;background:radial-gradient(ellipse,rgba(99,102,241,0.14) 0%,transparent 65%);top:-100px;left:-100px;}
+.glow-right{position:absolute;width:400px;height:400px;background:radial-gradient(ellipse,rgba(139,92,246,0.08) 0%,transparent 65%);bottom:-50px;right:200px;}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.04) 1px,transparent 1px);background-size:40px 40px;}
+.layout{position:relative;z-index:10;height:100%;display:flex;align-items:center;}
+/* LEFT SIDE */
+.left{flex:0 0 560px;padding:60px 50px 60px 70px;display:flex;flex-direction:column;justify-content:center;}
+.eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+.eyebrow-dot{width:8px;height:8px;border-radius:50%;background:#818cf8;}
+.eyebrow-text{font-size:12px;font-weight:600;color:#818cf8;letter-spacing:1px;text-transform:uppercase;}
+.brand{font-size:62px;font-weight:800;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,#ffffff 30%,#c084fc 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.subtitle{font-size:20px;font-weight:500;color:rgba(255,255,255,0.45);letter-spacing:0.5px;margin-bottom:28px;}
+.features{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
+.feat{display:flex;align-items:center;gap:12px;}
+.feat-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.feat-icon.green{background:rgba(16,185,129,0.15);}
+.feat-icon.blue{background:rgba(59,130,246,0.15);}
+.feat-icon.purple{background:rgba(139,92,246,0.15);}
+.feat-icon.yellow{background:rgba(245,158,11,0.15);}
+.feat-text{font-size:13px;color:rgba(255,255,255,0.6);font-weight:500;}
+.feat-text strong{color:rgba(255,255,255,0.85);}
+.price-row{display:flex;align-items:center;gap:12px;}
+.price{font-size:22px;font-weight:800;color:#fff;}
+.price-note{font-size:11px;color:rgba(255,255,255,0.35);}
+.cta{margin-top:20px;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:13px;font-weight:700;padding:12px 24px;border-radius:10px;width:fit-content;box-shadow:0 8px 30px rgba(99,102,241,0.35);}
+/* RIGHT SIDE */
+.right{flex:1;display:flex;align-items:center;justify-content:center;padding:30px 50px 30px 0;position:relative;}
+.popup-wrap{position:relative;width:520px;}
+.popup-shadow{position:absolute;inset:-15px;background:radial-gradient(ellipse,rgba(99,102,241,0.15) 0%,transparent 70%);border-radius:24px;}
+.popup{width:520px;background:#0d0e18;border:1px solid rgba(255,255,255,0.1);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(99,102,241,0.1);}
+.popup-titlebar{height:34px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 12px;gap:6px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.popup-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.popup-logo{display:flex;align-items:center;gap:8px;}
+.popup-logo-icon{width:24px;height:24px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.popup-logo-name{font-size:14px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.popup-tabs{display:flex;gap:1px;padding:7px 10px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.ptab{padding:5px 10px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);border-radius:6px 6px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
+.ptab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
+.popup-body{padding:12px;}
+.checklist{display:flex;flex-direction:column;gap:5px;}
+.ci{display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:7px;font-size:10px;}
+.ci-cb{width:13px;height:13px;background:#6366f1;border-radius:3px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;flex-shrink:0;}
+.ci-text{color:rgba(255,255,255,0.7);}
+.ci-tag{margin-left:auto;font-size:8px;font-weight:600;padding:2px 6px;border-radius:8px;}
+.t-move{background:rgba(245,158,11,0.12);color:#fbbf24;}
+.t-del{background:rgba(239,68,68,0.12);color:#f87171;}
+.t-new{background:rgba(16,185,129,0.12);color:#34d399;}
+.popup-footer{padding:8px 12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;}
+.pf-btn{flex:1;padding:7px;border-radius:7px;font-size:10px;font-weight:600;text-align:center;}
+.pf-cancel{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.4);}
+.pf-apply{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+/* floating badges */
+.float-badge{position:absolute;background:#0d0e18;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-size:10px;font-weight:600;}
+.fb-1{top:10px;right:-10px;color:#34d399;border-color:rgba(16,185,129,0.25);background:rgba(13,14,24,0.95);}
+.fb-2{bottom:30px;right:-20px;color:#818cf8;border-color:rgba(99,102,241,0.25);background:rgba(13,14,24,0.95);}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="glow-left"></div>
+<div class="glow-right"></div>
+<div class="grid"></div>
+<div class="layout">
+  <div class="left">
+    <div class="eyebrow"><div class="eyebrow-dot"></div><div class="eyebrow-text">Chrome Extension</div></div>
+    <div class="brand">FavorAI</div>
+    <div class="subtitle">Clean. Organize. AI-powered.</div>
+    <div class="features">
+      <div class="feat"><div class="feat-icon green">🔍</div><div class="feat-text"><strong>Smart duplicate detection</strong> — finds identical URLs across all folders</div></div>
+      <div class="feat"><div class="feat-icon blue">🔗</div><div class="feat-text"><strong>Dead link checker</strong> — removes unreachable bookmarks automatically</div></div>
+      <div class="feat"><div class="feat-icon purple">🤖</div><div class="feat-text"><strong>AI semantic reorganization</strong> — works with OpenAI, Gemini, Claude &amp; more</div></div>
+      <div class="feat"><div class="feat-icon yellow">📜</div><div class="feat-text"><strong>Session history &amp; rollback</strong> — undo any reorganization in one click</div></div>
+    </div>
+    <div class="price-row">
+      <div class="price">$4.99</div>
+      <div class="price-note">One-time purchase · No subscription · Bring your own API key</div>
+    </div>
+    <div class="cta">✨ Get FavorAI on Chrome Web Store →</div>
+  </div>
+  <div class="right">
+    <div class="popup-wrap">
+      <div class="popup-shadow"></div>
+      <div class="popup">
+        <div class="popup-titlebar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="popup-header">
+          <div class="popup-logo"><div class="popup-logo-icon">🔖</div><div class="popup-logo-name">FavorAI</div></div>
+          <span style="font-size:10px;color:#34d399;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);padding:2px 8px;border-radius:8px;font-weight:600;">✓ 14 changes proposed</span>
+        </div>
+        <div class="popup-tabs">
+          <div class="ptab active">⚡ Organization</div>
+          <div class="ptab">⚙️ Config</div>
+          <div class="ptab">📜 History</div>
+        </div>
+        <div class="popup-body">
+          <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:7px;display:flex;justify-content:space-between;"><span>📋 Proposed Changes</span><span style="color:#818cf8;">Select all</span></div>
+          <div class="checklist">
+            <div class="ci"><div class="ci-cb">✓</div><div class="ci-text">Create "💻 Development" (top-level)</div><div class="ci-tag t-new">Create</div></div>
+            <div class="ci"><div class="ci-cb">✓</div><div class="ci-text">Move "React Docs" → 💻 Dev / Frontend</div><div class="ci-tag t-move">Move</div></div>
+            <div class="ci"><div class="ci-cb">✓</div><div class="ci-text">Delete duplicate: github.com/trending</div><div class="ci-tag t-del">Duplicate</div></div>
+            <div class="ci"><div class="ci-cb">✓</div><div class="ci-text">Remove dead link: oldsite.blogspot.com</div><div class="ci-tag t-del">Dead link</div></div>
+            <div class="ci"><div class="ci-cb">✓</div><div class="ci-text">Move "Docker Guide" → 💻 Dev / DevOps</div><div class="ci-tag t-move">Move</div></div>
+          </div>
+        </div>
+        <div class="popup-footer">
+          <div class="pf-btn pf-cancel">← Back</div>
+          <div class="pf-btn pf-apply">✓ Apply 14 changes</div>
+        </div>
+      </div>
+      <div class="float-badge fb-1">✓ 7 duplicates removed</div>
+      <div class="float-badge fb-2">🤖 Powered by GPT-4o</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

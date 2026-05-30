@@ -16,6 +16,8 @@ if (fs.existsSync(distDir)) {
 fs.mkdirSync(distDir);
 
 // Folders/files to copy to package
+// Only these files/folders are included in the extension ZIP.
+// store-assets/, tests/, scripts/, node_modules/ are intentionally excluded.
 const filesToCopy = [
   'manifest.json',
   'background.js',
