@@ -157,12 +157,14 @@ Structure your explanation as follows (CRITICAL: use bookmark TITLES only, NO ID
 
 **MOVED BOOKMARKS**
 For each move: "Moved '[title]' from '[source folder name]' to '[target folder name]' — [semantic mismatch reason]."
+(IMPORTANT: If there are more than 15 moves, DO NOT list each one individually. Instead, write a brief, high-level summary of the main moves per category to keep the response short and avoid hitting output token limits.)
 
 **NEW FOLDERS CREATED** (if any)
 "Created '[folder name]' because [justification]."
 
 **BORDERLINE CASES** (optional but valuable)
 "Kept '[title]' in '[folder name]' despite [ambiguity] — [why it was not moved]."
+(Keep the entire explanation under 250 words total.)
 
 CRITICAL LANGUAGE INSTRUCTION:
 ⚠️ Your explanation text MUST respond in the user's language (detected from browser settings).
@@ -202,6 +204,7 @@ Step 4 — GENERATE the JSON with:
 
 EXPLANATION FORMAT (CRITICAL: use bookmark TITLES only, NO IDs):
 Structure your explanation with these sections:
+(IMPORTANT: If there are more than 15 total changes across all categories, DO NOT list every single change individually. Instead, write a brief, high-level summary of the main changes per category to avoid hitting output token limits.)
 
 **STRUCTURE OVERVIEW**
 List the 6-8 new top-level folders and their purpose.
@@ -217,6 +220,8 @@ List the 6-8 new top-level folders and their purpose.
 
 **DUPLICATES REMOVED**
 "Removed duplicate '[title]' — kept in '[folder name]'."
+
+(Keep the entire explanation under 300 words total.)
 
 CRITICAL LANGUAGE INSTRUCTION:
 ⚠️ Your explanation text MUST respond in the user's language (detected from browser settings).

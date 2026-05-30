@@ -107,7 +107,7 @@
   "bgHeartbeat4": { "message": "Resolving thematic inconsistencies…" },
   "bgHeartbeat5": { "message": "Validating proposed structure…" },
   "bgHeartbeat6": { "message": "Generating explanation…" },
-  "bgHeartbeat7": { "message": "Finalizing response…" },
+  "bgHeartbeat7": { "message": "Finalizing response (this may take a while)…" },
   "bgStartingReorg": {
     "message": "> Starting reorganization ($mode$)...",
     "placeholders": { "mode": { "content": "$1" } }
