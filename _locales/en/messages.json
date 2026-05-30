@@ -83,6 +83,44 @@
   "actionRenameBookmark": { "message": "Rename bookmark" },
   "actionDeleteEmptyFolder": { "message": "Delete empty folder" },
   "actionDeleteObsoleteFolder": { "message": "Delete obsolete folder" },
+  "bgSendingToAI": {
+    "message": "Sending to AI ($count$ bookmarks)…",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgSendingToAIWithTokens": {
+    "message": "Sending to AI ($count$ bookmarks, ~$tokens$K tokens reserved)…",
+    "placeholders": { "count": { "content": "$1" }, "tokens": { "content": "$2" } }
+  },
+  "bgResponseReceived": { "message": "Response received, processing…" },
+  "bgComputingFolders": { "message": "Computing folders to create…" },
+  "bgComputingMoves": { "message": "Computing moves…" },
+  "bgDetectingObsolete": { "message": "Detecting obsolete folders…" },
+  "bgTopLevelCorrected": {
+    "message": "⚠️ $count$ old top-level folder(s) auto-corrected",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgHeartbeat0": { "message": "Semantic title analysis…" },
+  "bgHeartbeat1": { "message": "Identifying categories…" },
+  "bgHeartbeat2": { "message": "Checking folder consistency…" },
+  "bgHeartbeat3": { "message": "Building hierarchy…" },
+  "bgHeartbeat4": { "message": "Resolving thematic inconsistencies…" },
+  "bgHeartbeat5": { "message": "Validating proposed structure…" },
+  "bgHeartbeat6": { "message": "Generating explanation…" },
+  "bgHeartbeat7": { "message": "Finalizing response…" },
+  "bgStartingReorg": {
+    "message": "> Starting reorganization ($mode$)...",
+    "placeholders": { "mode": { "content": "$1" } }
+  },
+  "bgModeComplete": { "message": "Complete" },
+  "bgModeMinimal": { "message": "Minimal" },
+  "bgChangesProposed": {
+    "message": "✓ $count$ proposed change(s)",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgReorgFailed": {
+    "message": "Reorganization failed: $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
   "bgAnalysisDone": { "message": "Analysis completed!" },
   "aiExplanationNone": { "message": "No explanation provided by AI." },
   "bgAnalysisInterrupted": { "message": "Analysis interrupted (Service Worker restarted or went offline)." },

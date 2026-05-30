@@ -89,7 +89,7 @@ function enforceNewTopLevel(reorganizedTree, originalMap, currentStatus) {
   }
 
   if (converted > 0) {
-    sendProgress(`⚠️ ${converted} ancien(s) dossier(s) top-level corrigé(s) automatiquement`, 94, currentStatus);
+    sendProgress(chrome.i18n.getMessage('bgTopLevelCorrected', [String(converted)]), 94, currentStatus);
   }
 
   return reorganizedTree;
@@ -247,17 +247,11 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
 
   // 5. Appel LLM
   const bookmarkCount = flattenBookmarks([rootNode]).length;
-  sendProgress(`Envoi à l'IA (${bookmarkCount} favoris)…`, 80, currentStatus);
+  sendProgress(chrome.i18n.getMessage('bgSendingToAI', [String(bookmarkCount)]), 80, currentStatus);
 
   const LLM_HEARTBEAT_MESSAGES = [
-    'Analyse sémantique des titres…',
-    'Identification des catégories…',
-    'Vérification de la cohérence des dossiers…',
-    'Construction de la hiérarchie…',
-    'Résolution des incohérences thématiques…',
-    'Validation de la structure proposée…',
-    'Génération de l\'explication…',
-    'Finalisation de la réponse…',
+    'bgHeartbeat0', 'bgHeartbeat1', 'bgHeartbeat2', 'bgHeartbeat3',
+    'bgHeartbeat4', 'bgHeartbeat5', 'bgHeartbeat6', 'bgHeartbeat7',
   ];
   let heartbeatIndex = 0;
   let heartbeatPct = 82;
@@ -267,7 +261,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     heartbeatPct = Math.min(heartbeatPct + 1, 97);
     const msgIndex = Math.min(heartbeatIndex, LLM_HEARTBEAT_MESSAGES.length - 1);
     const elapsed = elapsedSec >= 8 ? ` (${elapsedSec}s)` : '';
-    sendProgress(LLM_HEARTBEAT_MESSAGES[msgIndex] + elapsed, heartbeatPct, currentStatus);
+    sendProgress(chrome.i18n.getMessage(LLM_HEARTBEAT_MESSAGES[msgIndex]) + elapsed, heartbeatPct, currentStatus);
     heartbeatIndex++;
   }, 4000);
 
@@ -291,7 +285,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   }
 
   if (effectiveMaxTokens > configuredMax) {
-    sendProgress(`Envoi à l'IA (${bookmarkCount} favoris, ~${Math.round(effectiveMaxTokens / 1024)}K tokens réservés)…`, 80, currentStatus);
+    sendProgress(chrome.i18n.getMessage('bgSendingToAIWithTokens', [String(bookmarkCount), String(Math.round(effectiveMaxTokens / 1024))]), 80, currentStatus);
   }
 
   let llmResult;
@@ -318,7 +312,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     throw e;
   }
   clearInterval(heartbeatInterval);
-  sendProgress('Réponse reçue, traitement en cours…', 98, currentStatus);
+  sendProgress(chrome.i18n.getMessage('bgResponseReceived'), 98, currentStatus);
 
   if (!llmResult) throw new Error(chrome.i18n.getMessage('bgLLMEmptyResponse'));
 
@@ -397,7 +391,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   const actions = [];
   let counter = 1;
 
-  sendProgress('Calcul des dossiers à créer…', 95, currentStatus);
+  sendProgress(chrome.i18n.getMessage('bgComputingFolders'), 95, currentStatus);
   await yieldToUI();
   const reorganizedMap = buildReorganizedMap(reorganizedTree);
 
@@ -438,7 +432,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     }
   }
 
-  sendProgress('Calcul des déplacements…', 96, currentStatus);
+  sendProgress(chrome.i18n.getMessage('bgComputingMoves'), 96, currentStatus);
   await yieldToUI();
 
   // C. Déplacements et renommages
@@ -475,7 +469,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     }
   }
 
-  sendProgress('Détection des dossiers obsolètes…', 97, currentStatus);
+  sendProgress(chrome.i18n.getMessage('bgDetectingObsolete'), 97, currentStatus);
   await yieldToUI();
 
   // D. Suppressions de dossiers vides/obsolètes

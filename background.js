@@ -19,7 +19,7 @@ let popupWindowId = null;
 
 // Restore popupWindowId from storage on SW startup and verify the window still exists.
 chrome.storage.local.get(['popupWindowId'], (res) => {
-  if (res.popupWindowId != null) {
+  if (res.popupWindowId !== null && res.popupWindowId !== undefined) {
     chrome.windows.get(res.popupWindowId, (win) => {
       if (chrome.runtime.lastError || !win) {
         chrome.storage.local.remove('popupWindowId');
@@ -210,8 +210,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
     startKeepAlive();
 
-    const modeLabel = message.mode === 'complete' ? 'Complète' : 'Minimale';
-    logStatus(`> Démarrage de la réorganisation (${modeLabel})...`, 'info');
+    const modeLabel = message.mode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
+    logStatus(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
 
     // Récupérer la clé API depuis le stockage sync par sécurité (C2)
     chrome.storage.sync.get(['apiKey'], (res) => {
@@ -242,8 +242,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             currentStatus.actions = result.actions;
             currentStatus.explanation = result.explanation;
             logStatus(chrome.i18n.getMessage('bgAnalysisCompleted') || 'Analyse terminée avec succès.', 'success');
-            // Log the count but more concisely - it will show in the UI
-            logStatus(`✓ ${result.actions.length} changement(s) proposé(s)`, 'success');
+            logStatus(chrome.i18n.getMessage('bgChangesProposed', [String(result.actions.length)]), 'success');
 
             pendingActions = result.actions;
             chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: result.actions });
@@ -269,7 +268,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           currentStatus.lastError = errorMsg;
           currentStatus.retryable = isRateLimit;
 
-          logStatus(`Échec de la réorganisation : ${errorMsg}`, 'error');
+          logStatus(chrome.i18n.getMessage('bgReorgFailed', [errorMsg]), 'error');
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
 
           chrome.runtime.sendMessage({

@@ -83,6 +83,44 @@
   "actionRenameBookmark": { "message": "Renommer le favori" },
   "actionDeleteEmptyFolder": { "message": "Supprimer le dossier vide" },
   "actionDeleteObsoleteFolder": { "message": "Supprimer le dossier obsolète" },
+  "bgSendingToAI": {
+    "message": "Envoi à l'IA ($count$ favoris)…",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgSendingToAIWithTokens": {
+    "message": "Envoi à l'IA ($count$ favoris, ~$tokens$K tokens réservés)…",
+    "placeholders": { "count": { "content": "$1" }, "tokens": { "content": "$2" } }
+  },
+  "bgResponseReceived": { "message": "Réponse reçue, traitement en cours…" },
+  "bgComputingFolders": { "message": "Calcul des dossiers à créer…" },
+  "bgComputingMoves": { "message": "Calcul des déplacements…" },
+  "bgDetectingObsolete": { "message": "Détection des dossiers obsolètes…" },
+  "bgTopLevelCorrected": {
+    "message": "⚠️ $count$ ancien(s) dossier(s) top-level corrigé(s) automatiquement",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgHeartbeat0": { "message": "Analyse sémantique des titres…" },
+  "bgHeartbeat1": { "message": "Identification des catégories…" },
+  "bgHeartbeat2": { "message": "Vérification de la cohérence des dossiers…" },
+  "bgHeartbeat3": { "message": "Construction de la hiérarchie…" },
+  "bgHeartbeat4": { "message": "Résolution des incohérences thématiques…" },
+  "bgHeartbeat5": { "message": "Validation de la structure proposée…" },
+  "bgHeartbeat6": { "message": "Génération de l'explication…" },
+  "bgHeartbeat7": { "message": "Finalisation de la réponse…" },
+  "bgStartingReorg": {
+    "message": "> Démarrage de la réorganisation ($mode$)...",
+    "placeholders": { "mode": { "content": "$1" } }
+  },
+  "bgModeComplete": { "message": "Complète" },
+  "bgModeMinimal": { "message": "Minimale" },
+  "bgChangesProposed": {
+    "message": "✓ $count$ changement(s) proposé(s)",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "bgReorgFailed": {
+    "message": "Échec de la réorganisation : $error$",
+    "placeholders": { "error": { "content": "$1" } }
+  },
   "bgAnalysisDone": { "message": "Analyse terminée !" },
   "aiExplanationNone": { "message": "Aucune explication fournie par l'IA." },
   "bgAnalysisInterrupted": { "message": "Analyse interrompue (mise en veille ou redémarrage du Service Worker)." },
