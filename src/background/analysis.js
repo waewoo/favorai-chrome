@@ -20,15 +20,24 @@ function countNodes(node) {
  * Un dossier avec children:[] dans le résultat LLM mais avec des children dans l'original
  * est traité comme "inchangé" — ses enfants originaux sont restaurés.
  */
+function deepCloneNode(node) {
+  const clone = { ...node };
+  if (Array.isArray(node.children)) {
+    clone.children = node.children.map(deepCloneNode);
+  }
+  return clone;
+}
+
 function restorePreservedChildren(node, originalMap) {
   if (!Array.isArray(node.children)) return;
 
-  // Si le dossier a des children vides mais que l'original en avait, restaurer les originaux
+  // Si le dossier a des children vides mais que l'original en avait, restaurer les originaux.
+  // Clone profond pour éviter de partager des références avec originalMap : les passes suivantes
+  // (alignReorganizedIds, restoreOriginalMetadata) mutent les nœuds et corrompraient l'original.
   if (node.children.length === 0) {
     const origNode = originalMap[String(node.id)];
     if (origNode && Array.isArray(origNode.children) && origNode.children.length > 0) {
-      node.children = origNode.children.map(c => ({ ...c }));
-      // Recursion sur les enfants restaurés
+      node.children = origNode.children.map(deepCloneNode);
       for (const child of node.children) restorePreservedChildren(child, originalMap);
       return;
     }
