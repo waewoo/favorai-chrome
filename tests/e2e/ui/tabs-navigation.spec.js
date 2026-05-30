@@ -1,49 +1,12 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 test.describe('Tabs Navigation', () => {
   test('should display all main tabs', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check all tab buttons exist
       const tabRangement = page.locator('#tabRangementBtn');
@@ -62,7 +25,7 @@ test.describe('Tabs Navigation', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabRangementBtn = page.locator('#tabRangementBtn');
       const tabRangementPanel = page.locator('#tabRangementPanel');
@@ -84,7 +47,7 @@ test.describe('Tabs Navigation', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       const tabConfigPanel = page.locator('#tabConfigPanel');
@@ -106,7 +69,7 @@ test.describe('Tabs Navigation', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabHistoryBtn = page.locator('#tabHistoryBtn');
       const tabHistoryPanel = page.locator('#tabHistoryPanel');
@@ -126,7 +89,7 @@ test.describe('Tabs Navigation', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       const tabRangementBtn = page.locator('#tabRangementBtn');
@@ -147,7 +110,7 @@ test.describe('Tabs Navigation', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabRangementBtn = page.locator('#tabRangementBtn');
       const tabRangementPanel = page.locator('#tabRangementPanel');

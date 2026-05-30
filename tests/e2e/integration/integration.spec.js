@@ -1,42 +1,5 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 // Mock some bookmarks in storage before test
 async function setupMockBookmarks(context) {
@@ -67,7 +30,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(500);
 
       // Verify main interface loads
@@ -86,7 +49,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Navigate to configuration
@@ -114,7 +77,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Rangement tab should be active by default
@@ -133,7 +96,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Both buttons should be visible and enabled
@@ -153,7 +116,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Status console should exist
@@ -172,7 +135,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       const deadLinksCheckbox = page.locator('#checkDeadLinks');
@@ -191,7 +154,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Initially, main view should be visible
@@ -211,7 +174,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Confirmation modal should exist
@@ -231,7 +194,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(500);
 
       // Navigate to config
@@ -255,7 +218,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Navigate to history tab
@@ -276,7 +239,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
       await page.waitForTimeout(300);
 
       // popup-light should have main content
@@ -298,7 +261,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const errors = [];
       page.on('console', (msg) => {
@@ -320,7 +283,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       // Navigate to documentation tab

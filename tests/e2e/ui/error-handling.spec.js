@@ -1,42 +1,5 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 test.describe('Error Handling and Edge Cases', () => {
   test('should load popup without console errors', async () => {
@@ -50,7 +13,7 @@ test.describe('Error Handling and Edge Cases', () => {
         }
       });
 
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       expect(errors).toHaveLength(0);
     } finally {
@@ -69,7 +32,7 @@ test.describe('Error Handling and Edge Cases', () => {
         }
       });
 
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       expect(errors).toHaveLength(0);
     } finally {
@@ -81,7 +44,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Try to access elements that should exist
       const tabRangement = page.locator('#tabRangementBtn');
@@ -95,7 +58,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
       await page.waitForTimeout(300);
 
       const errorBanner = page.locator('#errorBanner');
@@ -110,7 +73,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const toast = page.locator('#toast');
       await expect(toast).not.toHaveCount(0);
@@ -123,7 +86,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const allElements = await page.locator('*').count();
       expect(allElements).toBeGreaterThan(0);
@@ -143,7 +106,7 @@ test.describe('Error Handling and Edge Cases', () => {
         }
       });
 
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Rapidly switch tabs
       for (let i = 0; i < 5; i++) {
@@ -166,7 +129,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       await tabConfigBtn.click();
@@ -188,7 +151,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const modal = page.locator('#confirmModal');
       await expect(modal).not.toHaveCount(0);
@@ -201,7 +164,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check for proper heading hierarchy
       const headings = page.locator('h1, h2, h3, h4, h5, h6');
@@ -223,7 +186,7 @@ test.describe('Error Handling and Edge Cases', () => {
         }
       });
 
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Wait a bit for storage operations to complete
       await page.waitForTimeout(500);
@@ -238,7 +201,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Get initial DOM size
       let elementCount = await page.locator('*').count();
@@ -268,7 +231,7 @@ test.describe('Error Handling and Edge Cases', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       await tabConfigBtn.click();

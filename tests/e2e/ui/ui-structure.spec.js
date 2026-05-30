@@ -1,49 +1,12 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 test.describe('UI Structure and Layout', () => {
   test('popup.html should have proper document structure', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check basic HTML structure
       const html = await page.locator('html');
@@ -60,7 +23,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       const html = await page.locator('html');
       const body = await page.locator('body');
@@ -76,7 +39,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check if elements have computed styles (CSS is loaded)
       const tabRangement = page.locator('#tabRangementBtn');
@@ -94,7 +57,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const mainView = page.locator('#mainView');
       const validationView = page.locator('#validationView');
@@ -110,7 +73,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const modal = page.locator('#confirmModal');
       const title = page.locator('#modalTitle');
@@ -132,7 +95,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const rangementPanel = page.locator('#tabRangementPanel');
       const configPanel = page.locator('#tabConfigPanel');
@@ -150,7 +113,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const actionListContainer = page.locator('#actionListContainer');
       await expect(actionListContainer).not.toHaveCount(0);
@@ -163,7 +126,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const explanationBlock = page.locator('#explanationBlock');
       await expect(explanationBlock).not.toHaveCount(0);
@@ -176,7 +139,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       const header = page.locator('.header');
       const footer = page.locator('.footer');
@@ -194,7 +157,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const appVersion = page.locator('#appVersion');
       // Version element might be hidden or displayed
@@ -208,7 +171,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check tab structure - look for tab buttons with specific IDs
       const tabButtons = await page.locator('.tab-nav button, #tabRangementBtn, #tabConfigBtn, #tabHistoryBtn').count();
@@ -230,7 +193,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const sections = page.locator('section');
       const count = await sections.count();
@@ -246,7 +209,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const duplicateIds = await page.evaluate(() => {
         const ids = {};
@@ -272,7 +235,7 @@ test.describe('UI Structure and Layout', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const elementsWithI18n = await page.locator('[data-i18n]').count();
       // Should have some elements with i18n attributes

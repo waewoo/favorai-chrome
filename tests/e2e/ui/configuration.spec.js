@@ -1,42 +1,5 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 async function navigateToConfig(page) {
   const tabConfigBtn = page.locator('#tabConfigBtn');
@@ -49,7 +12,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const configTitle = page.locator('text=Configuration LLM');
@@ -63,7 +26,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const providerSelect = page.locator('#provider');
@@ -82,7 +45,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const apiKeyInput = page.locator('#apiKey');
@@ -97,7 +60,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       // Open advanced settings details section
@@ -116,7 +79,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       // Model Name input exists in DOM but may be hidden by default
@@ -132,7 +95,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const deadLinksCheckbox = page.locator('#checkDeadLinks');
@@ -147,7 +110,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const saveBtn = page.locator('#btnSaveConfig');
@@ -162,7 +125,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const resetBtn = page.locator('#btnResetConfig');
@@ -176,7 +139,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const exportBtn = page.locator('#btnExportConfig');
@@ -190,7 +153,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const importBtn = page.locator('#btnImportConfig');
@@ -204,7 +167,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const fetchBtn = page.locator('#btnFetchModels');
@@ -218,7 +181,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const advancedSection = page.locator('text=Paramètres avancés').first();
@@ -232,7 +195,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       // Open advanced settings details section
@@ -251,7 +214,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const providerSelect = page.locator('#provider');
@@ -271,7 +234,7 @@ test.describe('Configuration Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
       const promptSection = page.locator('text=Personnaliser les prompts');

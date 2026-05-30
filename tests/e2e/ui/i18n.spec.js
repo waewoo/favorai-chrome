@@ -1,49 +1,12 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 test.describe('Internationalization (i18n)', () => {
   test('should load popup.html with proper language', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const htmlLang = await page.locator('html').getAttribute('lang');
       expect(htmlLang).toBeTruthy();
@@ -56,7 +19,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       const htmlLang = await page.locator('html').getAttribute('lang');
       expect(htmlLang).toBeTruthy();
@@ -69,7 +32,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       const advancedBtn = page.locator('#btnOpenAdvanced');
       const text = await advancedBtn.textContent();
@@ -85,7 +48,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabRangement = page.locator('#tabRangementBtn');
       const tabConfig = page.locator('#tabConfigBtn');
@@ -106,7 +69,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       await tabConfigBtn.click();
@@ -124,7 +87,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const minBtn = page.locator('#btnMinReorg');
       const fullBtn = page.locator('#btnFullReorg');
@@ -146,7 +109,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       // Check if any privacy/data collection text is present (in French or English)
       const pageContent = await page.content();
@@ -160,7 +123,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup-light.html`);
+      await gotoPopup(page, extensionId, 'popup-light.html');
 
       const title = page.locator('h1');
       const advancedBtn = page.locator('#btnOpenAdvanced');
@@ -185,7 +148,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const minBtn = page.locator('#btnMinReorg');
       const dataI18n = await minBtn.getAttribute('data-i18n');
@@ -203,7 +166,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(500);
 
       // Get all text content and check it's human-readable
@@ -220,7 +183,7 @@ test.describe('Internationalization (i18n)', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabConfigBtn = page.locator('#tabConfigBtn');
       await tabConfigBtn.click();

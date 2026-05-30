@@ -1,49 +1,12 @@
-import { test, expect, chromium } from '@playwright/test';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const extensionPath = path.resolve(__dirname, '../../../');
-
-async function launchExtension() {
-  const tmpDir = path.join(extensionPath, 'tests/e2e/tmp-user-data-' + Date.now());
-
-  const context = await chromium.launchPersistentContext(tmpDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--headless=new'
-    ]
-  });
-
-  let background = context.serviceWorkers()[0];
-  if (!background) {
-    background = await context.waitForEvent('serviceworker', { timeout: 10000 });
-  }
-
-  const extensionId = background.url().split('/')[2];
-  const page = await context.newPage();
-
-  return { context, page, extensionId, tmpDir };
-}
-
-async function cleanup(context, tmpDir) {
-  await context.close();
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
-}
+import { test, expect } from '@playwright/test';
+import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
 test.describe('Reorganization (Rangement) Tab', () => {
   test('should display Rangement tab content', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabRangementPanel = page.locator('#tabRangementPanel');
       await expect(tabRangementPanel).toBeVisible();
@@ -56,7 +19,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const launchSection = page.locator('text=Lancer le Rangement');
       await expect(launchSection).toBeVisible();
@@ -69,7 +32,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
       const minBtn = page.locator('#btnMinReorg');
@@ -86,7 +49,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const fullBtn = page.locator('#btnFullReorg');
       await expect(fullBtn).toBeVisible();
@@ -101,7 +64,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const statusSection = page.locator('text=Console de Statut');
       await expect(statusSection).toBeVisible();
@@ -114,7 +77,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const logContainer = page.locator('#logContainer');
       await expect(logContainer).toBeVisible();
@@ -127,7 +90,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const progressContainer = page.locator('#progressBarContainer');
       await expect(progressContainer).not.toHaveCount(0);
@@ -140,7 +103,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const deadLinksCheckbox = page.locator('#checkDeadLinks');
       await expect(deadLinksCheckbox).toBeVisible();
@@ -154,7 +117,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const privacyNote = page.locator('text=Aucune donnée n\'est collectée');
       await expect(privacyNote).toBeVisible();
@@ -167,7 +130,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const minBtn = page.locator('#btnMinReorg');
       const fullBtn = page.locator('#btnFullReorg');
@@ -183,7 +146,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const stopBtn = page.locator('#btnStopReorg');
       await expect(stopBtn).toHaveClass(/hidden/);
@@ -196,7 +159,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const folderSelect = page.locator('#bookmarkFolderSelect');
       await expect(folderSelect).toBeVisible();
@@ -209,7 +172,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const sections = page.locator('#tabRangementPanel section');
       const count = await sections.count();
@@ -223,7 +186,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const toast = page.locator('#toast');
       await expect(toast).not.toHaveCount(0);
@@ -236,7 +199,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       let hasError = false;
       page.on('console', (msg) => {
@@ -259,7 +222,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
-      await page.goto(`chrome-extension://${extensionId}/popup.html`);
+      await gotoPopup(page, extensionId);
 
       const tabRangementBtn = page.locator('#tabRangementBtn');
       await expect(tabRangementBtn).toHaveClass(/active/);
