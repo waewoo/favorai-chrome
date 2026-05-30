@@ -304,26 +304,7 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
     // console.log('========================');
   }
 
-  switch (provider) {
-    case 'openai':
-      return queryOpenAI(apiUrl || 'https://api.openai.com/v1', apiKey, modelName || 'gpt-5.5', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'google':
-      return queryGemini(apiUrl || 'https://generativelanguage.googleapis.com', apiKey, modelName || 'gemini-3.5-flash', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'mistral':
-      return queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-medium-latest', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'grok':
-      return queryOpenAI(apiUrl || 'https://api.x.ai/v1', apiKey, modelName || 'grok-4-3', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'claude':
-      return queryClaude(apiUrl || 'https://api.anthropic.com', apiKey, modelName || 'claude-opus-4-7', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'deepseek':
-      return queryDeepSeek(apiUrl || 'https://api.deepseek.com/v1', apiKey, modelName || 'deepseek-reasoner', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'ollama':
-      return queryOllama(apiUrl || 'http://localhost:11434', modelName || 'llama-4-scout', userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    case 'custom':
-      return queryCustom(apiUrl, apiKey, modelName, userPrompt, systemPrompt, signal, debugMode, resolvedMaxTokens);
-    default:
-      throw new Error(`Unknown LLM provider: ${provider}`);
-  }
+  return dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, userPrompt, systemPrompt, signal, resolvedMaxTokens);
 }
 
 /**
@@ -371,14 +352,6 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
   const substitutions = { title: bookmark.title, url: bookmark.url, folders: foldersList };
   const userPrompt = template.replace(/\{(title|url|folders)\}/g, (_, key) => substitutions[key] ?? _);
 
-  if (debugMode) {
-    // console.log('=== DEBUG: Suggest Bookmark Location ===');
-    // console.log('Bookmark:', bookmark);
-    // console.log('System Prompt:', systemPrompt);
-    // console.log('User Prompt:', userPrompt);
-    // console.log('========================================');
-  }
-
   let avoidInstruction = '';
   if (ignoredFolderIds && ignoredFolderIds.length > 0) {
     const ignoredPaths = folders
@@ -390,36 +363,32 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
   }
 
   const finalUserPrompt = userPrompt + avoidInstruction;
+  return dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, finalUserPrompt, systemPrompt, signal, 4096);
+}
 
-  let response;
+/**
+ * Achemine la requête vers le bon provider LLM.
+ * Point unique de dispatch pour éviter la duplication entre queryLLM et suggestBookmarkLocation.
+ */
+function dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, userPrompt, systemPrompt, signal, maxTokens) {
   switch (provider) {
     case 'openai':
-      response = await queryOpenAI(apiUrl || 'https://api.openai.com/v1', apiKey, modelName || 'gpt-5.5', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryOpenAI(apiUrl || 'https://api.openai.com/v1', apiKey, modelName || 'gpt-5.5', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'google':
-      response = await queryGemini(apiUrl || 'https://generativelanguage.googleapis.com', apiKey, modelName || 'gemini-3.5-flash', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryGemini(apiUrl || 'https://generativelanguage.googleapis.com', apiKey, modelName || 'gemini-3.5-flash', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'mistral':
-      response = await queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-medium-latest', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryMistral(apiUrl || 'https://api.mistral.ai/v1', apiKey, modelName || 'mistral-medium-latest', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'grok':
-      response = await queryOpenAI(apiUrl || 'https://api.x.ai/v1', apiKey, modelName || 'grok-4-3', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryOpenAI(apiUrl || 'https://api.x.ai/v1', apiKey, modelName || 'grok-4-3', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'claude':
-      response = await queryClaude(apiUrl || 'https://api.anthropic.com', apiKey, modelName || 'claude-opus-4-7', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryClaude(apiUrl || 'https://api.anthropic.com', apiKey, modelName || 'claude-opus-4-7', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'deepseek':
-      response = await queryDeepSeek(apiUrl || 'https://api.deepseek.com/v1', apiKey, modelName || 'deepseek-reasoner', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryDeepSeek(apiUrl || 'https://api.deepseek.com/v1', apiKey, modelName || 'deepseek-reasoner', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'ollama':
-      response = await queryOllama(apiUrl || 'http://localhost:11434', modelName || 'llama-4-scout', finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryOllama(apiUrl || 'http://localhost:11434', modelName || 'llama-4-scout', userPrompt, systemPrompt, signal, debugMode, maxTokens);
     case 'custom':
-      response = await queryCustom(apiUrl, apiKey, modelName, finalUserPrompt, systemPrompt, signal, debugMode, 4096);
-      break;
+      return queryCustom(apiUrl, apiKey, modelName, userPrompt, systemPrompt, signal, debugMode, maxTokens);
     default:
       throw new Error(`Unknown LLM provider: ${provider}`);
   }
-
-  return response;
 }
