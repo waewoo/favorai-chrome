@@ -24,6 +24,8 @@
   "sectionLaunchDesc": { "message": "L'extension analysera les doublons, liens morts, et interrogera l'IA pour ranger vos favoris." },
   "privacyNote": { "message": "Pour réorganiser vos favoris, les titres, la structure des dossiers et les URLs sont transmis au service d'IA que vous avez configuré. Aucune donnée n'est collectée par FavorAI." },
   "checkDeadLinksLabel": { "message": "Vérifier les liens morts (lent)" },
+  "bookmarkFolderLabel": { "message": "Dossier à réorganiser" },
+  "bookmarkFolderHelp": { "message": "L'IA analysera et réorganisera uniquement le contenu situé sous ce dossier (permet de cibler précisément une partie de vos favoris)." },
   "deadLinksPermissionDenied": { "message": "Permission refusée — vérification des liens désactivée. Accordez l'accès à toutes les URLs pour utiliser cette fonctionnalité." },
   "btnMinimal": { "message": "Minimal" },
   "btnComplete": { "message": "Complet" },

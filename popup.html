@@ -68,7 +68,10 @@
           </div>
 
           <div class="form-group">
-            <label for="bookmarkFolderSelect" style="font-size: 11px; color: var(--text-muted);">Bookmark Folder</label>
+            <label for="bookmarkFolderSelect" style="font-size: 11px; color: var(--text-muted);" data-i18n="bookmarkFolderLabel">Bookmark Folder</label>
+            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.4; margin: 2px 0 6px 0;" data-i18n="bookmarkFolderHelp">
+              The AI will only reorganize bookmarks and subfolders inside this selected folder (allows you to target a specific folder).
+            </p>
             <select id="bookmarkFolderSelect">
               <option value="root" data-i18n="allBookmarks"></option>
             </select>
