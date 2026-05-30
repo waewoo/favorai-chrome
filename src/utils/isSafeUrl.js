@@ -1,6 +1,6 @@
 /**
  * Vérifie qu'une URL utilise uniquement http:// ou https://.
- * Prévient les injections via javascript:, data:, etc.
+ * Rejette les schémas dangereux : javascript:, data:, file:, ftp:, etc.
  * @param {string} url
  * @returns {boolean}
  */
