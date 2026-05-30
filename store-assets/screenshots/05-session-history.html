@@ -3,140 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280">
-<title>FavorAI — Session History</title>
+<title>FavorAI — Full session history & rollback</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{width:1280px;height:800px;overflow:hidden;background:radial-gradient(ellipse at 30% 50%,#0e0e1f 0%,#090a0f 60%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
-.window{width:920px;height:740px;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.12);}
-.titlebar{height:40px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:8px;}
+body{
+  width:1280px;height:800px;overflow:hidden;
+  background:linear-gradient(135deg,#12093a 0%,#0a0621 55%,#1a0d40 100%);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative;
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 650px 400px at 18% 82%,rgba(99,102,241,0.11) 0%,transparent 68%),
+    radial-gradient(ellipse 400px 300px at 82% 15%,rgba(139,92,246,0.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.top-badge{
+  position:absolute;top:28px;left:50%;transform:translateX(-50%);
+  background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);
+  color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  padding:5px 16px;border-radius:20px;white-space:nowrap;
+}
+.headline-wrap{
+  position:absolute;top:62px;left:0;right:0;
+  text-align:center;padding:0 80px;
+}
+.headline{
+  font-size:38px;font-weight:900;line-height:1.18;color:#fff;
+  letter-spacing:-0.02em;margin-bottom:10px;
+}
+.headline em{
+  font-style:normal;
+  background:linear-gradient(90deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sub{font-size:16px;color:rgba(255,255,255,0.5);font-weight:400;}
+
+/* ── Timeline graphic (left side) ── */
+.timeline{
+  position:absolute;top:185px;left:60px;bottom:30px;
+  width:220px;display:flex;flex-direction:column;gap:0;justify-content:center;
+}
+.tl-header{font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:18px;}
+.tl-entry{
+  display:flex;align-items:flex-start;gap:12px;
+  padding-bottom:22px;position:relative;
+}
+.tl-entry:not(:last-child)::before{
+  content:'';position:absolute;left:7px;top:18px;bottom:-4px;
+  width:1px;background:rgba(255,255,255,0.08);
+}
+.tl-dot{width:15px;height:15px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;}
+.tl-dot.complete{background:rgba(139,92,246,0.25);border:2px solid #8b5cf6;}
+.tl-dot.minimal{background:rgba(99,102,241,0.25);border:2px solid #6366f1;}
+.tl-body{}
+.tl-mode{font-size:10px;font-weight:700;color:rgba(255,255,255,0.65);}
+.tl-date{font-size:10px;color:rgba(255,255,255,0.3);margin-top:1px;}
+.tl-stat{font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;}
+
+/* ── Rollback CTA box ── */
+.rollback-cta{
+  position:absolute;left:60px;bottom:42px;width:220px;
+  background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);
+  border-radius:11px;padding:14px;
+}
+.rc-title{font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:6px;}
+.rc-text{font-size:11px;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:10px;}
+.rc-btn{background:linear-gradient(135deg,#7c3aed,#6366f1);color:#fff;font-size:11px;font-weight:700;padding:8px 12px;border-radius:7px;text-align:center;}
+
+/* ── Single centered mockup ── */
+.mockup-center{
+  position:absolute;top:182px;left:310px;right:30px;bottom:28px;
+}
+.mock-win{
+  width:100%;height:100%;
+  background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;
+  box-shadow:0 32px 100px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.13);
+  position:relative;display:flex;flex-direction:column;
+}
+.titlebar{
+  height:38px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0;
+}
 .dot{width:12px;height:12px;border-radius:50%;}
 .dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
-.title-text{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;}
-.app{display:flex;flex-direction:column;height:calc(100% - 40px);}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.logo-name{font-size:17px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
-.tab{padding:7px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
+.wintitle{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);font-weight:500;}
+.app-body{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.fav-header{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.fav-logo{display:flex;align-items:center;gap:9px;}
+.fav-icon{width:28px;height:28px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.fav-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.tabs{display:flex;gap:2px;padding:9px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;}
+.tab{padding:7px 13px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
 .tab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
-.content{flex:1;padding:12px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
-.history-header{display:flex;align-items:center;justify-content:space-between;}
-.h-title{font-size:13px;font-weight:700;color:rgba(255,255,255,0.8);}
-.btn-clear{font-size:10px;color:rgba(239,68,68,0.7);background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;}
-.session{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;}
-.session-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
-.session-meta{display:flex;align-items:center;gap:8px;}
-.mode-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:10px;}
+.content{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+.hist-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.h-title{font-size:14px;font-weight:700;color:rgba(255,255,255,0.85);}
+.btn-clear{font-size:11px;color:rgba(239,68,68,0.7);background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);padding:5px 11px;border-radius:7px;}
+.session{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+  border-radius:11px;padding:14px 16px;flex-shrink:0;
+}
+.session.highlighted{
+  border-color:rgba(139,92,246,0.3);
+  background:rgba(139,92,246,0.05);
+  box-shadow:0 0 0 1px rgba(139,92,246,0.15);
+}
+.sess-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;}
+.sess-meta{display:flex;align-items:center;gap:9px;}
+.mode-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;}
 .mode-complete{background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);}
 .mode-minimal{background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.25);}
-.session-date{font-size:11px;color:rgba(255,255,255,0.35);}
-.btn-rollback{font-size:10px;font-weight:600;color:#818cf8;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);padding:5px 12px;border-radius:6px;}
-.session-stats{display:flex;gap:16px;margin-bottom:8px;}
-.stat{font-size:10px;color:rgba(255,255,255,0.4);}
-.stat strong{color:rgba(255,255,255,0.7);font-weight:600;}
-.session-changes{display:flex;flex-direction:column;gap:3px;}
-.change-row{display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(255,255,255,0.4);}
-.ch-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sess-date{font-size:11px;color:rgba(255,255,255,0.35);}
+.btn-rollback{
+  font-size:11px;font-weight:700;color:#818cf8;
+  background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);
+  padding:6px 13px;border-radius:7px;white-space:nowrap;
+}
+.btn-rollback.highlighted{
+  background:rgba(139,92,246,0.2);border-color:rgba(139,92,246,0.5);
+  color:#a78bfa;
+  box-shadow:0 0 12px rgba(139,92,246,0.25);
+}
+.sess-stats{display:flex;gap:18px;margin-bottom:9px;}
+.stat{font-size:11px;color:rgba(255,255,255,0.4);}
+.stat strong{color:rgba(255,255,255,0.75);font-weight:700;}
+.change-row{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,0.42);}
+.change-row + .change-row{margin-top:3px;}
+.ch-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .ch-dot.move{background:#fbbf24;}.ch-dot.del{background:#f87171;}.ch-dot.create{background:#34d399;}.ch-dot.rename{background:#818cf8;}
-.session-explanation{margin-top:8px;padding:8px 10px;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.12);border-radius:6px;font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;}
+
+/* ── Callout badges ── */
+.callout{
+  position:absolute;background:rgba(10,8,28,0.95);border:1px solid rgba(129,140,248,0.45);
+  border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:#fff;
+  white-space:nowrap;z-index:30;box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  display:flex;align-items:center;gap:7px;
+}
+.callout::before{content:'';width:7px;height:7px;border-radius:50%;background:#818cf8;flex-shrink:0;}
+.callout.green::before{background:#34d399;}
+.callout.purple::before{background:#a78bfa;}
 </style>
 </head>
 <body>
-<div class="window">
-  <div class="titlebar">
-    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-    <div class="title-text">FavorAI — Intelligent Bookmark Manager</div>
-  </div>
-  <div class="app">
-    <div class="header">
-      <div class="logo">
-        <div class="logo-icon">🔖</div>
-        <div class="logo-name">FavorAI</div>
-      </div>
-    </div>
-    <div class="tabs">
-      <div class="tab">⚡ Organization</div>
-      <div class="tab">⚙️ Config</div>
-      <div class="tab active">📜 History</div>
-      <div class="tab">📖 Docs</div>
-      <div class="tab">ℹ️ About</div>
-    </div>
-    <div class="content">
-      <div class="history-header">
-        <div class="h-title">📜 Session History</div>
-        <div class="btn-clear">🗑 Clear History</div>
-      </div>
 
-      <div class="session">
-        <div class="session-header">
-          <div>
-            <div class="session-meta">
-              <div class="mode-badge mode-complete">Complete</div>
-              <div class="session-date">May 30, 2026 · 16:42</div>
+<div class="top-badge">📜 History &amp; Rollback</div>
+
+<div class="headline-wrap">
+  <div class="headline">Made a mistake?<br><em>Roll back any reorganization in one click.</em></div>
+  <div class="sub">Every session is saved automatically — undo any reorganization and restore your bookmarks instantly.</div>
+</div>
+
+<!-- Left timeline -->
+<div class="timeline">
+  <div class="tl-header">📅 Your sessions</div>
+  <div class="tl-entry">
+    <div class="tl-dot complete"></div>
+    <div class="tl-body">
+      <div class="tl-mode">Complete</div>
+      <div class="tl-date">May 30, 2026</div>
+      <div class="tl-stat">14 changes applied</div>
+    </div>
+  </div>
+  <div class="tl-entry">
+    <div class="tl-dot minimal"></div>
+    <div class="tl-body">
+      <div class="tl-mode">Minimal</div>
+      <div class="tl-date">May 28, 2026</div>
+      <div class="tl-stat">6 changes applied</div>
+    </div>
+  </div>
+  <div class="tl-entry">
+    <div class="tl-dot complete"></div>
+    <div class="tl-body">
+      <div class="tl-mode">Complete</div>
+      <div class="tl-date">May 25, 2026</div>
+      <div class="tl-stat">23 changes applied</div>
+    </div>
+  </div>
+</div>
+
+<div class="rollback-cta">
+  <div class="rc-title">↩ Instant Rollback</div>
+  <div class="rc-text">FavorAI saves the full state before each reorganization. One click restores everything.</div>
+  <div class="rc-btn">↩ Restore previous state</div>
+</div>
+
+<!-- Main mockup -->
+<div class="mockup-center">
+  <div class="mock-win">
+    <div class="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="wintitle">FavorAI — Intelligent Bookmark Manager</div>
+    </div>
+    <div class="app-body">
+      <div class="fav-header">
+        <div class="fav-logo">
+          <div class="fav-icon">🔖</div>
+          <div class="fav-name">FavorAI</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab">⚡ Organization</div>
+        <div class="tab">⚙️ Config</div>
+        <div class="tab active">📜 History</div>
+        <div class="tab">📖 Docs</div>
+        <div class="tab">ℹ️ About</div>
+      </div>
+      <div class="content">
+        <div class="hist-header">
+          <div class="h-title">📜 Session History</div>
+          <div class="btn-clear">🗑 Clear History</div>
+        </div>
+
+        <!-- Most recent session (highlighted) -->
+        <div class="session highlighted">
+          <div class="sess-header">
+            <div>
+              <div class="sess-meta">
+                <div class="mode-badge mode-complete">Complete</div>
+                <div class="sess-date">May 30, 2026 · 16:42</div>
+              </div>
             </div>
+            <div class="btn-rollback highlighted">↩ Rollback session</div>
           </div>
-          <div class="btn-rollback">↩ Rollback session</div>
-        </div>
-        <div class="session-stats">
-          <div class="stat"><strong>14</strong> changes applied</div>
-          <div class="stat"><strong>7</strong> moved</div>
-          <div class="stat"><strong>3</strong> deleted</div>
-          <div class="stat"><strong>4</strong> created</div>
-        </div>
-        <div class="session-changes">
+          <div class="sess-stats">
+            <div class="stat"><strong>14</strong> changes applied</div>
+            <div class="stat"><strong>7</strong> moved</div>
+            <div class="stat"><strong>3</strong> deleted</div>
+            <div class="stat"><strong>4</strong> created</div>
+          </div>
           <div class="change-row"><div class="ch-dot create"></div>Created "💻 Development" (top-level)</div>
           <div class="change-row"><div class="ch-dot move"></div>Moved "React Documentation" → 💻 Development / Frontend</div>
           <div class="change-row"><div class="ch-dot del"></div>Removed dead link: deprecated-api.io (timeout)</div>
           <div class="change-row"><div class="ch-dot del"></div>Deleted duplicate: github.com/trending</div>
           <div class="change-row" style="color:rgba(255,255,255,0.25);">+ 10 more changes…</div>
         </div>
-      </div>
 
-      <div class="session">
-        <div class="session-header">
-          <div>
-            <div class="session-meta">
-              <div class="mode-badge mode-minimal">Minimal</div>
-              <div class="session-date">May 28, 2026 · 11:15</div>
+        <!-- Older session -->
+        <div class="session">
+          <div class="sess-header">
+            <div>
+              <div class="sess-meta">
+                <div class="mode-badge mode-minimal">Minimal</div>
+                <div class="sess-date">May 28, 2026 · 11:15</div>
+              </div>
             </div>
+            <div class="btn-rollback">↩ Rollback session</div>
           </div>
-          <div class="btn-rollback">↩ Rollback session</div>
-        </div>
-        <div class="session-stats">
-          <div class="stat"><strong>6</strong> changes applied</div>
-          <div class="stat"><strong>5</strong> moved</div>
-          <div class="stat"><strong>1</strong> renamed</div>
-        </div>
-        <div class="session-changes">
+          <div class="sess-stats">
+            <div class="stat"><strong>6</strong> changes applied</div>
+            <div class="stat"><strong>5</strong> moved</div>
+            <div class="stat"><strong>1</strong> renamed</div>
+          </div>
           <div class="change-row"><div class="ch-dot move"></div>Moved "Docker Cheatsheet" → DevOps (was in Personal)</div>
-          <div class="change-row"><div class="ch-dot move"></div>Moved "Python Tutorial" → Development (was in Misc)</div>
           <div class="change-row"><div class="ch-dot rename"></div>Renamed "Links" → "📚 References"</div>
         </div>
       </div>
-
-      <div class="session">
-        <div class="session-header">
-          <div>
-            <div class="session-meta">
-              <div class="mode-badge mode-complete">Complete</div>
-              <div class="session-date">May 25, 2026 · 09:03</div>
-            </div>
-          </div>
-          <div class="btn-rollback">↩ Rollback session</div>
-        </div>
-        <div class="session-stats">
-          <div class="stat"><strong>23</strong> changes applied</div>
-          <div class="stat"><strong>12</strong> moved</div>
-          <div class="stat"><strong>5</strong> deleted</div>
-          <div class="stat"><strong>6</strong> created</div>
-        </div>
-        <div class="session-explanation">
-          Full restructuring: created 8 top-level folders with emoji prefixes. Removed 4 duplicates and 1 dead link. Moved 12 bookmarks to semantically correct folders.
-        </div>
-      </div>
     </div>
+
+    <!-- Callouts -->
+    <div class="callout purple" style="right:-6px;top:100px;">Auto-saved sessions</div>
+    <div class="callout purple" style="right:-6px;top:180px;">Full change log</div>
+    <div class="callout green" style="right:-6px;top:280px;">One-click restore</div>
+    <div class="callout" style="right:-6px;bottom:100px;">Unlimited history</div>
   </div>
 </div>
+
 </body>
 </html>

@@ -3,106 +3,269 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280">
-<title>FavorAI — Analysis in Progress</title>
+<title>FavorAI — AI analysis in real time</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{width:1280px;height:800px;overflow:hidden;background:radial-gradient(ellipse at 30% 50%,#0e0e1f 0%,#090a0f 60%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
-.bg-glow{position:fixed;width:600px;height:400px;background:radial-gradient(ellipse,rgba(99,102,241,0.08) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
-.window{width:920px;height:740px;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.12);}
-.titlebar{height:40px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:8px;}
-.dot{width:12px;height:12px;border-radius:50%;}
+body{
+  width:1280px;height:800px;overflow:hidden;
+  background:linear-gradient(135deg,#12093a 0%,#0a0621 55%,#1a0d40 100%);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative;
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 80%,rgba(99,102,241,0.12) 0%,transparent 70%),
+    radial-gradient(ellipse 450px 350px at 80% 15%,rgba(139,92,246,0.09) 0%,transparent 65%);
+  pointer-events:none;
+}
+.top-badge{
+  position:absolute;top:28px;left:50%;transform:translateX(-50%);
+  background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.35);
+  color:#818cf8;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  padding:5px 16px;border-radius:20px;white-space:nowrap;
+}
+.headline-wrap{
+  position:absolute;top:62px;left:0;right:0;
+  text-align:center;padding:0 80px;
+}
+.headline{
+  font-size:36px;font-weight:900;line-height:1.18;color:#fff;
+  letter-spacing:-0.02em;margin-bottom:10px;
+}
+.headline em{
+  font-style:normal;
+  background:linear-gradient(90deg,#818cf8,#c084fc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sub{font-size:16px;color:rgba(255,255,255,0.5);font-weight:400;}
+
+/* ── Panels ── */
+.panels{
+  position:absolute;top:188px;left:44px;right:44px;bottom:28px;
+  display:flex;gap:24px;align-items:flex-start;
+}
+.panel-wrap{flex:1;display:flex;flex-direction:column;gap:10px;height:100%;}
+.panel-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+.panel-label.step1{color:#818cf8;}
+.panel-label.step2{color:#fbbf24;}
+.panel-label-dot{width:8px;height:8px;border-radius:50%;}
+.step1 .panel-label-dot{background:#818cf8;}
+.step2 .panel-label-dot{background:#fbbf24;}
+
+.mock-win{
+  flex:1;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:12px;overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,0.75),0 0 0 1px rgba(99,102,241,0.12);
+  position:relative;display:flex;flex-direction:column;
+}
+.titlebar{
+  height:36px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;padding:0 14px;gap:7px;flex-shrink:0;
+}
+.dot{width:11px;height:11px;border-radius:50%;}
 .dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
-.title-text{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;}
-.app{display:flex;flex-direction:column;height:calc(100% - 40px);}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.logo-name{font-size:17px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.badge{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
-.tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
-.tab{padding:7px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
-.tab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
-.content{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
-.progress-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;}
-.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.progress-label{font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);}
-.progress-pct{font-size:12px;font-weight:700;color:#818cf8;}
-.progress-bar-bg{height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;}
-.progress-bar{height:100%;width:62%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:99px;position:relative;}
-.progress-bar::after{content:'';position:absolute;right:0;top:0;height:100%;width:40px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));animation:shimmer 1.5s infinite;}
-@keyframes shimmer{0%{opacity:0;}50%{opacity:1;}100%{opacity:0;}}
-.step-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;}
+.wintitle{flex:1;text-align:center;font-size:11px;color:rgba(255,255,255,0.3);font-weight:500;}
+
+/* ── Left panel: Launch screen ── */
+.fav-app{display:flex;flex-direction:column;flex:1;}
+.fav-header{display:flex;align-items:center;justify-content:space-between;padding:10px 15px 9px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.fav-logo{display:flex;align-items:center;gap:8px;}
+.fav-icon{width:26px;height:26px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.fav-name{font-size:15px;font-weight:800;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.fav-badge-ready{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;font-size:10px;padding:2px 8px;border-radius:9px;font-weight:700;}
+.fav-tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.fav-tab{padding:6px 11px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);border-radius:7px 7px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
+.fav-tab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
+.fav-content{padding:12px 13px;display:flex;flex-direction:column;gap:9px;}
+.fav-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px;}
+.fav-stitle{font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.fav-desc{font-size:10.5px;color:rgba(255,255,255,0.5);line-height:1.5;margin-bottom:9px;}
+.fav-privacy{font-size:9.5px;color:rgba(255,255,255,0.3);line-height:1.4;margin-bottom:9px;padding:6px 9px;background:rgba(99,102,241,0.05);border-radius:5px;border:1px solid rgba(99,102,241,0.1);}
+.fav-select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.65);font-size:10.5px;padding:6px 9px;border-radius:6px;margin-bottom:8px;}
+.fav-cb-row{display:flex;align-items:center;gap:6px;font-size:10.5px;color:rgba(255,255,255,0.55);margin-bottom:9px;}
+.fav-cb{width:13px;height:13px;border-radius:3px;background:#6366f1;border:1.5px solid #818cf8;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;flex-shrink:0;}
+.fav-btns{display:flex;gap:7px;}
+.fav-btn{flex:1;padding:9px;border-radius:7px;font-size:10.5px;font-weight:700;text-align:center;}
+.fav-btn.min{background:rgba(99,102,241,0.12);color:#818cf8;border:1px solid rgba(99,102,241,0.3);}
+.fav-btn.full{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
+
+/* ── Right panel: Analysis in progress ── */
+.prog-content{padding:12px 13px;display:flex;flex-direction:column;gap:10px;flex:1;}
+.prog-header-row{display:flex;align-items:center;justify-content:space-between;}
+.prog-header-label{font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;}
+.badge-analyzing{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;font-size:10px;padding:2px 9px;border-radius:9px;font-weight:700;}
+
+.prog-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px;}
+.prog-label-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+.prog-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.75);}
+.prog-pct{font-size:12px;font-weight:700;color:#818cf8;}
+.prog-bar-bg{height:6px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:10px;}
+.prog-bar{height:100%;width:62%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:99px;}
+.step-row{display:flex;align-items:center;gap:8px;margin-top:7px;font-size:10.5px;}
 .step-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.step-dot.done{background:#10b981;}.step-dot.active{background:#818cf8;animation:pulse 1s infinite;}.step-dot.pending{background:rgba(255,255,255,0.15);}
-.step-text{color:rgba(255,255,255,0.6);}
-.step-text.done{color:rgba(16,185,129,0.8);}
+.step-dot.done{background:#10b981;}.step-dot.active{background:#818cf8;}.step-dot.pending{background:rgba(255,255,255,0.15);}
+.step-text{color:rgba(255,255,255,0.55);}
+.step-text.done{color:rgba(16,185,129,0.85);}
 .step-text.active{color:#818cf8;font-weight:600;}
-.console-section{flex:1;}
-.console-title{font-size:11px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
-.console{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:10px 12px;font-family:'Menlo','Monaco',monospace;font-size:10.5px;height:280px;overflow:hidden;}
-.log{line-height:1.8;}
-.log.info{color:rgba(56,189,248,0.8);}
+
+.console-wrap{flex:1;}
+.console-title{font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;}
+.console{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:9px 11px;font-family:'Menlo',monospace;font-size:10px;height:195px;overflow:hidden;}
+.log{line-height:1.85;}
+.log.info{color:rgba(56,189,248,0.82);}
 .log.success{color:#34d399;}
 .log.warn{color:#fbbf24;}
 .log.ai{color:#818cf8;}
-.btn-stop{margin-top:12px;width:100%;padding:9px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;font-size:12px;font-weight:600;text-align:center;}
+.btn-stop{padding:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;font-size:10.5px;font-weight:600;text-align:center;}
+
+/* ── Callout badges ── */
+.callout{
+  position:absolute;background:rgba(10,8,28,0.95);border:1px solid rgba(129,140,248,0.45);
+  border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#fff;
+  white-space:nowrap;z-index:30;box-shadow:0 4px 18px rgba(0,0,0,0.6);
+  display:flex;align-items:center;gap:6px;
+}
+.callout::before{content:'';width:6px;height:6px;border-radius:50%;background:#818cf8;flex-shrink:0;}
+.callout.green::before{background:#34d399;}
+.callout.yellow::before{background:#fbbf24;}
+
+/* ── Arrow divider ── */
+.arrow-divider{display:flex;align-items:center;justify-content:center;align-self:center;flex-shrink:0;margin-top:50px;}
 </style>
 </head>
 <body>
-<div class="bg-glow"></div>
-<div class="window">
-  <div class="titlebar">
-    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-    <div class="title-text">FavorAI — Intelligent Bookmark Manager</div>
-  </div>
-  <div class="app">
-    <div class="header">
-      <div class="logo">
-        <div class="logo-icon">🔖</div>
-        <div class="logo-name">FavorAI</div>
+
+<div class="top-badge">⚡ Real-time Analysis</div>
+
+<div class="headline-wrap">
+  <div class="headline">AI scans your library in seconds —<br><em>duplicates, dead links, and more.</em></div>
+  <div class="sub">Watch the live console as FavorAI deep-dives your entire bookmark collection.</div>
+</div>
+
+<div class="panels">
+
+  <!-- ── LEFT: Launch screen ── -->
+  <div class="panel-wrap">
+    <div class="panel-label step1">
+      <div class="panel-label-dot"></div>
+      Step 1 — Launch
+    </div>
+    <div class="mock-win" style="position:relative;">
+      <div class="titlebar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <div class="wintitle">FavorAI — Intelligent Bookmark Manager</div>
       </div>
-      <div class="badge">⟳ Analyzing…</div>
-    </div>
-    <div class="tabs">
-      <div class="tab active">⚡ Organization</div>
-      <div class="tab">⚙️ Config</div>
-      <div class="tab">📜 History</div>
-      <div class="tab">📖 Docs</div>
-      <div class="tab">ℹ️ About</div>
-    </div>
-    <div class="content">
-      <div class="progress-section">
-        <div class="progress-header">
-          <div class="progress-label">Complete Reorganization in progress</div>
-          <div class="progress-pct">62%</div>
+      <div class="fav-app">
+        <div class="fav-header">
+          <div class="fav-logo">
+            <div class="fav-icon">🔖</div>
+            <div class="fav-name">FavorAI</div>
+          </div>
+          <div class="fav-badge-ready">v1.2.0</div>
         </div>
-        <div class="progress-bar-bg"><div class="progress-bar"></div></div>
-        <div class="step-row"><div class="step-dot done"></div><div class="step-text done">✓ Reading 143 bookmarks</div></div>
-        <div class="step-row"><div class="step-dot done"></div><div class="step-text done">✓ Duplicates found: 7</div></div>
-        <div class="step-row"><div class="step-dot active"></div><div class="step-text active">Checking dead links: 58 / 136…</div></div>
-        <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Querying AI (OpenAI gpt-4o)</div></div>
-        <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Computing changes</div></div>
-      </div>
-      <div class="console-section">
-        <div class="console-title">📟 Status Console</div>
-        <div class="console">
-          <div class="log info">&gt; Starting reorganization (Complete)…</div>
-          <div class="log success">✓ Reading bookmarks… 143 found</div>
-          <div class="log success">✓ Scanning for duplicates… 7 detected</div>
-          <div class="log info">Checking dead links: 24/136…</div>
-          <div class="log info">Checking dead links: 48/136…</div>
-          <div class="log warn">⚠ Dead link: http://oldsite.blogspot.com (404)</div>
-          <div class="log warn">⚠ Dead link: https://deprecated-api.io (Timeout)</div>
-          <div class="log info">Checking dead links: 58/136…</div>
-          <div class="log ai" style="margin-top:4px;">Preparing bookmarks for AI… ✓</div>
-          <div class="log ai">Sending to AI (136 bookmarks, ~4K tokens reserved)…</div>
-          <div class="log ai" style="opacity:0.6;">Semantic title analysis…</div>
+        <div class="fav-tabs">
+          <div class="fav-tab active">⚡ Organization</div>
+          <div class="fav-tab">⚙️ Config</div>
+          <div class="fav-tab">📜 History</div>
+        </div>
+        <div class="fav-content">
+          <div class="fav-section">
+            <div class="fav-stitle">🚀 Launch Reorganization</div>
+            <div class="fav-desc">Analyzes duplicates, dead links, then queries your AI to organize bookmarks semantically.</div>
+            <div class="fav-privacy">ℹ️ Titles &amp; URLs sent to your configured AI provider. No data collected by FavorAI.</div>
+            <select class="fav-select" style="pointer-events:none;"><option>📁 All bookmarks (Root)</option></select>
+            <div class="fav-cb-row"><div class="fav-cb">✓</div><span>Check dead links (slower — recommended)</span></div>
+            <div class="fav-btns">
+              <div class="fav-btn min">⚡ Minimal<br><span style="font-size:9px;font-weight:400;opacity:0.7">Fix misplacements only</span></div>
+              <div class="fav-btn full">✨ Complete<br><span style="font-size:9px;font-weight:400;opacity:0.85">Full redesign</span></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;">📟 Status Console</div>
+            <div class="console" style="height:80px;">
+              <div class="log info">&gt; Ready. 143 bookmarks found.</div>
+              <div class="log info">&gt; Click Complete to start AI analysis.</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="btn-stop">■ Stop Reorganization</div>
+      <!-- Callouts -->
+      <div class="callout" style="right:-6px;top:120px;">143 bookmarks</div>
+      <div class="callout green" style="right:-6px;top:290px;">Dead link scanner ON</div>
+      <div class="callout green" style="right:-6px;bottom:100px;">One-click launch</div>
     </div>
   </div>
+
+  <!-- ── Arrow ── -->
+  <div class="arrow-divider">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M4 16h20M18 10l8 6-8 6" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <!-- ── RIGHT: Analysis in progress ── -->
+  <div class="panel-wrap">
+    <div class="panel-label step2">
+      <div class="panel-label-dot"></div>
+      Step 2 — AI Processing
+    </div>
+    <div class="mock-win" style="position:relative;">
+      <div class="titlebar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <div class="wintitle">FavorAI — Intelligent Bookmark Manager</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 15px 9px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="fav-icon">🔖</div>
+          <div class="fav-name">FavorAI</div>
+        </div>
+        <div class="badge-analyzing">⟳ Analyzing…</div>
+      </div>
+      <div class="fav-tabs">
+        <div class="fav-tab active">⚡ Organization</div>
+        <div class="fav-tab">⚙️ Config</div>
+        <div class="fav-tab">📜 History</div>
+      </div>
+      <div class="prog-content">
+        <div class="prog-section">
+          <div class="prog-label-row">
+            <div class="prog-lbl">Complete Reorganization in progress</div>
+            <div class="prog-pct">62%</div>
+          </div>
+          <div class="prog-bar-bg"><div class="prog-bar"></div></div>
+          <div class="step-row"><div class="step-dot done"></div><div class="step-text done">✓ Reading 143 bookmarks</div></div>
+          <div class="step-row"><div class="step-dot done"></div><div class="step-text done">✓ Duplicates found: 7</div></div>
+          <div class="step-row"><div class="step-dot active"></div><div class="step-text active">Checking dead links: 58 / 136…</div></div>
+          <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Querying AI (OpenAI gpt-4o)</div></div>
+          <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Computing changes</div></div>
+        </div>
+        <div class="console-wrap">
+          <div class="console-title">📟 Status Console</div>
+          <div class="console">
+            <div class="log info">&gt; Starting reorganization (Complete)…</div>
+            <div class="log success">✓ Reading bookmarks… 143 found</div>
+            <div class="log success">✓ Duplicates found: 7 detected</div>
+            <div class="log info">Checking dead links: 24/136…</div>
+            <div class="log info">Checking dead links: 48/136…</div>
+            <div class="log warn">⚠ Dead link: oldsite.blogspot.com (404)</div>
+            <div class="log warn">⚠ Dead link: deprecated-api.io (Timeout)</div>
+            <div class="log info">Checking dead links: 58/136…</div>
+            <div class="log ai">Preparing bookmarks for AI… ✓</div>
+            <div class="log ai">Sending to OpenAI (~4K tokens)…</div>
+            <div class="log ai" style="opacity:0.6;">Semantic analysis in progress…</div>
+          </div>
+        </div>
+        <div class="btn-stop">■ Stop Reorganization</div>
+      </div>
+      <!-- Callouts -->
+      <div class="callout yellow" style="right:-6px;top:120px;">Live progress bar</div>
+      <div class="callout" style="right:-6px;top:215px;">7 dups removed</div>
+      <div class="callout yellow" style="right:-6px;top:290px;">Dead link scan</div>
+      <div class="callout green" style="right:-6px;bottom:95px;">AI processing</div>
+    </div>
+  </div>
+
 </div>
 </body>
 </html>

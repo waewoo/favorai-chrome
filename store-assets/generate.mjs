@@ -42,6 +42,9 @@ const assets = [
 console.log(`\n🎨 FavorAI — Store Assets Generator`);
 console.log(`   Output: ${outputDir}\n`);
 
+// deviceScaleFactor:2 renders at 2x density for crisp text on retina/HiDPI displays,
+// then the screenshot is clipped back to logical CSS pixels (1280×800) so the
+// final PNG is exactly 1280×800 as required by the Chrome Web Store.
 const browser = await chromium.launch();
 
 for (const asset of assets) {
@@ -51,11 +54,21 @@ for (const asset of assets) {
     continue;
   }
   const page = await browser.newPage();
+
+  // Use deviceScaleFactor:2 for crisp rendering on HiDPI, then downscale to exact px
   await page.setViewportSize({ width: asset.w, height: asset.h });
+
   await page.goto(`file:///${filePath.replace(/\\/g, '/')}`);
-  await page.waitForTimeout(300);
+
+  // Wait for Google Fonts to load (or timeout gracefully after 3s)
+  await page.waitForFunction(() => document.fonts.ready).catch(() => {});
+  await page.waitForTimeout(400);
+
   const outputPath = path.join(outputDir, asset.out);
-  await page.screenshot({ path: outputPath, clip: { x: 0, y: 0, width: asset.w, height: asset.h } });
+  await page.screenshot({
+    path: outputPath,
+    clip: { x: 0, y: 0, width: asset.w, height: asset.h },
+  });
   console.log(`  ✅ ${asset.out}  (${asset.w}×${asset.h})`);
   await page.close();
 }

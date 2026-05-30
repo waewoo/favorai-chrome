@@ -3,114 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1280">
-<title>FavorAI — Configuration</title>
+<title>FavorAI — Works with every major AI provider</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
-body{width:1280px;height:800px;overflow:hidden;background:radial-gradient(ellipse at 30% 50%,#0e0e1f 0%,#090a0f 60%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;}
-.window{width:920px;height:740px;background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.12);}
-.titlebar{height:40px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;padding:0 16px;gap:8px;}
+body{
+  width:1280px;height:800px;overflow:hidden;
+  background:linear-gradient(135deg,#12093a 0%,#0a0621 55%,#1a0d40 100%);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative;
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 650px 450px at 20% 85%,rgba(99,102,241,0.12) 0%,transparent 68%),
+    radial-gradient(ellipse 450px 300px at 82% 12%,rgba(192,132,252,0.09) 0%,transparent 65%);
+  pointer-events:none;
+}
+
+.top-badge{
+  position:absolute;top:28px;left:50%;transform:translateX(-50%);
+  background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.35);
+  color:#818cf8;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  padding:5px 16px;border-radius:20px;white-space:nowrap;
+}
+.headline-wrap{
+  position:absolute;top:62px;left:0;right:0;
+  text-align:center;padding:0 80px;
+}
+.headline{
+  font-size:36px;font-weight:900;line-height:1.2;color:#fff;
+  letter-spacing:-0.02em;margin-bottom:10px;
+}
+.headline em{
+  font-style:normal;
+  background:linear-gradient(90deg,#818cf8,#c084fc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sub{font-size:16px;color:rgba(255,255,255,0.5);font-weight:400;}
+
+/* ── Provider logos row (above mockup) ── */
+.providers-row{
+  position:absolute;top:175px;left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;align-items:center;white-space:nowrap;
+}
+.prov-chip{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.75);
+}
+.prov-chip.active{
+  background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);
+  color:#a5b4fc;
+}
+
+/* ── Single centered mockup ── */
+.mockup-center{
+  position:absolute;top:230px;left:50%;transform:translateX(-50%);
+  width:840px;
+}
+.mock-win{
+  background:#0d0e18;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;
+  box-shadow:0 32px 100px rgba(0,0,0,0.8),0 0 0 1px rgba(99,102,241,0.13);
+  position:relative;
+}
+.titlebar{
+  height:38px;background:#0a0b13;border-bottom:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;padding:0 16px;gap:8px;
+}
 .dot{width:12px;height:12px;border-radius:50%;}
 .dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
-.title-text{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;}
-.app{display:flex;flex-direction:column;height:calc(100% - 40px);}
-.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
-.logo-name{font-size:17px;font-weight:700;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.badge{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
-.tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
-.tab{padding:7px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
+.wintitle{flex:1;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);font-weight:500;}
+.app-body{display:flex;flex-direction:column;}
+.fav-header{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 10px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.fav-logo{display:flex;align-items:center;gap:9px;}
+.fav-icon{width:28px;height:28px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.fav-name{font-size:16px;font-weight:800;background:linear-gradient(135deg,#fff 40%,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.badge-ok{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#34d399;font-size:10px;padding:3px 9px;border-radius:9px;font-weight:700;}
+.tabs{display:flex;gap:2px;padding:9px 14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.tab{padding:7px 13px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.4);border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;position:relative;top:1px;}
 .tab.active{color:#818cf8;background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);}
-.content{flex:1;overflow:auto;padding:12px 16px;}
-.section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin-bottom:10px;}
-.section-title{font-size:11px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
-.field{margin-bottom:10px;}
-.label{font-size:11px;color:rgba(255,255,255,0.5);font-weight:500;margin-bottom:5px;}
-.input{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.75);font-size:11px;padding:8px 10px;border-radius:7px;outline:none;}
+.content{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;}
+.stitle{font-size:11px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
+.field{margin-bottom:11px;}
+.label{font-size:11px;color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:6px;}
+.input{
+  width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.7);font-size:11.5px;padding:9px 11px;border-radius:7px;
+}
 .input.focus{border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.07);}
-.select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.75);font-size:11px;padding:8px 10px;border-radius:7px;}
+.select{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:11.5px;padding:9px 11px;border-radius:7px;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.provider-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
-.pill{padding:5px 12px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid transparent;}
-.pill.active{background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.4);color:#818cf8;}
+.provider-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+.pill{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid transparent;}
+.pill.active{background:rgba(99,102,241,0.2);border-color:rgba(99,102,241,0.45);color:#a5b4fc;}
 .pill.inactive{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);}
-.advanced-toggle{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:8px;margin-bottom:10px;}
+.advanced-toggle{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:11px;color:rgba(255,255,255,0.5);
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:9px;margin-bottom:10px;
+}
 .advanced-toggle span{flex:1;}
 .btn-row{display:flex;gap:8px;}
-.btn{padding:9px 16px;border-radius:8px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;}
+.btn{padding:10px 16px;border-radius:9px;font-size:12px;font-weight:700;text-align:center;}
 .btn-save{flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;}
-.btn-export{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);}
-.btn-import{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);}
+.btn-sec{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);}
 .key-hidden{letter-spacing:2px;color:rgba(255,255,255,0.4);}
 .saved-toast{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#34d399;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);padding:3px 10px;border-radius:20px;margin-left:8px;}
+
+/* ── Callout badges ── */
+.callout{
+  position:absolute;background:rgba(10,8,28,0.95);border:1px solid rgba(129,140,248,0.45);
+  border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;color:#fff;
+  white-space:nowrap;z-index:30;box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  display:flex;align-items:center;gap:7px;
+}
+.callout::before{content:'';width:7px;height:7px;border-radius:50%;background:#818cf8;flex-shrink:0;}
+.callout.green::before{background:#34d399;}
+.callout.lock::before{background:#fbbf24;}
 </style>
 </head>
 <body>
-<div class="window">
-  <div class="titlebar">
-    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-    <div class="title-text">FavorAI — Intelligent Bookmark Manager</div>
-  </div>
-  <div class="app">
-    <div class="header">
-      <div class="logo">
-        <div class="logo-icon">🔖</div>
-        <div class="logo-name">FavorAI</div>
-      </div>
-      <div class="badge">✓ Configured</div>
+
+<div class="top-badge">⚙️ Configuration</div>
+
+<div class="headline-wrap">
+  <div class="headline">Works with <em>every major AI provider.</em><br>Your API key. Your choice.</div>
+  <div class="sub">OpenAI · Gemini · Claude · Mistral · DeepSeek · Grok · Ollama — all supported out of the box.</div>
+</div>
+
+<!-- Provider chips row -->
+<div class="providers-row">
+  <div class="prov-chip active">🟠 OpenAI</div>
+  <div class="prov-chip">🔵 Gemini</div>
+  <div class="prov-chip">⚡ Claude</div>
+  <div class="prov-chip">🟣 Mistral</div>
+  <div class="prov-chip">🟢 DeepSeek</div>
+  <div class="prov-chip">🤖 Grok</div>
+  <div class="prov-chip">🏠 Ollama</div>
+</div>
+
+<div class="mockup-center">
+  <div class="mock-win">
+    <div class="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="wintitle">FavorAI — Intelligent Bookmark Manager</div>
     </div>
-    <div class="tabs">
-      <div class="tab">⚡ Organization</div>
-      <div class="tab active">⚙️ Config</div>
-      <div class="tab">📜 History</div>
-      <div class="tab">📖 Docs</div>
-      <div class="tab">ℹ️ About</div>
-    </div>
-    <div class="content">
-      <div class="section">
-        <div class="section-title">⚙️ LLM Configuration</div>
-        <div class="field">
-          <div class="label">Provider</div>
-          <div class="provider-pills">
-            <div class="pill active">🟠 OpenAI</div>
-            <div class="pill inactive">🔵 Gemini</div>
-            <div class="pill inactive">⚡ Claude</div>
-            <div class="pill inactive">🟣 Mistral</div>
-            <div class="pill inactive">🟢 DeepSeek</div>
-            <div class="pill inactive">🤖 Grok</div>
-            <div class="pill inactive">🏠 Ollama</div>
-          </div>
+    <div class="app-body">
+      <div class="fav-header">
+        <div class="fav-logo">
+          <div class="fav-icon">🔖</div>
+          <div class="fav-name">FavorAI</div>
         </div>
-        <div class="row2">
+        <div class="badge-ok">✓ Configured</div>
+      </div>
+      <div class="tabs">
+        <div class="tab">⚡ Organization</div>
+        <div class="tab active">⚙️ Config</div>
+        <div class="tab">📜 History</div>
+        <div class="tab">📖 Docs</div>
+        <div class="tab">ℹ️ About</div>
+      </div>
+      <div class="content">
+        <div class="section">
+          <div class="stitle">⚙️ LLM Configuration</div>
           <div class="field">
-            <div class="label">API Key (Token)</div>
-            <div class="input focus"><span class="key-hidden">sk-••••••••••••••••••••••</span></div>
+            <div class="label">Provider</div>
+            <div class="provider-pills">
+              <div class="pill active">🟠 OpenAI</div>
+              <div class="pill inactive">🔵 Gemini</div>
+              <div class="pill inactive">⚡ Claude</div>
+              <div class="pill inactive">🟣 Mistral</div>
+              <div class="pill inactive">🟢 DeepSeek</div>
+              <div class="pill inactive">🤖 Grok</div>
+              <div class="pill inactive">🏠 Ollama</div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <div class="label">API Key (Token)</div>
+              <div class="input focus"><span class="key-hidden">sk-••••••••••••••••••••</span></div>
+            </div>
+            <div class="field">
+              <div class="label">Model Name</div>
+              <select class="select" style="pointer-events:none;">
+                <option>gpt-4o</option>
+                <option>gpt-4o-mini</option>
+                <option>gpt-4-turbo</option>
+              </select>
+            </div>
           </div>
           <div class="field">
-            <div class="label">Model Name</div>
-            <select class="select" style="pointer-events:none;">
-              <option>gpt-4o</option>
-              <option>gpt-4o-mini</option>
-              <option>gpt-4-turbo</option>
-            </select>
+            <div class="label">API URL <span style="color:rgba(255,255,255,0.25);font-weight:400;">(optional override)</span></div>
+            <div class="input" style="color:rgba(255,255,255,0.3);">https://api.openai.com/v1</div>
           </div>
         </div>
-        <div class="field">
-          <div class="label">API URL <span style="color:rgba(255,255,255,0.25);font-weight:400;">(optional override)</span></div>
-          <div class="input" style="color:rgba(255,255,255,0.3);">https://api.openai.com/v1</div>
+        <div class="advanced-toggle">
+          <span>⚙️ Advanced Settings</span>
+          <span style="color:rgba(255,255,255,0.3);">▶</span>
+        </div>
+        <div class="btn-row">
+          <div class="btn btn-sec">Export</div>
+          <div class="btn btn-sec">Import</div>
+          <div class="btn btn-save">💾 Save Configuration <span class="saved-toast">✓ Saved!</span></div>
         </div>
       </div>
-      <div class="advanced-toggle">
-        <span>⚙️ Advanced Settings</span>
-        <span style="color:rgba(255,255,255,0.3);">▶</span>
-      </div>
-      <div class="btn-row">
-        <div class="btn btn-export">Export</div>
-        <div class="btn btn-import">Import</div>
-        <div class="btn btn-save">💾 Save Configuration <span class="saved-toast">✓ Saved!</span></div>
-      </div>
     </div>
+
+    <!-- Callouts — inside window edges -->
+    <div class="callout" style="left:10px;top:92px;">7 providers</div>
+    <div class="callout" style="left:10px;top:165px;">Switch anytime</div>
+    <div class="callout lock" style="left:10px;top:238px;">Key stays local</div>
+    <div class="callout green" style="right:10px;top:92px;">Ollama offline</div>
+    <div class="callout" style="right:10px;top:165px;">Custom endpoint</div>
+    <div class="callout green" style="right:10px;bottom:65px;">Import / export</div>
   </div>
 </div>
+
 </body>
 </html>
