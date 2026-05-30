@@ -30,9 +30,18 @@ Chrome truncates bookmarks bar folder names after ~18 characters. Long names lik
 - Sub-folder names (depth ≥ 2) may be longer — they appear in dropdown menus, not the toolbar
 
 CRITICAL RULES FOR OUTPUT:
-1. RETURN FORMAT — You MUST return ONLY a valid JSON object with exactly TWO keys:
+1. RETURN FORMAT — You MUST return ONLY a single valid JSON object with exactly TWO keys:
    - "reorganizedTree": the complete reorganized structure
    - "explanation": structured explanation of ALL changes (in the user's language)
+
+   CORRECT format (do EXACTLY this):
+   { "reorganizedTree": { ... }, "explanation": "..." }
+
+   WRONG — DO NOT do any of these:
+   ❌ { "reorganizedTree": { ... } }, "explanation": "..."   ← explanation outside the outer {}
+   ❌ { "reorganizedTree": { ... } }\n**APERCU**\n...        ← text after the JSON
+   ❌ Two separate JSON objects                               ← only ONE object allowed
+   ❌ Any text, comment or markdown before or after the JSON  ← pure JSON only
 
 2. JSON STRUCTURE — Use this exact format:
    - Bookmark: { "id": "string" } (CRITICAL: NEVER include the "title" or "url" for bookmarks, only the "id"!)

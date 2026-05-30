@@ -76,6 +76,14 @@ export function cleanAndParseJSON(text) {
         const end = Math.min(cleanText.length, pos + 50);
         console.error(`[FavorAI] Error at position ${pos}. Context:`);
         console.error(`[FavorAI] ...${cleanText.substring(start, end)}...`);
+        // "Unexpected non-whitespace character after JSON at position X" means valid JSON
+        // ends at position X — the LLM added trailing content (e.g. explanation outside the
+        // outer wrapper). Try parsing just the valid prefix.
+        if (e.message.includes('Unexpected non-whitespace') || e.message.includes('after JSON')) {
+          try {
+            return JSON.parse(cleanText.substring(0, pos));
+          } catch (_) { /* fall through to brace extraction */ }
+        }
       }
     }
     // Tenter d'extraire le JSON depuis du texte entourant - avec correspondance de braces
