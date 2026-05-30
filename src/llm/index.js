@@ -19,6 +19,16 @@ You are organizing a Chrome/Chromium BOOKMARKS BAR. Top-level folders appear as 
 - If you have more than 8 candidate categories, MERGE the smallest/most related ones into broader themes until you reach ≤ 8
 - Use sub-folders (2nd and 3rd level) to organize content within each top-level folder
 
+TOP-LEVEL FOLDER NAME LENGTH — CRITICAL FOR USABILITY:
+Chrome truncates bookmarks bar folder names after ~18 characters. Long names like "Intelligence Artificielle" or "Finance & Investissements" will be cut off and unreadable.
+- HARD LIMIT: Top-level folder names MUST be ≤ 18 characters (including the emoji prefix)
+- ALWAYS prefix top-level folder names with a single expressive emoji (e.g. 💰 Finance, 🤖 AI, 🏠 Home, 🛠️ DevOps)
+- After the emoji and space, the text part must be ≤ 15 characters
+- Prefer short, punchy names: "🤖 AI & LLMs" over "Intelligence Artificielle & Machine Learning"
+- Examples of GOOD top-level names: "💰 Finance", "🤖 AI & LLMs", "🛠️ DevOps", "🏠 Personal", "📚 Learning", "⚡ Quick Access"
+- Examples of BAD top-level names (too long): "Finance & Investissements", "Intelligence Artificielle", "Développement Web & Mobile"
+- Sub-folder names (depth ≥ 2) may be longer — they appear in dropdown menus, not the toolbar
+
 CRITICAL RULES FOR OUTPUT:
 1. RETURN FORMAT — You MUST return ONLY a valid JSON object with exactly TWO keys:
    - "reorganizedTree": the complete reorganized structure
@@ -92,6 +102,7 @@ List new top-level folders with one-line purpose.
 FINAL VALIDATION — verify before returning:
 ✅ Top-level folder count is between 6 and 8 (HARD MAXIMUM: 8) — count them explicitly
 ✅ If count > 8: STOP, merge the least populated top-level folders until count ≤ 8
+✅ Every top-level folder name starts with an emoji and is ≤ 18 characters total — if any name is longer, SHORTEN IT NOW
 ✅ No single folder contains more than ~40% of all bookmarks
    EXCEPTION: If collection is 70%+ technical, one top-level tech category may hold up to 60% provided it has at least 4 rich sub-folders
 ✅ No technical bookmarks in personal/hobby folders
@@ -129,7 +140,7 @@ ABSOLUTE CONSTRAINTS:
 - NEVER restructure the hierarchy
 - NEVER mass-move or "optimize" the structure
 - NEVER act on ambiguous or unclear titles
-    - Emojis / Prefix symbols: Feel free to prefix folder names with a single expressive emoji (like 💼, 🏠, 🤖, 🎨, etc.) if it represents the theme well, to make folders visually distinguishable.
+- TOP-LEVEL FOLDER NAMES: MUST start with an emoji + be ≤ 18 characters total (Chrome truncates longer names in the toolbar). Sub-folder names may be longer.
 - QUICK ACCESS: any bookmark placed directly on the bookmarks bar (not inside any folder) must be moved into a "★ Quick Access" folder — create it if it doesn't exist
 
 EXPLANATION FORMAT (put in the "explanation" field):
@@ -175,7 +186,7 @@ Step 4 — GENERATE the JSON with:
   - 6–8 top-level folders max (count before returning)
 
 - BOOKMARKS BAR USAGE: exactly 6–8 top-level folders with new_ IDs — HARD MAXIMUM 8
-    - Emojis / Prefix symbols: Feel free to prefix folder names with a single expressive emoji (like 💼, 🏠, 🤖, 🎨, etc.) if it represents the theme well, to make folders visually distinguishable.
+- TOP-LEVEL FOLDER NAMES: MUST start with an emoji + be ≤ 18 characters total (Chrome truncates longer names in the toolbar). Sub-folder names may be longer.
 - MERGE thin folders (< 3 bookmarks) into broader categories where appropriate.
 - NO ORPHAN FOLDERS: any original folder not included in reorganizedTree is automatically deleted.
 - QUICK ACCESS: bookmarks placed directly on the bar (not in a folder) → "★ Quick Access" (new_ ID).
