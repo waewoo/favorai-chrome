@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security
 
 # Default goal: show help instructions
 help:
@@ -25,6 +25,7 @@ help:
 	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
 	@echo "  make publish               Build ZIP, upload and publish to all users"
 	@echo "  make publish-testers       Build ZIP, upload and publish to trusted testers only"
+	@echo "  make security              Scan dependencies for high/critical vulnerabilities (npm audit)"
 	@echo "  make clean                 Remove reports, zip packages, and temporary folders"
 	@echo "  make clean-e2e             Remove leftover Playwright tmp dirs and test-results"
 	@echo "  make kill-e2e              Kill any stuck Playwright/Chrome processes from e2e runs"
@@ -39,6 +40,9 @@ lint:
 
 lint-fix:
 	npm run lint:fix
+
+security:
+	npm audit --audit-level=high
 
 test:
 	npm run test

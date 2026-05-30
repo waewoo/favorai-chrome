@@ -73,6 +73,7 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make upload` | Build ZIP and upload to Chrome Web Store (draft, no publish) |
 | `make publish` | Build ZIP, upload and publish to all users |
 | `make publish-testers` | Build ZIP, upload and publish to trusted testers only |
+| `make security` | Scan dependencies for high/critical vulnerabilities (npm audit) |
 
 #### Recommended workflow before committing
 
@@ -95,8 +96,8 @@ node scripts/get-refresh-token.mjs   # opens browser → paste token in .env
 # Add WEBSTORE_EXTENSION_ID from the store dashboard URL
 
 # Release workflow:
-# 1. Run all checks to ensure stability:
-make lint && make test && make test-e2e
+# 1. Run all checks to ensure stability and security:
+make lint && make test && make test-e2e && make security
 
 # 2. Bump the version, update CHANGELOG, commit, and tag locally:
 make bump                     # auto-detect bump type based on git commits, update CHANGELOG.md, commit & tag locally

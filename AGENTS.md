@@ -129,6 +129,7 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make upload` | Build ZIP + upload to Chrome Web Store as draft (no publish) |
 | `make publish` | Build ZIP + upload + publish to all users |
 | `make publish-testers` | Build ZIP + upload + publish to trusted testers only |
+| `make security` | Scan dependencies for high/critical vulnerabilities (npm audit) |
 
 **Recommended workflow before committing:**
 ```bash
@@ -187,9 +188,9 @@ Before you can publish to the Chrome Web Store, ensure you have set up your API 
 #### Release Checklist & Process
 Whenever you are ready to publish a new version:
 
-1. **Verify Codebase Integrity**: Ensure all tests and lint checks pass cleanly:
+1. **Verify Codebase Integrity & Security**: Ensure all tests, lint checks, and security audits pass cleanly:
    ```bash
-   make lint && make test && make test-e2e
+   make lint && make test && make test-e2e && make security
    ```
 2. **Synchronize Versions, update CHANGELOG, commit, and tag**: Bump the version across files, prepend release notes to `CHANGELOG.md`, and automatically stage, commit, and tag the release version locally with its corresponding release notes:
    - **Auto-detected Release** (SemVer based on git commits since the last tag): `make bump`
