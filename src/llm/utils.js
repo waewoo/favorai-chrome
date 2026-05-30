@@ -64,6 +64,10 @@ export function cleanAndParseJSON(text) {
       inString = !inString;
       return ch;
     }
+    if (inString) {
+      if (ch === '\n') return '\\n';
+      if (ch === '\r') return '';
+    }
     if (code === 0x201C || code === 0x201D) {
       return inString ? '\\"' : '"';  // Escape inside string values, otherwise replace with normal double quote
     }

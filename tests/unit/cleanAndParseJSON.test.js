@@ -114,4 +114,9 @@ describe('cleanAndParseJSON', () => {
     const json = '\u201Ckey\u201D: \u201Cvalue\u201D';
     expect(cleanAndParseJSON('{' + json + '}')).toEqual({ key: 'value' });
   });
+
+  it('should escape raw literal newlines and carriage returns inside double-quoted string literals', () => {
+    const json = '{\n  "key": "line1\r\nline2\nline3"\n}';
+    expect(cleanAndParseJSON(json)).toEqual({ key: 'line1\nline2\nline3' });
+  });
 });
