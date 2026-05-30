@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { queryLLM } from '../../src/llm/index.js';
+import { queryLLM, suggestBookmarkLocation } from '../../src/llm/index.js';
 import { queryOpenAI } from '../../src/llm/providers/openai.js';
 import { queryGemini } from '../../src/llm/providers/gemini.js';
 import { queryMistral } from '../../src/llm/providers/mistral.js';
@@ -96,6 +96,35 @@ describe('llm/index.js', () => {
     expect(queryOpenAI).toHaveBeenCalled();
     expect(result.explanation).toBe('OpenAI Mixed OK');
   });
+
+  it('should detect mixed user profile as MIXED when tech and personal bookmarks are balanced', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OpenAI Mixed OK' });
+
+    const mixedTree = {
+      id: '0',
+      title: 'root',
+      children: [
+        {
+          id: '1',
+          title: 'Barre de favoris',
+          children: [
+            { id: '10', title: 'Python Coding tutorial', url: 'https://python.org' },
+            { id: '20', title: 'My Cooking recipes and delicious food', url: 'https://recipe.org' }
+          ]
+        }
+      ]
+    };
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key'
+    };
+
+    const result = await queryLLM(config, mixedTree, 'complete', null);
+    expect(queryOpenAI).toHaveBeenCalled();
+    expect(result.explanation).toBe('OpenAI Mixed OK');
+  });
+
 
   it('should route requests to all supported providers', async () => {
     vi.mocked(queryGemini).mockResolvedValue({ reorganizedTree: {}, explanation: 'Gemini OK' });
@@ -209,5 +238,49 @@ describe('llm/index.js', () => {
     const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
     // callArgs[7] is maxTokens, should default to 131072 when invalid
     expect(callArgs[7]).toBe(131072);
+  });
+
+  it('should fall back to English for unknown UI languages, and support language code splitting', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    // Test unknown UI language
+    chrome.i18n.getUILanguage.mockReturnValueOnce('xyz');
+    await queryLLM({ provider: 'openai', apiKey: 'test-key' }, techTree, 'complete', null);
+    let callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
+    expect(callArgs[4]).toContain('Respond in English');
+
+    // Test language code splitting (e.g., 'de-DE')
+    chrome.i18n.getUILanguage.mockReturnValueOnce('de-DE');
+    await queryLLM({ provider: 'openai', apiKey: 'test-key' }, techTree, 'complete', null);
+    callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
+    expect(callArgs[4]).toContain('Respond in German');
+  });
+
+  it('should handle tree without children in getTopLevelFolders during context building', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const noChildrenTree = { id: '0', title: 'root' }; // no children key
+    await queryLLM({ provider: 'openai', apiKey: 'test-key' }, noChildrenTree, 'complete', null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
+    expect(callArgs[3]).toContain('Current top-level folders: (none)');
+  });
+
+  it('should handle template placeholders not in substitutions during suggestBookmarkLocation', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      promptSuggest: 'Recommend for {title} and {url} and {non_existent}'
+    };
+    const bookmark = { title: 'My Bookmark' }; // url is undefined
+    const folders = [{ id: '1', path: 'Root' }];
+
+    await suggestBookmarkLocation(config, bookmark, folders, [], null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
+    // The placeholder {non_existent} is ignored by regex; {url} falls back to {url} via nullish coalescing
+    expect(callArgs[3]).toContain('Recommend for My Bookmark and {url} and {non_existent}');
   });
 });

@@ -72,4 +72,15 @@ describe('formatErrorMessage', () => {
     const result = formatErrorMessage('Mistral', 400, payload);
     expect(result).toBe('Erreur Mistral (400: Specific error)');
   });
+
+  it('should fall back to status description if response is too long and JSON parsing fails', () => {
+    const result = formatErrorMessage('Ollama', 500, 'x'.repeat(250));
+    expect(result).toBe('Erreur Ollama (500: Server Error)');
+  });
+
+  it('should handle JSON payload with no error or message fields', () => {
+    const payload = JSON.stringify({});
+    const result = formatErrorMessage('Claude', 500, payload);
+    expect(result).toBe('Erreur Claude (500: Server Error)');
+  });
 });

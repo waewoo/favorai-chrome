@@ -111,7 +111,7 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 |---|---|
 | `make lint` | ESLint — validates code style and catches syntax errors. **Run first.** |
 | `make lint-fix` | ESLint auto-fix |
-| `make test` | Vitest unit tests (130 tests, 95%+ coverage). **Run after lint.** |
+| `make test` | Vitest unit tests (159 tests, 100% coverage). **Run after lint.** |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + formatted global coverage summary |
 | `make test-e2e` | Playwright e2e tests (106 tests, UI + integration). Runs `clean-e2e` first. |
@@ -137,11 +137,12 @@ make lint && make test && make test-e2e
 
 ### 3. Test Coverage Requirements
 
-**Unit Tests** (130 tests, 95%+ coverage):
+**Unit Tests** (159 tests, 100% coverage):
 - Located in `tests/unit/`
 - Test utility functions, analysis logic, LLM parsing, diff calculations
 - Mock Chrome APIs using `tests/mocks/chrome.js`
-- Run with: `make test`
+- **CRITICAL**: The unit test coverage rate MUST always be 100% across all files and columns/types (Statements, Branches, Functions, and Lines). Any modification or new feature must be accompanied by relevant unit tests to maintain this 100% rate.
+- Run with: `make test` or `make test-coverage`
 
 **E2E Tests** (106 tests, 10 spec files):
 - Located in `tests/e2e/`

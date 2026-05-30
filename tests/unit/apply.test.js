@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { applyChanges } from '../../src/background/apply.js';
 
 describe('applyChanges', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   it('should apply folder creations, renames, moves, and deletions in sequence', async () => {
     // Mock getTree to return a simple bookmarks bar tree
     chrome.bookmarks.getTree.mockResolvedValue([
@@ -198,6 +205,7 @@ describe('applyChanges', () => {
     const pendingActions = [
       { id: 'act_folder_deep', type: 'delete_folder', targetId: '101', params: { sourcePath: 'A > B > C' } },
       { id: 'act_folder_shallow', type: 'delete_folder', targetId: '102', params: { sourcePath: 'A > B' } },
+      { id: 'act_folder_no_path', type: 'delete_folder', targetId: '105', params: {} },
       { id: 'act_file_1', type: 'delete_duplicate', targetId: '103' },
       { id: 'act_file_2', type: 'delete_dead', targetId: '104' }
     ];
@@ -211,7 +219,7 @@ describe('applyChanges', () => {
       return [];
     });
 
-    await applyChanges(['act_folder_deep', 'act_folder_shallow', 'act_file_1', 'act_file_2'], pendingActions, 'complete');
+    await applyChanges(['act_folder_deep', 'act_folder_shallow', 'act_folder_no_path', 'act_file_1', 'act_file_2'], pendingActions, 'complete');
 
     // Test post-cleanup removeTree error:
     // Make children call succeed but removeTree fail (covers lines 151-152)
@@ -225,4 +233,170 @@ describe('applyChanges', () => {
     await applyChanges([], [], 'complete');
     expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('sub_empty_2');
   });
+
+  it('should skip folder creation and moves if the target parent folder (new_ prefix) is not resolved', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    
+    const approvedActionIds = ['act_unresolved_create', 'act_unresolved_move'];
+    const pendingActions = [
+      {
+        id: 'act_unresolved_create',
+        type: 'create_folder',
+        params: { tempId: 'new_folder_sub', title: 'Sub Folder', parentId: 'new_parent_unresolved', targetPath: 'A > B' }
+      },
+      {
+        id: 'act_unresolved_move',
+        type: 'move_bookmark',
+        params: { nodeId: '10', newParentId: 'new_parent_unresolved' }
+      }
+    ];
+
+    chrome.bookmarks.create.mockClear();
+    chrome.bookmarks.move.mockClear();
+
+    await applyChanges(approvedActionIds, pendingActions, 'complete');
+
+    expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+  });
+
+  it('should handle bookmarks.get returning empty or failing gracefully', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    
+    chrome.bookmarks.get.mockImplementation(async (id) => {
+      if (id === '99') throw new Error('Query error');
+      return [];
+    });
+
+    const approvedActionIds = ['act_move_empty', 'act_delete_empty', 'act_move_fail'];
+    const pendingActions = [
+      {
+        id: 'act_move_empty',
+        type: 'move_bookmark',
+        title: 'Bookmark To Move',
+        params: { nodeId: '100', newParentId: '1' }
+      },
+      {
+        id: 'act_delete_empty',
+        type: 'delete_duplicate',
+        targetId: '100'
+      },
+      {
+        id: 'act_move_fail',
+        type: 'move_bookmark',
+        title: 'Bookmark Fail',
+        params: { nodeId: '99', newParentId: '1' }
+      }
+    ];
+
+    chrome.bookmarks.move.mockClear();
+    chrome.bookmarks.remove.mockClear();
+
+    await applyChanges(approvedActionIds, pendingActions, 'complete');
+
+    expect(chrome.bookmarks.move).toHaveBeenCalledWith('100', { parentId: '1' });
+    expect(chrome.bookmarks.remove).toHaveBeenCalledWith('100');
+    expect(chrome.bookmarks.move).toHaveBeenCalledWith('99', { parentId: '1' });
+  });
+
+  it('should cover rename and delete branch variations', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([
+      {
+        id: '0',
+        title: 'Root',
+        children: [
+          {
+            id: '1',
+            title: 'Barre de favoris',
+            children: [
+              { id: '10', title: 'Bookmark', url: 'https://old.com', parentId: '1' },
+              { id: '30', title: 'Folder B', parentId: '1', children: [] }
+            ]
+          }
+        ]
+      }
+    ]);
+
+    chrome.bookmarks.get.mockImplementation(async (id) => {
+      if (id === '10') {
+        return [{ id: '10', title: 'Bookmark', url: 'https://old.com', parentId: '1' }];
+      }
+      if (id === '30') {
+        return [{ id: '30', title: 'Folder B', parentId: '1' }];
+      }
+      if (id === '31') {
+        throw new Error('Get failed for rename catch');
+      }
+      if (id === '40') {
+        return [{ id: '40', title: 'Folder to Delete', parentId: '1' }];
+      }
+      if (id === '99') {
+        throw new Error('Get failed');
+      }
+      return [];
+    });
+
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const pendingActions = [
+      {
+        id: 'act_rename_fold_fail',
+        type: 'rename_folder',
+        params: { nodeId: '31', newTitle: 'Renamed Folder Fail' }
+      },
+      {
+        id: 'act_rename_fold',
+        type: 'rename_folder',
+        params: { nodeId: '30', newTitle: 'Renamed Folder' }
+      },
+      {
+        id: 'act_rename_book_url',
+        type: 'rename_bookmark',
+        params: { nodeId: '10', newTitle: 'Renamed Bookmark URL', newUrl: 'https://newurl.com' }
+      },
+      {
+        id: 'act_delete_missing',
+        type: 'delete_duplicate',
+        targetId: '99'
+      },
+      {
+        id: 'act_delete_empty_arr',
+        type: 'delete_duplicate',
+        targetId: '100'
+      },
+      {
+        id: 'act_delete_folder_no_url',
+        type: 'delete_folder',
+        targetId: '40',
+        params: { sourcePath: undefined }
+      },
+      {
+        id: 'act_delete_folder_with_path',
+        type: 'delete_folder',
+        targetId: '30',
+        params: { sourcePath: 'A > B' }
+      }
+    ];
+
+    const approvedActionIds = [
+      'act_rename_fold_fail',
+      'act_rename_fold',
+      'act_rename_book_url',
+      'act_delete_missing',
+      'act_delete_empty_arr',
+      'act_delete_folder_no_url',
+      'act_delete_folder_with_path'
+    ];
+
+    await applyChanges(approvedActionIds, pendingActions, 'complete');
+
+    expect(chrome.bookmarks.update).toHaveBeenCalledWith('31', { title: 'Renamed Folder Fail' });
+    expect(chrome.bookmarks.update).toHaveBeenCalledWith('30', { title: 'Renamed Folder' });
+    expect(chrome.bookmarks.update).toHaveBeenCalledWith('10', { title: 'Renamed Bookmark URL', url: 'https://newurl.com' });
+    expect(chrome.bookmarks.remove).toHaveBeenCalledWith('99');
+    expect(chrome.bookmarks.remove).toHaveBeenCalledWith('100');
+    expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('40');
+    expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('30');
+  });
 });
+

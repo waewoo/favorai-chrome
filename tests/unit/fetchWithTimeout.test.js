@@ -66,4 +66,28 @@ describe('fetchWithTimeout', () => {
 
     await expect(fetchWithTimeout('https://api.example.com', {}, 5000)).rejects.toThrow('Failed to fetch');
   });
+
+  it('should throw timeout error if timeout exceeds but user signal is not aborted', async () => {
+    const controller = new AbortController();
+    global.fetch.mockImplementation((url, init) => {
+      return new Promise((resolve, reject) => {
+        const signal = init?.signal;
+        const tid = setTimeout(() => { resolve({ ok: true }); }, 100);
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            clearTimeout(tid);
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }
+      });
+    });
+
+    await expect(fetchWithTimeout('https://api.example.com', { signal: controller.signal }, 10)).rejects.toThrow(/dépassé|timeout/i);
+  });
+
+  it('should use default timeout if timeoutMs is not provided', async () => {
+    global.fetch.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+    const response = await fetchWithTimeout('https://api.example.com', {});
+    expect(response.ok).toBe(true);
+  });
 });

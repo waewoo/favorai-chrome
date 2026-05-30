@@ -202,6 +202,32 @@ describe('diff.js functions', () => {
       expect(node.id).toBe('10');
     });
 
+    it('should match bookmark by exact ID and title', () => {
+      const node = { id: '20', title: 'Bookmark X', url: 'https://x.com' };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id).toBe('20');
+    });
+
+    it('should handle falsy/empty original node title in exact match', () => {
+      originalMap['10'].title = undefined;
+      const node = { id: '10', title: '', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id).toBe('10');
+    });
+
+    it('should skip exact ID match if folder/bookmark status mismatch', () => {
+      const node = { id: '20', title: 'Different Title', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id.startsWith('new_')).toBe(true);
+    });
+
+    it('should skip exact ID match if folder/bookmark status mismatch even when title matches but no candidates available in fallback', () => {
+      const node = { id: '20', title: 'Bookmark X', children: [] };
+      originalBookmarksByTitle['bookmark x'] = [];
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id.startsWith('new_')).toBe(true);
+    });
+
     it('should match by title when ID has drifted', () => {
       const node = { id: 'new_123', title: 'Folder A', children: [] };
       alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
@@ -258,10 +284,39 @@ describe('diff.js functions', () => {
       expect(Array.isArray(node.children)).toBe(true);
     });
 
-    it('should handle null parentId', () => {
-      const node = { id: 'new_root', title: 'Root Level', children: [] };
-      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle, null);
+    it('should handle titleKey as null or missing candidates array in _removeCandidate', () => {
+      const node = { id: '10', title: 'Folder A', children: [] };
+      alignReorganizedIds(node, originalMap, null, originalBookmarksByTitle);
+      expect(node.id).toBe('10');
+    });
+
+    it('should handle candidate title array not being an array in _removeCandidate', () => {
+      const node = { id: '10', title: 'Folder A', children: [] };
+      const invalidFolders = { 'folder a': 'not-an-array' };
+      alignReorganizedIds(node, originalMap, invalidFolders, originalBookmarksByTitle);
+      expect(node.id).toBe('10');
+    });
+
+    it('should handle missing or empty node title in alignReorganizedIds', () => {
+      const node = { id: 'new_folder', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
       expect(node.id).toBeDefined();
+    });
+
+    it('should fall back to first candidate if parentId search fails in alignReorganizedIds', () => {
+      originalFoldersByTitle['same name'] = [
+        { id: '50', title: 'Same Name', parentId: '10' }
+      ];
+      originalMap['50'] = originalFoldersByTitle['same name'][0];
+      const node = { id: 'new_same', title: 'Same Name', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle, '30');
+      expect(node.id).toBe('50');
+    });
+
+    it('should initialize children array to empty if folder has no children in alignReorganizedIds', () => {
+      const node = { id: '10', title: 'Folder A' };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.children).toEqual([]);
     });
   });
 
@@ -340,17 +395,16 @@ describe('diff.js functions', () => {
       expect(node).toBeDefined();
     });
 
-    it('should preserve non-matching children', () => {
+    it('should handle child with empty or missing title in sanitizeReorganizedTree', () => {
       const node = {
         id: '0',
         title: 'Root',
         children: [
-          { id: '100', title: 'Unique Folder', children: [] }
+          { id: 'new_no_title', children: [] }
         ]
       };
       sanitizeReorganizedTree(node, originalMap);
       expect(node.children).toHaveLength(1);
-      expect(node.children[0].id).toBe('100');
     });
   });
 

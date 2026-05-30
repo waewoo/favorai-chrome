@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cleanAndParseJSON } from '../../src/llm/utils.js';
 
 describe('cleanAndParseJSON', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should parse standard JSON strings', () => {
     const json = '{"key": "value", "number": 123}';
     expect(cleanAndParseJSON(json)).toEqual({ key: 'value', number: 123 });
@@ -41,5 +49,69 @@ describe('cleanAndParseJSON', () => {
   it('should throw an error for invalid JSON strings', () => {
     const invalid = 'not a json';
     expect(() => cleanAndParseJSON(invalid)).toThrow(/invalid/i);
+  });
+
+  it('should extract JSON when trailing text exists after valid JSON', () => {
+    const json = '{"key": "value"} trailing text and explanations';
+    expect(cleanAndParseJSON(json)).toEqual({ key: 'value' });
+  });
+
+  it('should extract JSON from surrounding text even with escaped characters in strings', () => {
+    const json = 'Some text {\n  "key": "value \\"escaped\\""\n} more text';
+    expect(cleanAndParseJSON(json)).toEqual({ key: 'value "escaped"' });
+  });
+
+  it('should handle brace matching but parsing failure gracefully', () => {
+    const json = 'garbage {this is invalid json but brace matched} [1, 2, 3]';
+    expect(cleanAndParseJSON(json)).toEqual([1, 2, 3]);
+  });
+
+  it('should handle escaped characters in bracket counting loop', () => {
+    const json = 'garbage [\n  "value \\"escaped\\""\n] garbage';
+    expect(cleanAndParseJSON(json)).toEqual(['value "escaped"']);
+  });
+
+  it('should handle bracket matching but parsing failure gracefully', () => {
+    const json = 'garbage [invalid json but bracket matched] {"key": "value"}';
+    expect(cleanAndParseJSON(json)).toEqual({ key: 'value' });
+  });
+
+  it('should sanitize unicode smart quotes and hyphens', () => {
+    // \u201C / \u201D -> "
+    // \u2018 / \u2019 -> '
+    // \u2013 / \u2014 -> -
+    // \u2026 -> ...
+    const json = '{"quote": "\u201Chello\u201D", "single": "\u2018world\u2019", "hyphen": "\u2013 \u2014", "dots": "\u2026"}';
+    expect(cleanAndParseJSON(json)).toEqual({
+      quote: '"hello"',
+      single: "'world'",
+      hyphen: '- -',
+      dots: '...'
+    });
+  });
+
+  it('should cover JSON.parse fallback catch block when prefix parsing fails', () => {
+    const originalParse = JSON.parse;
+    vi.spyOn(JSON, 'parse').mockImplementation((text) => {
+      if (text === '{"key": "value"}') {
+        throw new Error('Artificial error');
+      }
+      return originalParse(text);
+    });
+
+    const json = '{"key": "value"} trailing text';
+    expect(cleanAndParseJSON(json)).toEqual({ key: 'value' });
+
+    vi.restoreAllMocks();
+  });
+
+  it('should return the input as-is if it is not a string', () => {
+    const obj = { already: 'parsed' };
+    expect(cleanAndParseJSON(obj)).toBe(obj);
+  });
+
+  it('should sanitize smart quotes enclosing keys and values when not already inside string literals', () => {
+    const json = '\u201Ckey\u201D: \u201Cvalue\u201D';
+    expect(cleanAndParseJSON('{' + json + '}')).toEqual({ key: 'value' });
   });
 });

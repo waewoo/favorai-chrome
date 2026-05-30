@@ -38,7 +38,37 @@ describe('saveSessionToHistory', () => {
       expect.any(Function)
     );
   });
+
+  it('should cap history to MAX_HISTORY_SESSIONS', async () => {
+    const existingHistory = Array.from({ length: 50 }, (_, i) => ({
+      sessionId: `sess_${i}`,
+      mode: 'minimal',
+      entries: []
+    }));
+
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      callback({ reorgHistory: existingHistory });
+    });
+
+    const newEntries = [{ type: 'rename', nodeId: '10' }];
+    await saveSessionToHistory(newEntries, 'complete', 'Capping test');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.any(Array)
+      }),
+      expect.any(Function)
+    );
+
+    const callArgs = chrome.storage.local.set.mock.calls;
+    const lastCall = callArgs[callArgs.length - 1];
+    const savedHistory = lastCall[0].reorgHistory;
+    
+    expect(savedHistory).toHaveLength(50);
+    expect(savedHistory[0].explanation).toBe('Capping test');
+  });
 });
+
 
 describe('rollbackSession', () => {
   it('should undo operations in reverse order', async () => {
