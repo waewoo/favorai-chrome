@@ -356,11 +356,12 @@ document.addEventListener('DOMContentLoaded', () => {
   restoreStatus();
   loadBookmarkFolders();
 
-  // Set manifest version
+  // Set manifest version dynamically in header badge and About section
+  const version = chrome.runtime.getManifest().version;
   const appVersionEl = document.getElementById('appVersion');
-  if (appVersionEl) {
-    appVersionEl.textContent = 'v' + chrome.runtime.getManifest().version;
-  }
+  if (appVersionEl) appVersionEl.textContent = 'v' + version;
+  const aboutVersionEl = document.getElementById('aboutVersion');
+  if (aboutVersionEl) aboutVersionEl.textContent = 'FavorAI v' + version;
   
   toast.addEventListener('animationend', () => {
     toast.classList.remove('show');
@@ -416,7 +417,19 @@ document.addEventListener('DOMContentLoaded', () => {
   btnFullReorg.addEventListener('click', () => startReorganization('complete'));
   btnStopReorg.addEventListener('click', stopReorganization);
 
-  checkDeadLinksCheckbox.addEventListener('change', () => {
+  checkDeadLinksCheckbox.addEventListener('change', async () => {
+    if (checkDeadLinksCheckbox.checked) {
+      const granted = await chrome.permissions.contains({ origins: ['<all_urls>'] });
+      if (!granted) {
+        const approved = await chrome.permissions.request({ origins: ['<all_urls>'] });
+        if (!approved) {
+          checkDeadLinksCheckbox.checked = false;
+          addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée.', 'warning');
+          chrome.storage.sync.set({ checkDeadLinks: false });
+          return;
+        }
+      }
+    }
     chrome.storage.sync.set({ checkDeadLinks: checkDeadLinksCheckbox.checked });
   });
 
@@ -745,7 +758,21 @@ function importConfig(e) {
   e.target.value = '';
 }
 
-function startReorganization(mode) {
+async function startReorganization(mode) {
+  // If dead links check is enabled, ensure we have host permission (optional_host_permissions)
+  if (checkDeadLinksCheckbox.checked) {
+    const granted = await chrome.permissions.contains({ origins: ['<all_urls>'] });
+    if (!granted) {
+      const approved = await chrome.permissions.request({ origins: ['<all_urls>'] });
+      if (!approved) {
+        checkDeadLinksCheckbox.checked = false;
+        chrome.storage.sync.set({ checkDeadLinks: false });
+        addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée.', 'warning');
+        return;
+      }
+    }
+  }
+
   const config = {
     provider: providerSelect.value,
     apiUrl: apiUrlInput.value.trim(),

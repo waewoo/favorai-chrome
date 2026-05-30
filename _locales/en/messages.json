@@ -24,6 +24,7 @@
   "sectionLaunchDesc": { "message": "The extension will analyze duplicates, dead links, and query AI to organize your bookmarks." },
   "privacyNote": { "message": "To reorganize your bookmarks, their titles and structure (without URLs) are transmitted to the AI service you configured. No data is collected by FavorAI." },
   "checkDeadLinksLabel": { "message": "Check dead links (slow)" },
+  "deadLinksPermissionDenied": { "message": "Permission denied — dead link checking disabled. Grant access to all URLs to use this feature." },
   "btnMinimal": { "message": "Minimal" },
   "btnComplete": { "message": "Complete" },
   "btnMinimalTitle": { "message": "Only organize misplaced bookmarks, without modifying the existing folder structure." },

@@ -22,6 +22,8 @@ const filesToCopy = [
   'popup.html',
   'popup.css',
   'popup.js',
+  'popup-light.html',
+  'popup-light.js',
   'privacy_policy.html',
   '_locales',
   'src',
