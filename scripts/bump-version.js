@@ -122,20 +122,36 @@ fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
 console.log(`✅ Updated manifest.json & package.json to v${newVersion}`);
 
-// 5. Update CHANGELOG.md if we have commits
+// 5. Update CHANGELOG.md and create Git commit & tag
+let changelogNotes = null;
 if (isGit && commits.length > 0) {
-  updateChangelog(commits, newVersion);
+  changelogNotes = updateChangelog(commits, newVersion);
+}
+
+if (isGit) {
+  try {
+    const filesToCommit = fs.existsSync(changelogPath) && changelogNotes ? 'manifest.json package.json CHANGELOG.md' : 'manifest.json package.json';
+    
+    console.log('📦 Committing release files...');
+    execSync(`git commit ${filesToCommit} -m "chore(release): v${newVersion}"`, { stdio: 'inherit' });
+    
+    console.log(`🏷️ Creating annotated Git tag v${newVersion}...`);
+    const tagMessage = `Release v${newVersion}\n\n${changelogNotes || 'Manual version increment.'}`;
+    // Use stdin to pass the multi-line tag message safely to avoid escaping issues
+    execSync(`git tag -a v${newVersion} --file=-`, { input: tagMessage, stdio: ['pipe', 'inherit', 'inherit'] });
+    
+    console.log(`✅ Release v${newVersion} committed and tagged locally!`);
+  } catch (err) {
+    console.error('❌ Failed to execute Git commands:', err.message);
+  }
 }
 
 // 6. Print next steps
 console.log('\n======================================================');
-console.log(` Release v${newVersion} prepared successfully!`);
+console.log(` Release v${newVersion} prepared, committed, and tagged!`);
 console.log('======================================================');
-console.log('To complete the release process, run the following commands:');
-console.log(`  git add manifest.json package.json CHANGELOG.md`);
-console.log(`  git commit -m "chore(release): v${newVersion}"`);
-console.log(`  git tag -a v${newVersion} -m "Release v${newVersion}"`);
-console.log('  git push origin main --tags');
+console.log('To push the release to the remote repository, run:');
+console.log(`  git push origin main --tags`);
 console.log('======================================================\n');
 
 function analyzeBumpType(commitsList) {
@@ -180,7 +196,7 @@ function analyzeBumpType(commitsList) {
 function updateChangelog(commitsList, version) {
   if (!fs.existsSync(changelogPath)) {
     console.warn(`⚠️ CHANGELOG.md not found. Skipping changelog update.`);
-    return;
+    return null;
   }
 
   const added = [];
@@ -228,7 +244,7 @@ function updateChangelog(commitsList, version) {
 
   // If no release-worthy commits remain after filtering
   if (added.length === 0 && fixed.length === 0 && changed.length === 0) {
-    return;
+    return null;
   }
 
   const now = new Date();
@@ -237,17 +253,18 @@ function updateChangelog(commitsList, version) {
   const day = String(now.getDate()).padStart(2, '0');
   const dateStr = `${year}-${month}-${day}`;
 
-  let changelogBlock = `## [${version}] - ${dateStr}\n\n`;
-  
+  let notesBlock = '';
   if (added.length > 0) {
-    changelogBlock += `### Added\n${added.join('\n')}\n\n`;
+    notesBlock += `### Added\n${added.join('\n')}\n\n`;
   }
   if (changed.length > 0) {
-    changelogBlock += `### Changed\n${changed.join('\n')}\n\n`;
+    notesBlock += `### Changed\n${changed.join('\n')}\n\n`;
   }
   if (fixed.length > 0) {
-    changelogBlock += `### Fixed\n${fixed.join('\n')}\n\n`;
+    notesBlock += `### Fixed\n${fixed.join('\n')}\n\n`;
   }
+
+  let changelogBlock = `## [${version}] - ${dateStr}\n\n` + notesBlock;
 
   let changelogContent = fs.readFileSync(changelogPath, 'utf8');
   const firstEntryIndex = changelogContent.indexOf('## [');
@@ -263,4 +280,6 @@ function updateChangelog(commitsList, version) {
 
   fs.writeFileSync(changelogPath, changelogContent, 'utf8');
   console.log(`📝 Updated CHANGELOG.md with release notes for v${version}`);
+
+  return notesBlock;
 }
