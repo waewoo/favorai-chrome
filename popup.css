@@ -170,11 +170,12 @@
       font-size: 12px;
       outline: none;
       transition: all 0.2s;
+      color-scheme: dark;
     }
 
     select option {
-      background-color: #11131c;
-      color: var(--text-main);
+      background-color: #0d0f1a;
+      color: #f3f4f6;
     }
 
     select option:checked {

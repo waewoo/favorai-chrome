@@ -77,15 +77,15 @@ publish-testers: package
 
 clean: clean-e2e
 	@echo "Cleaning up generated directories and files..."
-	@rm -rf coverage/ playwright-report/ test-results/ dist/ *.zip 2>/dev/null || powershell -Command "Remove-Item -Path coverage, playwright-report, test-results, dist, *.zip -Recurse -ErrorAction SilentlyContinue"
+	@node -e "const fs = require('fs'); ['coverage', 'playwright-report', 'test-results', 'dist'].forEach(p => { try { fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} }); fs.readdirSync('.').forEach(f => { if (f.endsWith('.zip')) { try { fs.rmSync(f, { force: true }); } catch (e) {} } });"
 	@echo "Cleanup completed."
 
 # Remove leftover Playwright Chrome user-data dirs (in tests/e2e/ from old runs)
 # and os.tmpdir() dirs created by the current helper
 clean-e2e:
 	@echo "Cleaning up Playwright temporary directories..."
-	@rm -rf tests/e2e/tmp-user-data-* tests/tests/ test-results/ playwright-report/ 2>/dev/null || true
-	@powershell -Command "Get-ChildItem -Path \"$$env:TEMP\" -Directory -Filter 'favorai-e2e-*' | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue" 2>/dev/null || true
+	@node -e "const fs = require('fs'); ['tests/tests', 'test-results', 'playwright-report'].forEach(p => { try { fs.rmSync(p, { recursive: true, force: true }); } catch (e) {} }); if (fs.existsSync('tests/e2e')) { fs.readdirSync('tests/e2e').forEach(f => { if (f.startsWith('tmp-user-data-')) { try { fs.rmSync('tests/e2e/' + f, { recursive: true, force: true }); } catch (e) {} } }); }"
+	@node -e "const fs = require('fs'); const path = require('path'); const os = require('os'); const tempDir = os.tmpdir(); if (fs.existsSync(tempDir)) { fs.readdirSync(tempDir).forEach(f => { if (f.startsWith('favorai-e2e-')) { try { fs.rmSync(path.join(tempDir, f), { recursive: true, force: true }); } catch (e) {} } }); }"
 	@echo "E2E cleanup done."
 
 # Kill any orphaned Playwright-spawned Chrome processes (--load-extension flag is the fingerprint)

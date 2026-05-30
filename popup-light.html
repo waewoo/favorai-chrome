@@ -247,6 +247,20 @@
       100% { content: '...'; }
     }
 
+    /* ── Select dropdown dark theme ── */
+    select {
+      color-scheme: dark;
+      appearance: auto;
+    }
+    select option {
+      background-color: #0d0f1a;
+      color: #f3f4f6;
+    }
+    select option:checked {
+      background-color: #4f46e5;
+      color: #fff;
+    }
+
     /* ── Footer ── */
     .footer {
       text-align: center;
@@ -311,7 +325,7 @@
 
         <div>
           <label for="lightManualFolder" style="font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px;" data-i18n="lightFolderLabel"></label>
-          <select id="lightManualFolder" style="width: 100%; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none;">
+          <select id="lightManualFolder" style="width: 100%; background: #0d0f1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 6px 8px; font-size: 11px; color: var(--text-main); font-family: var(--font-family); outline: none; color-scheme: dark;">
             <option value="" data-i18n="lightSelectFolder"></option>
           </select>
         </div>
