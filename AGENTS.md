@@ -12,24 +12,27 @@ We follow a strict **Separation of Concerns** to isolate UI logic, background or
 FavorAI/
 ├── manifest.json                    # Extension metadata, permissions & service worker declaration
 ├── background.js                    # Service Worker entrypoint (event router, keep-alive alarm listener)
-├── popup.html                       # Popup UI layout (localized via data-i18n attributes)
-├── popup.css                        # UI styling rules
+├── popup.html                       # Full popup UI layout (localized via data-i18n attributes)
+├── popup-light.html                 # Lightweight popup variant for the browser action quick access
+├── popup.css                        # UI styling rules (shared by both popup variants)
 ├── popup.js                         # UI logic, state management, chrome.runtime messaging sender
+├── popup-light.js                   # Simplified UI logic for the lightweight popup variant
 ├── Makefile                         # Unified interface for linting, testing, and packaging
 ├── src/
 │   ├── background/
-│   │   ├── analysis.js              # Runs duplicate detections, dead-link checks, flattens bookmarks
+│   │   ├── analysis.js              # Runs duplicate detections, dead-link checks, orchestrates LLM call
 │   │   ├── diff.js                  # Aligns reorganized LLM outputs and builds node mappings
 │   │   ├── apply.js                 # Safe updates, parent ID resolutions, deletions, and moves
-│   │   └── history.js               # History tracking and bookmarks rollback mechanics
+│   │   └── history.js              # History tracking and bookmarks rollback mechanics
 │   ├── llm/
-│   │   ├── index.js                 # Unified LLM query routing and optimized prompt logic
+│   │   ├── index.js                 # Unified LLM query routing via dispatchToProvider()
 │   │   ├── utils.js                 # LLM response parser, JSON sanitation, and fetch timeout helpers
-│   │   └── providers/               # API clients wrappers (openai, gemini, mistral, ollama, etc.)
+│   │   └── providers/               # API client wrappers: openai, gemini, claude, mistral, deepseek, ollama, grok, custom
 │   └── utils/
 │       ├── constants.js             # Shared static constraints and browser structural root IDs
 │       ├── escapeHtml.js            # XSS HTML escaper helper
-│       └── isSafeUrl.js             # Scheme and syntax-level URL sanitization checker
+│       ├── isSafeUrl.js             # Scheme validation (http/https only — rejects javascript:, data:, etc.)
+│       └── truncateString.js        # String truncation helper with ellipsis
 ```
 
 ---
@@ -39,18 +42,20 @@ FavorAI/
 To maintain state integrity, AI agents must respect the exact schemas used for LLM payload exchanges:
 
 ### 1. Simplified Input Tree (Sent to LLM)
-URLs and descriptions are stripped from the tree before sending to protect user privacy and save tokens.
+
+The tree is sent to the external LLM provider with URLs included to aid semantic classification. Duplicates and dead links already handled locally are excluded before sending.
+
 ```json
 {
   "id": "1",
   "title": "Barre de favoris",
   "children": [
-    { "id": "10", "title": "GitHub repository" },
+    { "id": "10", "title": "GitHub repository", "url": "https://github.com" },
     {
       "id": "2",
       "title": "Design resources",
       "children": [
-        { "id": "11", "title": "CSS Gradients guide" }
+        { "id": "11", "title": "CSS Gradients guide", "url": "https://css-tricks.com" }
       ]
     }
   ]
@@ -60,7 +65,7 @@ URLs and descriptions are stripped from the tree before sending to protect user 
 ### 2. Reorganized Tree Output (Received from LLM)
 The LLM response must be a valid JSON object containing a `reorganizedTree` and an `explanation`.
 * **Important**: Bookmarks should only contain the `id` field. Titles/URLs are automatically restored on the client side using `restoreOriginalMetadata`.
-* **Important**: New folders created by the LLM must use a prefix `new_` (e.g., `new_dev_tools`).
+* **Important**: New folders created by the LLM must use the prefix `new_` (e.g., `new_dev_tools`).
 ```json
 {
   "reorganizedTree": {
@@ -91,57 +96,64 @@ The LLM response must be a valid JSON object containing a `reorganizedTree` and 
 
 ## 🧪 Testing & Mocking Architecture
 
-All logical utility components must maintain **100% coverage** across **all metrics**:
-- **Statements**: 100%
-- **Branch**: 100%
-- **Functions**: 100%
-- **Lines**: 100%
-
-**Per-file requirement**: Each utility file (`src/background/*.js`, `src/llm/*.js`, `src/utils/*.js`) must individually meet the 100% threshold for all four coverage metrics. No exceptions, no trade-offs.
-
 ### 1. Mocking Chrome APIs
-When writing unit tests under `tests/unit/`, do not invoke real browser APIs. A global mock system is pre-configured in [tests/setup.js](file:///d:/Travail/Projet/favorai-chrome/tests/setup.js) using the mocks defined in [tests/mocks/chrome.js](file:///d:/Travail/Projet/favorai-chrome/tests/mocks/chrome.js).
+When writing unit tests under `tests/unit/`, do not invoke real browser APIs. A global mock system is pre-configured in [tests/setup.js](tests/setup.js) using the mocks defined in [tests/mocks/chrome.js](tests/mocks/chrome.js).
 Ensure you mock return values explicitly inside your test cases when test targets make Chrome API calls:
 ```javascript
-// Example of mocking Chrome API inside a test case
 chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
 ```
 
-### 2. Available Commands
-**CRITICAL: Always run the full test suite before committing changes.**
+### 2. Available Make Commands
 
-AI agents must run these tasks to validate code changes:
-- `make lint` : Validates coding styles and scans for syntax errors. **Run this first**.
-- `make test` : Runs the entire Vitest unit test suite (95%+ coverage required). **Run after lint**.
-- `make test-coverage` : Runs unit tests and prints the formatted global coverage summary.
-- `make test-e2e` : Runs Playwright end-to-end tests (93 tests covering UI structure, navigation, forms, i18n, and error handling). **Run after unit tests**. This validates actual browser behavior in Chromium context.
-- `make clean` : Cleans temporary report folders, build files, and package zips.
+**CRITICAL: Always run lint and unit tests before committing. Run e2e tests for UI/integration changes.**
 
-**Recommended test workflow before committing:**
+| Command | Description |
+|---|---|
+| `make lint` | ESLint — validates code style and catches syntax errors. **Run first.** |
+| `make lint-fix` | ESLint auto-fix |
+| `make test` | Vitest unit tests (130 tests, 95%+ coverage). **Run after lint.** |
+| `make test-watch` | Vitest in interactive watch mode |
+| `make test-coverage` | Unit tests + formatted global coverage summary |
+| `make test-e2e` | Playwright e2e tests (106 tests, UI + integration). Runs `clean-e2e` first. |
+| `make test-e2e-ui` | UI e2e tests only |
+| `make test-e2e-integration` | Integration e2e tests only |
+| `make clean` | Remove coverage/, playwright-report/, test-results/, dist/, *.zip |
+| `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and test reports |
+| `make kill-e2e` | Kill any orphaned Playwright-spawned Chrome processes |
+| `make package` | Package the extension into a ZIP for the Chrome Web Store |
+
+**Recommended workflow before committing:**
+```bash
+make lint && make test
+```
+
+**For UI or integration changes, also run e2e:**
 ```bash
 make lint && make test && make test-e2e
 ```
 
 ### 3. Test Coverage Requirements
 
-**Unit Tests** (95%+ coverage):
+**Unit Tests** (130 tests, 95%+ coverage):
 - Located in `tests/unit/`
 - Test utility functions, analysis logic, LLM parsing, diff calculations
 - Mock Chrome APIs using `tests/mocks/chrome.js`
 - Run with: `make test`
 
-**E2E Tests** (93 tests, 7 test files):
+**E2E Tests** (106 tests, 10 spec files):
 - Located in `tests/e2e/`
-- Test UI components, navigation, form inputs, internationalization, error handling
-- Currently cover: popup structure, tab navigation, configuration forms, history display, reorganization UI, popup-light interface, error states
-- **Add tests for new features**: When implementing a new feature, add corresponding e2e tests to `tests/e2e/` to catch integration errors early
+- Shared helpers in `tests/e2e/helpers.js` (`launchExtension`, `gotoPopup`, `cleanup`)
+- Configuration: `workers: 2`, `timeout: 60s`, `retries: 1` (see `playwright.config.js`)
+- Cover: popup structure, tab navigation, configuration forms, history display, reorganization UI, popup-light interface, i18n, error handling, integration flows
+- **Add tests for new features**: When implementing a new feature, add corresponding e2e tests to catch integration errors early
 - Run with: `make test-e2e`
 
 **Best Practice: Test-Driven Development**
-1. When adding a new feature, write the e2e test first
+1. Write e2e test first for new features
 2. Implement the feature
-3. Run full test suite (`make lint && make test && make test-e2e`)
-4. All tests must pass before committing
+3. Run `make lint && make test` — must pass before every commit
+4. Run `make test-e2e` for UI/integration changes
+5. All tests must pass before committing
 
 ---
 
@@ -151,18 +163,32 @@ To ensure compliance with Chrome and Edge Manifest V3 stores:
 
 1. **Service Worker State Ephemerality**:
    - Background service workers are terminated after 30 seconds of inactivity.
-   - Do **NOT** store state in memory variables (e.g., `let activeDiff = {...}`). 
+   - Do **NOT** store state in memory variables (e.g., `let activeDiff = {...}`).
    - **Fix**: Persist state to `chrome.storage.local` and retrieve it on event wakes.
+   - `popupWindowId` is persisted to `chrome.storage.local` and restored on SW startup.
+
 2. **Sync Storage Write Limits**:
    - `chrome.storage.sync` write quota is limited to 120 writes per minute.
    - Do **NOT** write to `chrome.storage.sync` inside loop routines or rapid status changes. Use `chrome.storage.local` for dynamic logs or cache.
+
 3. **Background Network Calls**:
    - All external fetch operations must run inside the background service worker. If executed inside the popup, the requests will abort when the user closes the popup window.
+
 4. **XSS Security (CSP)**:
    - Remote script downloads or CDN loading is strictly blocked. All code must be local.
    - Avoid using `innerHTML`, `outerHTML`, or `document.write` to bind values. Use `textContent` or construct DOM elements programmatically using `document.createElement()`.
-5. **SOLID, KISS, and DRY Principles**:
-   - **TDD (Test-Driven Development)**: Write unit tests first before implementing logical changes, ensuring high code regression safety.
+
+5. **Security & Privacy**:
+   - API keys must never be logged, even in debug mode. Use masked values (e.g., `key=***`) in log output.
+   - Bookmark URLs are sent to the configured external LLM provider for semantic classification. Make sure users are informed of this in the UI privacy note.
+   - Prompt templates must use single-pass replacement (regex with all keys at once) to prevent prompt injection via bookmark titles or URLs.
+
+6. **Concurrency**:
+   - `saveSessionToHistory` serializes concurrent calls via a promise queue to prevent read-modify-write race conditions on `chrome.storage.local`.
+   - When creating folders with `new_` IDs, `resolveParentId` returns `null` if the parent creation failed. Callers must check for `null` and skip the child operation rather than falling back silently.
+
+7. **SOLID, KISS, and DRY Principles**:
+   - **TDD (Test-Driven Development)**: Write unit tests first before implementing logical changes.
    - **SOLID**: Keep modules short, focused, and single-purpose.
    - **KISS**: Avoid complex, over-engineered layers.
-   - **DRY**: Shared helpers (such as HTML escaping, URL checks) should reside under `src/utils/`.
+   - **DRY**: Shared helpers reside under `src/utils/`. Provider dispatch is centralized in `dispatchToProvider()` in `src/llm/index.js`.
