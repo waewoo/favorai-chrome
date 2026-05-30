@@ -191,7 +191,7 @@ Whenever you are ready to publish a new version:
    ```bash
    make lint && make test && make test-e2e
    ```
-2. **Synchronize Versions and update CHANGELOG**: Bump the version across files and prepend release notes to `CHANGELOG.md`. The scripts update `manifest.json`, `package.json`, and `CHANGELOG.md` in sync:
+2. **Synchronize Versions, update CHANGELOG, commit, and tag**: Bump the version across files, prepend release notes to `CHANGELOG.md`, and automatically stage, commit, and tag the release version locally with its corresponding release notes:
    - **Auto-detected Release** (SemVer based on git commits since the last tag): `make bump`
    - **Patch Release** (force e.g., 1.2.0 ➔ 1.2.1): `make bump-patch`
    - **Minor Release** (force e.g., 1.2.0 ➔ 1.3.0): `make bump-minor`

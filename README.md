@@ -98,12 +98,12 @@ node scripts/get-refresh-token.mjs   # opens browser → paste token in .env
 # 1. Run all checks to ensure stability:
 make lint && make test && make test-e2e
 
-# 2. Bump the version synchronously and update CHANGELOG:
-make bump                     # auto-detect bump type based on git commits & update CHANGELOG.md
+# 2. Bump the version, update CHANGELOG, commit, and tag locally:
+make bump                     # auto-detect bump type based on git commits, update CHANGELOG.md, commit & tag locally
 # or force manually:
-make bump-patch               # manual patch release (1.2.0 -> 1.2.1)
-make bump-minor               # manual minor release (1.2.0 -> 1.3.0)
-make bump-major               # manual major release (1.2.0 -> 2.0.0)
+make bump-patch               # manual patch release, commit & tag locally
+make bump-minor               # manual minor release, commit & tag locally
+make bump-major               # manual major release, commit & tag locally
 
 # 3. Publish to the Chrome Web Store:
 make publish                  # build ZIP + upload + publish to all users
