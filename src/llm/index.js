@@ -366,10 +366,10 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
   const systemPrompt = `You are a strict JSON classifier. You must return ONLY a valid JSON object matching the requested schema without any markdown tags, markdown blocks, or extra conversational text. ${languageInstruction}`;
 
   const template = promptSuggest || PROMPT_SUGGEST;
-  const userPrompt = template
-    .replace('{title}', bookmark.title)
-    .replace('{url}', bookmark.url)
-    .replace('{folders}', foldersList);
+  // Single-pass replacement prevents a crafted bookmark title/url (e.g. "{folders}")
+  // from being substituted again in a later sequential .replace() call.
+  const substitutions = { title: bookmark.title, url: bookmark.url, folders: foldersList };
+  const userPrompt = template.replace(/\{(title|url|folders)\}/g, (_, key) => substitutions[key] ?? _);
 
   if (debugMode) {
     // console.log('=== DEBUG: Suggest Bookmark Location ===');
