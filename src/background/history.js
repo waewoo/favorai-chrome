@@ -1,10 +1,15 @@
 import { MAX_HISTORY_SESSIONS } from '../utils/constants.js';
 
+// Serialise les appels concurrents à saveSessionToHistory pour éviter la race condition
+// lecture-puis-écriture (last-write-wins) sur chrome.storage.local.
+let _historyQueue = Promise.resolve();
+
 /**
  * Enregistre une session dans l'historique persistant (max MAX_HISTORY_SESSIONS sessions).
+ * Les appels concurrents sont mis en file et exécutés séquentiellement.
  */
 export function saveSessionToHistory(entries, mode, explanation = '') {
-  return new Promise((resolve) => {
+  _historyQueue = _historyQueue.then(() => new Promise((resolve) => {
     chrome.storage.local.get(['reorgHistory'], (res) => {
       const history = res.reorgHistory || [];
       history.unshift({
@@ -17,7 +22,8 @@ export function saveSessionToHistory(entries, mode, explanation = '') {
       if (history.length > MAX_HISTORY_SESSIONS) history.pop();
       chrome.storage.local.set({ reorgHistory: history }, resolve);
     });
-  });
+  }));
+  return _historyQueue;
 }
 
 /**
