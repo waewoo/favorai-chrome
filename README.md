@@ -29,7 +29,7 @@ FavorAI is a Chrome and Chromium-based browser extension that helps you clean up
 │   ├── llm/                 # LLM client wrappers + provider dispatch
 │   └── utils/               # Sanitization helpers and constants
 └── tests/                   # Automated Vitest unit tests and Playwright e2e tests
-    ├── unit/                # 130 unit tests (Vitest)
+    ├── unit/                # 160 unit tests (Vitest)
     ├── e2e/                 # 106 e2e tests (Playwright)
     │   ├── helpers.js       # Shared launchExtension / gotoPopup / cleanup helpers
     │   ├── ui/              # UI spec files (structure, navigation, config, history, i18n, …)
@@ -56,12 +56,16 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make install` | Install Node.js dependencies |
 | `make lint` | Run ESLint code validation |
 | `make lint-fix` | Auto-fix linter warnings |
-| `make test` | Run Vitest unit tests (130 tests, 95%+ coverage) |
+| `make test` | Run Vitest unit tests (160 tests, 100% coverage) |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + coverage summary |
 | `make test-e2e` | Run all Playwright e2e tests (106 tests) |
 | `make test-e2e-ui` | UI e2e tests only |
 | `make test-e2e-integration` | Integration e2e tests only |
+| `make bump` | Auto-detect SemVer bump type (major/minor/patch) from git history & update CHANGELOG |
+| `make bump-patch` | Increment patch version (e.g. 1.2.0 -> 1.2.1) manually |
+| `make bump-minor` | Increment minor version (e.g. 1.2.0 -> 1.3.0) manually |
+| `make bump-major` | Increment major version (e.g. 1.2.0 -> 2.0.0) manually |
 | `make clean` | Remove coverage, reports, dist, zip files |
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and reports |
 | `make kill-e2e` | Kill any stuck Playwright-spawned Chrome processes |
@@ -90,9 +94,22 @@ cp .env.example .env          # fill in WEBSTORE_CLIENT_ID + WEBSTORE_CLIENT_SEC
 node scripts/get-refresh-token.mjs   # opens browser → paste token in .env
 # Add WEBSTORE_EXTENSION_ID from the store dashboard URL
 
-# Then on each release:
+# Release workflow:
+# 1. Run all checks to ensure stability:
+make lint && make test && make test-e2e
+
+# 2. Bump the version synchronously and update CHANGELOG:
+make bump                     # auto-detect bump type based on git commits & update CHANGELOG.md
+# or force manually:
+make bump-patch               # manual patch release (1.2.0 -> 1.2.1)
+make bump-minor               # manual minor release (1.2.0 -> 1.3.0)
+make bump-major               # manual major release (1.2.0 -> 2.0.0)
+
+# 3. Publish to the Chrome Web Store:
 make publish                  # build ZIP + upload + publish to all users
+# or
 make publish-testers          # or publish to trusted testers first
+# or
 make upload                   # or just upload as a draft without publishing
 ```
 

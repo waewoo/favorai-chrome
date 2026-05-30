@@ -111,16 +111,21 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 |---|---|
 | `make lint` | ESLint — validates code style and catches syntax errors. **Run first.** |
 | `make lint-fix` | ESLint auto-fix |
-| `make test` | Vitest unit tests (159 tests, 100% coverage). **Run after lint.** |
+| `make test` | Vitest unit tests (160 tests, 100% coverage). **Run after lint.** |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + formatted global coverage summary |
 | `make test-e2e` | Playwright e2e tests (106 tests, UI + integration). Runs `clean-e2e` first. |
 | `make test-e2e-ui` | UI e2e tests only |
 | `make test-e2e-integration` | Integration e2e tests only |
+| `make bump` | Auto-detect SemVer bump type (major/minor/patch) from git history & update CHANGELOG |
+| `make bump-patch` | Increment patch version (e.g. 1.2.0 -> 1.2.1) manually |
+| `make bump-minor` | Increment minor version (e.g. 1.2.0 -> 1.3.0) manually |
+| `make bump-major` | Increment major version (e.g. 1.2.0 -> 2.0.0) manually |
 | `make clean` | Remove coverage/, playwright-report/, test-results/, dist/, *.zip |
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and test reports |
 | `make kill-e2e` | Kill any orphaned Playwright-spawned Chrome processes |
 | `make package` | Package the extension into a ZIP for the Chrome Web Store |
+| `make screenshots` | Generate all store asset PNGs from HTML sources |
 | `make upload` | Build ZIP + upload to Chrome Web Store as draft (no publish) |
 | `make publish` | Build ZIP + upload + publish to all users |
 | `make publish-testers` | Build ZIP + upload + publish to trusted testers only |
@@ -137,7 +142,7 @@ make lint && make test && make test-e2e
 
 ### 3. Test Coverage Requirements
 
-**Unit Tests** (159 tests, 100% coverage):
+**Unit Tests** (160 tests, 100% coverage):
 - Located in `tests/unit/`
 - Test utility functions, analysis logic, LLM parsing, diff calculations
 - Mock Chrome APIs using `tests/mocks/chrome.js`
@@ -158,6 +163,56 @@ make lint && make test && make test-e2e
 3. Run `make lint && make test` — must pass before every commit
 4. Run `make test-e2e` for UI/integration changes
 5. All tests must pass before committing
+
+### 4. Versioning and Release Workflow
+
+Creating a new release and publishing it to the Chrome Web Store is automated via the `Makefile` and helper scripts.
+
+#### One-Time Setup
+Before you can publish to the Chrome Web Store, ensure you have set up your API credentials:
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Fill in the following OAuth2 and store details in `.env`:
+   - `WEBSTORE_CLIENT_ID`: OAuth2 client ID from the Google Cloud Console.
+   - `WEBSTORE_CLIENT_SECRET`: OAuth2 client secret from Google Cloud.
+   - `WEBSTORE_EXTENSION_ID`: The ID of your extension in the Chrome Web Store Developer Dashboard.
+3. Obtain a refresh token by running:
+   ```bash
+   node scripts/get-refresh-token.mjs
+   ```
+   This will open a browser to authenticate. Authorize the application and copy the resulting code/refresh token back into your `.env` file as `WEBSTORE_REFRESH_TOKEN`.
+
+#### Release Checklist & Process
+Whenever you are ready to publish a new version:
+
+1. **Verify Codebase Integrity**: Ensure all tests and lint checks pass cleanly:
+   ```bash
+   make lint && make test && make test-e2e
+   ```
+2. **Synchronize Versions and update CHANGELOG**: Bump the version across files and prepend release notes to `CHANGELOG.md`. The scripts update `manifest.json`, `package.json`, and `CHANGELOG.md` in sync:
+   - **Auto-detected Release** (SemVer based on git commits since the last tag): `make bump`
+   - **Patch Release** (force e.g., 1.2.0 ➔ 1.2.1): `make bump-patch`
+   - **Minor Release** (force e.g., 1.2.0 ➔ 1.3.0): `make bump-minor`
+   - **Major Release** (force e.g., 1.2.0 ➔ 2.0.0): `make bump-major`
+3. **Generate Store Assets (Optional)**: If UI screenshots or promotional tiles need updating, regenerate them:
+   ```bash
+   make screenshots
+   ```
+4. **Publish to Chrome Web Store**: Choose one of the deployment targets:
+   - **Full Release**: Upload the packaged ZIP and submit for review/publish to all users:
+     ```bash
+     make publish
+     ```
+   - **Tester Release**: Deploy to your group of trusted testers only:
+     ```bash
+     make publish-testers
+     ```
+   - **Draft Upload**: Upload the package as a draft without submitting for review:
+     ```bash
+     make upload
+     ```
 
 ---
 
