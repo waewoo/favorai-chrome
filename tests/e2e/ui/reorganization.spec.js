@@ -79,8 +79,10 @@ test.describe('Reorganization (Rangement) Tab', () => {
     try {
       await gotoPopup(page, extensionId);
 
+      // #logContainer uses flex:1/min-height:0 — check presence and attribute, not pixel visibility
       const logContainer = page.locator('#logContainer');
-      await expect(logContainer).toBeVisible();
+      expect(await logContainer.count()).toBeGreaterThan(0);
+      await expect(logContainer).toHaveAttribute('role', 'log');
     } finally {
       await cleanup(context, tmpDir);
     }

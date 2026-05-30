@@ -94,12 +94,14 @@ test.describe('Tabs Navigation', () => {
       const tabConfigBtn = page.locator('#tabConfigBtn');
       const tabRangementBtn = page.locator('#tabRangementBtn');
 
-      // Switch to Config
+      // Switch to Config — wait for panel visible before asserting active class
       await tabConfigBtn.click();
+      await page.locator('#tabConfigPanel').waitFor({ state: 'visible' });
       await expect(tabConfigBtn).toHaveClass(/active/);
 
-      // Switch to Rangement
+      // Switch to Rangement — wait for panel visible before asserting active class
       await tabRangementBtn.click();
+      await page.locator('#tabRangementPanel').waitFor({ state: 'visible' });
       await expect(tabRangementBtn).toHaveClass(/active/);
     } finally {
       await cleanup(context, tmpDir);

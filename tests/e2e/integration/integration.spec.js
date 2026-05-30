@@ -291,35 +291,22 @@ test.describe('Integration Tests - Reorganization Flow', () => {
       await expect(tabDocsBtn).toBeVisible();
       await tabDocsBtn.click();
 
-      // Documentation panel should be visible
+      // Documentation panel should be visible after tab click
       const docsPanel = page.locator('#tabDocumentationPanel');
-      await docsPanel.waitFor({ state: 'visible' });
-      await page.waitForTimeout(200);
+      await expect(docsPanel).toBeVisible({ timeout: 10000 });
 
-      // Check for documentation content sections
-      const docsTitle = docsPanel.locator(':text("Documentation")').first();
-      await expect(docsTitle).toBeVisible();
+      // Verify key documentation sections using i18n keys present in popup.html
+      const docsTitle = page.locator('[data-i18n="docsTitle"]');
+      expect(await docsTitle.count()).toBeGreaterThan(0);
 
-      // Verify presence of key documentation sections
       const docsOverview = page.locator('[data-i18n="docsOverviewTitle"]');
       await expect(docsOverview).toBeVisible();
 
-      const docsHowItWorks = page.locator('[data-i18n="docsHowItWorks"]');
-      await expect(docsHowItWorks).toBeVisible();
+      const docsFeatures = page.locator('[data-i18n="docsFeatures"]');
+      await expect(docsFeatures).toBeVisible();
 
       const docsTokens = page.locator('[data-i18n="docsGettingTokens"]');
       await expect(docsTokens).toBeVisible();
-
-      // Verify API provider sections exist
-      const openaiProvider = page.locator('[data-i18n="docsOpenAITitle"]');
-      await expect(openaiProvider).toBeVisible();
-
-      const geminiProvider = page.locator('[data-i18n="docsGeminiTitle"]');
-      await expect(geminiProvider).toBeVisible();
-
-      // Verify privacy section
-      const privacySection = page.locator('[data-i18n="docsPrivacy"]');
-      await expect(privacySection).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }

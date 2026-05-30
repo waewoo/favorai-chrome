@@ -96,11 +96,10 @@ test.describe('Configuration Tab', () => {
 
     try {
       await gotoPopup(page, extensionId);
-      await navigateToConfig(page);
-
+      // #checkDeadLinks is in the Rangement tab, not Config
       const deadLinksCheckbox = page.locator('#checkDeadLinks');
-      await expect(deadLinksCheckbox).toBeVisible();
       await expect(deadLinksCheckbox).toHaveAttribute('type', 'checkbox');
+      expect(await deadLinksCheckbox.count()).toBeGreaterThan(0);
     } finally {
       await cleanup(context, tmpDir);
     }

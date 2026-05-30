@@ -101,9 +101,10 @@ test.describe('UI Structure and Layout', () => {
       const configPanel = page.locator('#tabConfigPanel');
       const historyPanel = page.locator('#tabHistoryPanel');
 
-      await expect(rangementPanel).not.toHaveCount(0);
-      await expect(configPanel).not.toHaveCount(0);
-      await expect(historyPanel).not.toHaveCount(0);
+      // toBeAttached checks DOM presence directly — more stable than not.toHaveCount(0)
+      await expect(rangementPanel).toBeAttached();
+      await expect(configPanel).toBeAttached();
+      await expect(historyPanel).toBeAttached();
     } finally {
       await cleanup(context, tmpDir);
     }
