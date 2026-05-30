@@ -47,6 +47,15 @@ chrome.action.onClicked.addListener(() => {
   }
 });
 
+// Single named listener — registered once, never duplicated across openPopupWindow calls.
+function onPopupWindowRemoved(id) {
+  if (id === popupWindowId) {
+    popupWindowId = null;
+    chrome.storage.local.remove('popupWindowId');
+    chrome.windows.onRemoved.removeListener(onPopupWindowRemoved);
+  }
+}
+
 function openPopupWindow(url) {
   chrome.windows.create({
     url,
@@ -59,13 +68,9 @@ function openPopupWindow(url) {
     if (!chrome.runtime.lastError && win) {
       popupWindowId = win.id;
       chrome.storage.local.set({ popupWindowId: win.id });
-      chrome.windows.onRemoved.addListener(function onRemoved(id) {
-        if (id === popupWindowId) {
-          popupWindowId = null;
-          chrome.storage.local.remove('popupWindowId');
-          chrome.windows.onRemoved.removeListener(onRemoved);
-        }
-      });
+      // Remove before re-adding to prevent duplicate registrations if called rapidly.
+      chrome.windows.onRemoved.removeListener(onPopupWindowRemoved);
+      chrome.windows.onRemoved.addListener(onPopupWindowRemoved);
     }
   });
 }
