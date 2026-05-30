@@ -6,7 +6,7 @@ export async function queryGemini(url, key, model, prompt, systemPrompt, signal,
 
   if (debugMode) {
     console.log('=== DEBUG: Gemini Request ===');
-    console.log('Endpoint:', endpoint);
+    console.log('Endpoint:', `${base}/v1beta/models/${model}:generateContent?key=***`);
     console.log('Model:', model);
     console.log('System Prompt Length:', systemPrompt.length);
     console.log('User Prompt Length:', prompt.length);
