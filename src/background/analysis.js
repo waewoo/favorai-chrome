@@ -226,9 +226,10 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
 
   // 2. Vérifier la taille du JSON (limite de contexte LLM)
   const allBms = flattenBookmarks([rootNode]);
-  if (allBms.length > 2000) {
-    currentStatus.logs.push({ text: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(allBms.length)]), type: 'warning' });
-    chrome.runtime.sendMessage({ action: 'progress_update', message: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(allBms.length)]), percentage: 8 }).catch(() => {});
+  const bookmarkCount = allBms.length;
+  if (bookmarkCount > 2000) {
+    currentStatus.logs.push({ text: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(bookmarkCount)]), type: 'warning' });
+    chrome.runtime.sendMessage({ action: 'progress_update', message: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(bookmarkCount)]), percentage: 8 }).catch(() => {});
   }
 
   // 3. Nettoyage local
@@ -246,7 +247,6 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
   // 5. Appel LLM
-  const bookmarkCount = flattenBookmarks([rootNode]).length;
   sendProgress(chrome.i18n.getMessage('bgSendingToAI', [String(bookmarkCount)]), 80, currentStatus);
 
   const LLM_HEARTBEAT_MESSAGES = [
