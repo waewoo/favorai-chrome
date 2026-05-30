@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-minor bump-major
 
 # Default goal: show help instructions
 help:
@@ -16,6 +16,9 @@ help:
 	@echo "  make test-e2e              Execute ALL E2E tests with Playwright (UI + Integration)"
 	@echo "  make test-e2e-ui           Execute UI E2E tests only (structure, navigation, forms)"
 	@echo "  make test-e2e-integration  Execute Integration E2E tests only (workflows, flows)"
+	@echo "  make bump                  Increment patch version (e.g. 1.2.0 -> 1.2.1)"
+	@echo "  make bump-minor            Increment minor version (e.g. 1.2.0 -> 1.3.0)"
+	@echo "  make bump-major            Increment major version (e.g. 1.2.0 -> 2.0.0)"
 	@echo "  make package               Package the extension into a ZIP file for Chrome Store"
 	@echo "  make screenshots           Generate all store asset PNGs from HTML sources"
 	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
@@ -25,6 +28,7 @@ help:
 	@echo "  make clean-e2e             Remove leftover Playwright tmp dirs and test-results"
 	@echo "  make kill-e2e              Kill any stuck Playwright/Chrome processes from e2e runs"
 	@echo "========================================================================"
+
 
 install:
 	npm install
@@ -93,3 +97,13 @@ kill-e2e:
 	@echo "Killing stuck Playwright Chrome processes..."
 	@powershell -Command "Get-CimInstance Win32_Process | Where-Object { $$_.Name -eq 'chrome.exe' -and $$_.CommandLine -match 'load-extension' } | ForEach-Object { Stop-Process -Id $$_.ProcessId -Force -ErrorAction SilentlyContinue; Write-Host \"Killed PID $$($$_.ProcessId)\" }" || exit 0
 	@echo "Done."
+
+bump:
+	node scripts/bump-version.js patch
+
+bump-minor:
+	node scripts/bump-version.js minor
+
+bump-major:
+	node scripts/bump-version.js major
+
