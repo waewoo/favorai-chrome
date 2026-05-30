@@ -147,7 +147,8 @@ export function sanitizeReorganizedTree(node, originalMap, idMap = {}) {
 
 /**
  * Nettoie l'arbre pour l'envoyer au LLM :
- * - Retire les URLs (vie privée — le LLM n'en a pas besoin pour réorganiser)
+ * - Les URLs sont incluses dans le payload envoyé au LLM (le provider externe les reçoit)
+ *   afin d'aider à la classification sémantique des favoris.
  * - Retire les doublons et liens morts déjà traités
  */
 export function cleanTreeForLLM(node, duplicatesSet, deadLinksSet) {
