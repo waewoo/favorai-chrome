@@ -121,7 +121,8 @@ release: clean-e2e
 	npm run package
 	@echo "🚀 Pushing commits and tags to GitHub (origin main)..."
 	git push origin main --tags
-	@echo "🚀 Creating GitHub Release..."
-	@node -e "const fs = require('fs'); const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8')); const version = manifest.version; const zipName = 'favorai-extension-v' + version + '.zip'; const { execSync } = require('child_process'); execSync('gh release create v' + version + ' ' + zipName + ' --title v' + version + ' --generate-notes', { stdio: 'inherit' });"
+	@echo "🚀 Creating/updating GitHub Release..."
+	node scripts/release.js
+
 
 

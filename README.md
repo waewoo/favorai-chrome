@@ -66,6 +66,7 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make bump-patch` | Increment patch version (e.g. 1.2.0 -> 1.2.1) manually |
 | `make bump-minor` | Increment minor version (e.g. 1.2.0 -> 1.3.0) manually |
 | `make bump-major` | Increment major version (e.g. 1.2.0 -> 2.0.0) manually |
+| `make release` | Package extension, push commits/tags, and create/update GitHub release (with changelog extraction & comparison links) |
 | `make clean` | Remove coverage, reports, dist, zip files |
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and reports |
 | `make kill-e2e` | Kill any stuck Playwright-spawned Chrome processes |

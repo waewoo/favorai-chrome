@@ -21,6 +21,7 @@ FavorAI/
 ├── scripts/
 │   ├── security-check.js            # Unified security audit (npm audit + ESLint + web-ext lint)
 │   ├── bump-version.js              # SemVer bump, CHANGELOG generation, commit & tag automation
+│   ├── release.js                   # GitHub Release publisher (extracts notes & appends compare link)
 │   ├── package.js                   # Extension ZIP packaging for the Chrome Web Store
 │   ├── publish.mjs                  # Chrome Web Store upload & publish via OAuth2
 │   └── get-refresh-token.mjs        # One-time OAuth2 refresh token helper
@@ -128,6 +129,7 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make bump-patch` | Increment patch version (e.g. 1.2.0 -> 1.2.1) manually |
 | `make bump-minor` | Increment minor version (e.g. 1.2.0 -> 1.3.0) manually |
 | `make bump-major` | Increment major version (e.g. 1.2.0 -> 2.0.0) manually |
+| `make release` | Package extension, push commits/tags, and create/update GitHub release (with changelog extraction & comparison links) |
 | `make clean` | Remove coverage/, playwright-report/, test-results/, dist/, *.zip |
 | `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and test reports |
 | `make kill-e2e` | Kill any orphaned Playwright-spawned Chrome processes |
@@ -200,11 +202,12 @@ Whenever you are ready to publish a new version:
    ```bash
    make lint && make test && make test-e2e && make security
    ```
-2. **Synchronize Versions, update CHANGELOG, commit, and tag**: Bump the version across files, prepend release notes to `CHANGELOG.md`, and automatically stage, commit, and tag the release version locally with its corresponding release notes:
+2. **Synchronize Versions, update CHANGELOG, commit, and tag**: Bump the version across files, prepend release notes to `CHANGELOG.md`, and automatically stage, commit, and tag the release version locally. If the GitHub CLI (`gh`) is logged in, it will also push to GitHub and create/update the corresponding GitHub Release with parsed release notes and comparison links:
    - **Auto-detected Release** (SemVer based on git commits since the last tag): `make bump`
    - **Patch Release** (force e.g., 1.2.0 ➔ 1.2.1): `make bump-patch`
    - **Minor Release** (force e.g., 1.2.0 ➔ 1.3.0): `make bump-minor`
    - **Major Release** (force e.g., 1.2.0 ➔ 2.0.0): `make bump-major`
+   - **Recreate/Publish GitHub Release manually**: `make release` (runs `scripts/release.js` to extract current version notes from `CHANGELOG.md` and update/create the GitHub Release)
 3. **Generate Store Assets (Optional)**: If UI screenshots or promotional tiles need updating, regenerate them:
    ```bash
    make screenshots

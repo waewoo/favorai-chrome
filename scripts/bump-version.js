@@ -160,13 +160,8 @@ if (isGit) {
       console.log('🚀 Pushing commits to GitHub (origin main)...');
       execSync('git push origin main', { stdio: 'inherit' });
       
-      console.log(`🚀 Creating GitHub Release v${newVersion} and uploading ${zipName}...`);
-      const notes = changelogNotes || `Release v${newVersion}`;
-      execSync(`gh release create v${newVersion} "${zipName}" --title "v${newVersion}" --notes-file=-`, {
-        input: notes,
-        stdio: ['pipe', 'inherit', 'inherit']
-      });
-      console.log(`✅ GitHub Release v${newVersion} successfully created and asset uploaded!`);
+      console.log(`🚀 Creating GitHub Release v${newVersion}...`);
+      execSync('node scripts/release.js', { stdio: 'inherit' });
     } else {
       console.log('\n⚠️ GitHub CLI (gh) not logged in or not installed. Skipping GitHub Release creation.');
       console.log('To manually push commits and tags, run:');
