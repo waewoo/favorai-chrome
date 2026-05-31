@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-05-31
+
+### Added
+- **ui**: add config alert and reorg shortcut to popup-light with deep-linking, E2E tests, and deprecation suppression (`c321b9d`)
+- **security**: add unified security tooling and fix XSS vulnerability (`3cc1c4e`)
+
+### Changed
+- **store-assets** (chore): update screenshot mockups and split listing descriptions (`ea8d0c6`)
+- (docs) update AGENTS.md and README.md with current tool/test info (`4c72b2a`)
+- **lint** (chore): extend ESLint coverage to all JS files in the project (`36f3f05`)
+- **coverage** (test): restore 100%% unit test coverage after security refactoring (`3fc4d52`)
+- **security** (chore): resolve vulnerabilities and integrate security scan to CI (`e2e07cd`)
+- (docs) document tag and commit automation in README.md and AGENTS.md (`b10a294`)
+
 ## [1.3.0] - 2026-05-30
 
 ### Changed
