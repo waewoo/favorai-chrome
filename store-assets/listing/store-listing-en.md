@@ -1,7 +1,7 @@
 # FavorAI — Chrome Web Store Listing (English)
 
 ## SUMMARY (132 chars max)
-AI-powered bookmark manager: detect duplicates, fix dead links & reorganize semantically with OpenAI, Gemini, Claude and more.
+AI bookmark manager: smart duplicate detection, dead link checks & semantic reorganization with your AI provider.
 
 ---
 
@@ -13,7 +13,7 @@ With one click, FavorAI scans your entire bookmark library, detects problems, qu
 CORE FEATURES
 
 🔍 Smart Duplicate Detection
-Automatically finds bookmarks pointing to the same URL across different folders. Keeps the best-placed copy and flags the rest for removal.
+Automatically finds duplicate bookmarks beyond exact URL matches: http/https variants, www vs non-www, tracking parameters, redirects to the same final page, and similar article content across domains when advanced link checks are enabled. Keeps the best-placed copy and flags the rest for removal.
 
 🔗 Dead Link Verification
 Detects 404s, timeouts, and unreachable servers — so you can purge links that no longer exist.
@@ -44,7 +44,7 @@ HOW IT WORKS
 
 1. Configure your AI provider (OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, or local Ollama). Enter your API key — it stays on your device.
 2. When saving a page, FavorAI instantly suggests the right folder. Accept, get an alternative, or pick manually.
-3. For a full cleanup, click "Reorganize all bookmarks" to scan duplicates, check dead links, and restructure everything.
+3. For a full cleanup, click "Reorganize all bookmarks" to scan smart duplicates, optionally verify redirects/dead links, and restructure everything.
 4. Review every proposed change in the checklist — approve all, some, or none.
 5. Use the History tab to review or roll back any session instantly.
 6. Open the Forgotten tab to surface bookmarks left untouched for months — and clean them up in one pass.

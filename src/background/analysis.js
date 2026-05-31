@@ -51,6 +51,249 @@ function yieldToUI() {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
+const TRACKING_QUERY_PARAMS = new Set([
+  'fbclid', 'gclid', 'igshid', 'mc_cid', 'mc_eid', 'msclkid',
+  'ref', 'spm', 'utm_campaign', 'utm_content', 'utm_medium',
+  'utm_source', 'utm_term'
+]);
+
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&[a-z0-9#]+;/gi, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Normalise une URL pour la détection locale de doublons:
+ * http/https, www, fragments, slash final et paramètres de tracking.
+ */
+export function normalizeUrlForDuplicate(url) {
+  try {
+    const parsed = new URL(String(url || '').trim());
+    if (!['http:', 'https:'].includes(parsed.protocol)) return String(url || '').trim();
+
+    let hostname = parsed.hostname.toLowerCase();
+    if (hostname.startsWith('www.')) hostname = hostname.slice(4);
+
+    let pathname = decodeURIComponent(parsed.pathname || '/');
+    pathname = pathname.replace(/\/+/g, '/');
+    if (pathname.length > 1) pathname = pathname.replace(/\/$/, '');
+
+    const query = [];
+    for (const [key, value] of parsed.searchParams.entries()) {
+      const lowerKey = key.toLowerCase();
+      if (TRACKING_QUERY_PARAMS.has(lowerKey) || lowerKey.startsWith('utm_')) continue;
+      query.push([lowerKey, value]);
+    }
+    query.sort(([aKey, aValue], [bKey, bValue]) => (
+      aKey === bKey ? aValue.localeCompare(bValue) : aKey.localeCompare(bKey)
+    ));
+
+    const port = parsed.port && !['80', '443'].includes(parsed.port) ? `:${parsed.port}` : '';
+    const search = query.length
+      ? `?${query.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&')}`
+      : '';
+
+    return `${hostname}${port}${pathname}${search}`;
+  } catch {
+    return String(url || '').trim().toLowerCase();
+  }
+}
+
+function extractHtmlField(html, regex) {
+  const match = html.match(regex);
+  return match ? stripHtmlToText(match[1]).trim() : '';
+}
+
+function stripHtmlToText(html = '') {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ');
+}
+
+function simplifyArticleTitle(title) {
+  const parts = String(title || '')
+    .split(/\s+(?:-|–|—|\||:)\s+/)
+    .map(part => normalizeText(part))
+    .filter(Boolean);
+  if (parts.length <= 1) return normalizeText(title);
+  return parts.reduce((best, part) => (part.length > best.length ? part : best), parts[0]);
+}
+
+function extractMainHtml(html) {
+  const article = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i);
+  if (article) return article[1];
+
+  const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i);
+  if (main) return main[1];
+
+  const roleMain = html.match(/<[^>]+role=["']main["'][^>]*>([\s\S]*?)<\/[^>]+>/i);
+  if (roleMain) return roleMain[1];
+
+  const paragraphs = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map(match => match[1]);
+  return paragraphs.length ? paragraphs.join(' ') : html;
+}
+
+/**
+ * Construit une empreinte stable pour repérer des articles identiques publiés
+ * sous plusieurs domaines, sans stocker le contenu complet.
+ */
+export function buildArticleFingerprint(title, html) {
+  const pageTitle = extractHtmlField(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
+  const ogTitle = extractHtmlField(html, /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i)
+    || extractHtmlField(html, /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["'][^>]*>/i);
+  const h1 = extractHtmlField(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const normalizedTitle = simplifyArticleTitle(ogTitle || pageTitle || h1 || title);
+  const bodyWords = normalizeText(stripHtmlToText(extractMainHtml(html)))
+    .split(' ')
+    .filter(word => word.length > 3)
+    .slice(0, 500);
+
+  if (!normalizedTitle || bodyWords.length < 80) return null;
+  return { title: normalizedTitle, words: bodyWords };
+}
+
+async function inspectUrl(url, userSignal, includeContent = false) {
+  if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+  const lower = String(url).toLowerCase().trim();
+  if (!lower.startsWith('http://') && !lower.startsWith('https://')) return { dead: false };
+
+  try {
+    const { hostname } = new URL(url);
+    if (RESTRICTED_DOMAINS.has(hostname.toLowerCase())) return { dead: false };
+  } catch { /* URL malformée, on laisse fetch lever l'erreur */ }
+
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), URL_CHECK_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  if (userSignal) userSignal.addEventListener('abort', onAbort);
+
+  try {
+    let response;
+    try {
+      response = await fetch(url, { method: 'HEAD', signal: controller.signal });
+      if (response.status < 200 || response.status >= 400 || includeContent) {
+        response = await fetch(url, { method: 'GET', signal: controller.signal });
+      }
+    } catch (e) {
+      if (userSignal?.aborted) throw e;
+      response = await fetch(url, { method: 'GET', signal: controller.signal });
+    }
+    if (response.status === 404 || response.status >= 500) {
+      return { dead: true, reason: `HTTP ${response.status}`, finalUrl: response.url };
+    }
+
+    const contentType = response.headers?.get?.('content-type') || '';
+    const result = { dead: false, finalUrl: response.url };
+    if (includeContent && /text\/html|application\/xhtml\+xml/i.test(contentType) && response.text) {
+      result.html = await response.text();
+    }
+    return result;
+  } catch (error) {
+    if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+    const isTimeout = error.name === 'AbortError' || error.message?.includes('timeout');
+    return { dead: true, reason: isTimeout ? 'Timeout (10s)' : 'Connection error (DNS/Network)' };
+  } finally {
+    clearTimeout(tid);
+    if (userSignal) userSignal.removeEventListener('abort', onAbort);
+  }
+}
+
+function pickBestDuplicate(nodes, originalMap) {
+  let best = nodes[0];
+  let bestDepth = getPathFromMap(best.parentId, originalMap).split(' > ').length;
+  for (let i = 1; i < nodes.length; i++) {
+    const cur = nodes[i];
+    const d = getPathFromMap(cur.parentId, originalMap).split(' > ').length;
+    if (d > bestDepth || (d === bestDepth && (cur.title || '').length > (best.title || '').length)) {
+      best = cur; bestDepth = d;
+    }
+  }
+  return best;
+}
+
+function collectDuplicateGroups(bookmarks, originalMap, getKey, seenDuplicateIds = new Set()) {
+  const groups = new Map();
+  for (const bm of bookmarks) {
+    const key = getKey(bm);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(bm);
+  }
+
+  const duplicates = [];
+  const duplicateIds = new Set(seenDuplicateIds);
+  for (const nodes of groups.values()) {
+    const candidates = nodes.filter(n => !duplicateIds.has(n.id));
+    if (candidates.length < 2) continue;
+    const best = pickBestDuplicate(candidates, originalMap);
+    for (const node of candidates) {
+      if (node.id !== best.id) {
+        duplicates.push({ duplicate: node, original: best });
+        duplicateIds.add(node.id);
+      }
+    }
+  }
+  return duplicates;
+}
+
+function contentSimilarity(a, b) {
+  const aWords = new Set(a.words);
+  const bWords = new Set(b.words);
+  let common = 0;
+  for (const word of aWords) {
+    if (bWords.has(word)) common++;
+  }
+  return common / Math.min(aWords.size, bWords.size);
+}
+
+function collectContentDuplicateGroups(bookmarks, originalMap, signatures, seenDuplicateIds = new Set()) {
+  const duplicateIds = new Set(seenDuplicateIds);
+  const byTitle = new Map();
+  for (const bm of bookmarks) {
+    const signature = signatures.get(bm.id);
+    if (!signature || duplicateIds.has(bm.id)) continue;
+    if (!byTitle.has(signature.title)) byTitle.set(signature.title, []);
+    byTitle.get(signature.title).push({ bookmark: bm, signature });
+  }
+
+  const duplicates = [];
+  for (const entries of byTitle.values()) {
+    const candidates = [];
+    for (let i = 0; i < entries.length; i++) {
+      for (let j = i + 1; j < entries.length; j++) {
+        const left = entries[i];
+        const right = entries[j];
+        if (duplicateIds.has(left.bookmark.id) || duplicateIds.has(right.bookmark.id)) continue;
+        if (contentSimilarity(left.signature, right.signature) >= 0.55) {
+          candidates.push(left.bookmark, right.bookmark);
+        }
+      }
+    }
+
+    const uniqueCandidates = [...new Map(candidates.map(bm => [bm.id, bm])).values()]
+      .filter(bm => !duplicateIds.has(bm.id));
+    if (uniqueCandidates.length < 2) continue;
+
+    const best = pickBestDuplicate(uniqueCandidates, originalMap);
+    for (const bm of uniqueCandidates) {
+      if (bm.id !== best.id) {
+        duplicates.push({ duplicate: bm, original: best });
+        duplicateIds.add(bm.id);
+      }
+    }
+  }
+  return duplicates;
+}
+
 /**
  * En mode complet, si le LLM a laissé des anciens dossiers (ID non-new_) au top-level
  * de la barre de favoris (id "1"), on les convertit en dossiers "new_" pour forcer leur
@@ -106,44 +349,7 @@ export function sendProgress(message, percentage, currentStatus) {
  * Vérifie si une URL est accessible (liens morts).
  */
 export async function checkUrlStatus(url, userSignal) {
-  if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-
-  const lower = String(url).toLowerCase().trim();
-  if (!lower.startsWith('http://') && !lower.startsWith('https://')) return { dead: false };
-
-  try {
-    const { hostname } = new URL(url);
-    if (RESTRICTED_DOMAINS.has(hostname.toLowerCase())) return { dead: false };
-  } catch { /* URL malformée, on laisse fetch lever l'erreur */ }
-
-  const controller = new AbortController();
-  const tid = setTimeout(() => controller.abort(), URL_CHECK_TIMEOUT_MS);
-  const onAbort = () => controller.abort();
-  if (userSignal) userSignal.addEventListener('abort', onAbort);
-
-  try {
-    let response;
-    try {
-      response = await fetch(url, { method: 'HEAD', signal: controller.signal });
-      if (response.status < 200 || response.status >= 400) {
-        response = await fetch(url, { method: 'GET', signal: controller.signal });
-      }
-    } catch (e) {
-      if (userSignal?.aborted) throw e;
-      response = await fetch(url, { method: 'GET', signal: controller.signal });
-    }
-    if (response.status === 404 || response.status >= 500) {
-      return { dead: true, reason: `HTTP ${response.status}` };
-    }
-    return { dead: false };
-  } catch (error) {
-    if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    const isTimeout = error.name === 'AbortError' || error.message?.includes('timeout');
-    return { dead: true, reason: isTimeout ? 'Timeout (10s)' : 'Connection error (DNS/Network)' };
-  } finally {
-    clearTimeout(tid);
-    if (userSignal) userSignal.removeEventListener('abort', onAbort);
-  }
+  return inspectUrl(url, userSignal, false);
 }
 
 /**
@@ -155,32 +361,14 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
 
   sendProgress(chrome.i18n.getMessage('bgSearchingDuplicates'), 20, currentStatus);
 
-  // Grouper par URL
-  const urlGroups = new Map();
-  for (const bm of all) {
-    if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    if (!urlGroups.has(bm.url)) urlGroups.set(bm.url, []);
-    urlGroups.get(bm.url).push(bm);
-  }
+  // Grouper par URL canonique: ignore http/https, www, fragments et tracking params.
+  if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  let duplicates = collectDuplicateGroups(all, originalMap, bm => normalizeUrlForDuplicate(bm.url));
 
-  const duplicates = [];
-  const unique = [];
-  for (const [, nodes] of urlGroups) {
-    if (nodes.length === 1) { unique.push(nodes[0]); continue; }
-    let best = nodes[0];
-    let bestDepth = getPathFromMap(best.parentId, originalMap).split(' > ').length;
-    for (let i = 1; i < nodes.length; i++) {
-      const cur = nodes[i];
-      const d = getPathFromMap(cur.parentId, originalMap).split(' > ').length;
-      if (d > bestDepth || (d === bestDepth && (cur.title || '').length > (best.title || '').length)) {
-        best = cur; bestDepth = d;
-      }
-    }
-    unique.push(best);
-    for (const n of nodes) {
-      if (n.id !== best.id) duplicates.push({ duplicate: n, original: best });
-    }
-  }
+  let duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
+  const unique = all.filter(bm => !duplicateIds.has(bm.id));
+  const finalUrls = new Map();
+  const articleFingerprints = new Map();
 
   const deadLinks = [];
   if (checkDeadLinks) {
@@ -189,8 +377,13 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
       if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const batch = unique.slice(i, i + actual);
       await Promise.all(batch.map(async (bm) => {
-        const s = await checkUrlStatus(bm.url, userSignal);
+        const s = await inspectUrl(bm.url, userSignal, true);
         if (s.dead) deadLinks.push({ bookmark: bm, reason: s.reason });
+        if (!s.dead && s.finalUrl) finalUrls.set(bm.id, normalizeUrlForDuplicate(s.finalUrl));
+        if (!s.dead && s.html) {
+          const fingerprint = buildArticleFingerprint(bm.title, s.html);
+          if (fingerprint) articleFingerprints.set(bm.id, fingerprint);
+        }
       }));
       const progress = Math.min(30 + Math.round((i / unique.length) * 40), 70);
       sendProgress(
@@ -198,6 +391,25 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
         progress, currentStatus
       );
     }
+
+    const deadLinkIds = new Set(deadLinks.map(d => d.bookmark.id));
+    const reachableUnique = unique.filter(bm => !deadLinkIds.has(bm.id));
+    const redirectDuplicates = collectDuplicateGroups(
+      reachableUnique,
+      originalMap,
+      bm => finalUrls.get(bm.id),
+      duplicateIds
+    );
+    duplicates = duplicates.concat(redirectDuplicates);
+    duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
+
+    const similarContentDuplicates = collectContentDuplicateGroups(
+      reachableUnique,
+      originalMap,
+      articleFingerprints,
+      duplicateIds
+    );
+    duplicates = duplicates.concat(similarContentDuplicates);
   } else {
     sendProgress(chrome.i18n.getMessage('bgDeadLinksDisabled'), 70, currentStatus);
   }

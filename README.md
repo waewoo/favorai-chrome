@@ -6,7 +6,7 @@ FavorAI is a Chrome and Chromium-based browser extension that helps you clean up
 
 ## Key Features
 
-- **Duplicate Detection**: Smart identification of duplicate links based on URL and depth.
+- **Smart Duplicate Detection**: Identifies exact URL duplicates, http/https and www variants, tracking URLs, redirects to the same final page, and similar article content across domains.
 - **Dead Link Verifier**: Checks for 404s, connection errors, and timeouts.
 - **Bilingual Interface**: Seamlessly switches between English and French based on browser language.
 - **Multi-Provider LLM Integration**: Works with OpenAI, Google Gemini, Anthropic Claude, Mistral AI, DeepSeek, Grok, Ollama (local), or any custom OpenAI-compatible endpoint.

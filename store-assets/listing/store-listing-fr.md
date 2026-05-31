@@ -1,7 +1,7 @@
 # FavorAI — Fiche du Chrome Web Store (Français)
 
 ## RÉSUMÉ (132 caractères max)
-Gestionnaire de favoris par IA : détection des doublons, correction des liens morts et réorganisation sémantique intelligente.
+Gestionnaire de favoris IA : doublons intelligents, liens morts et réorganisation sémantique.
 
 ---
 
@@ -13,7 +13,7 @@ En un clic, FavorAI analyse l'intégralité de votre bibliothèque de favoris, d
 FONCTIONNALITÉS PRINCIPALES
 
 🔍 Détection intelligente des doublons
-Trouve automatiquement les favoris pointant vers la même URL dans différents dossiers. Conserve l'exemplaire le mieux placé et signale les autres pour suppression.
+Trouve automatiquement les favoris en double au-delà de l'URL exacte : variantes http/https, www ou sans www, paramètres de tracking, redirections vers la même page finale, et articles similaires sur plusieurs domaines lorsque les vérifications avancées sont activées. Conserve l'exemplaire le mieux placé et signale les autres pour suppression.
 
 🔗 Vérification des liens morts
 Détecte les 404, les timeouts et les serveurs inaccessibles — pour purger les liens qui n'existent plus.
@@ -44,7 +44,7 @@ COMMENT ÇA MARCHE
 
 1. Configurez votre fournisseur d'IA (OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, ou Ollama en local). Entrez votre clé API — elle reste sur votre appareil.
 2. Lorsque vous enregistrez une page, FavorAI suggère instantanément le bon dossier. Acceptez, obtenez une autre suggestion ou choisissez manuellement.
-3. Pour un nettoyage complet, cliquez sur "Réorganiser tous les favoris" pour scanner les doublons, vérifier les liens morts et tout restructurer.
+3. Pour un nettoyage complet, cliquez sur "Réorganiser tous les favoris" pour scanner les doublons intelligents, vérifier éventuellement redirections/liens morts, et tout restructurer.
 4. Examinez chaque changement proposé dans la checklist — approuvez tout, une partie ou rien.
 5. Utilisez l'onglet Historique pour consulter ou annuler une session instantanément.
 6. Ouvrez l'onglet Oubliés pour retrouver les favoris laissés de côté depuis des mois — et faites le tri en une seule passe.

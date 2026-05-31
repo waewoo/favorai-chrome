@@ -241,7 +241,7 @@
         <td><strong>Bookmark URLs</strong></td>
         <td>Not persisted by FavorAI</td>
         <td>✅ <strong>Yes</strong> — URLs are included in the payload sent to the LLM to help with semantic classification</td>
-        <td>Partial — also used locally to check for dead links (optional)</td>
+        <td>Partial — also used locally to normalize URLs, follow redirects, check dead links, and detect duplicate article content when advanced link checks are enabled</td>
       </tr>
       <tr>
         <td><strong>Session history</strong></td>
@@ -314,7 +314,7 @@
       <tr>
         <td><code>&lt;all_urls&gt;</code> <em>(optional)</em></td>
         <td>
-          Requested only when you enable "Check dead links": sends HEAD/GET requests to your bookmark URLs to detect broken links. Also required to communicate with custom LLM endpoints on any domain. You can deny this permission — all other features remain functional.
+          Requested only when you enable advanced link checks: sends HEAD/GET requests to your bookmark URLs to detect broken links, follow redirects, and compare page content fingerprints for duplicate articles. Also required to communicate with custom LLM endpoints on any domain. You can deny this permission — all other features remain functional.
         </td>
       </tr>
     </tbody>

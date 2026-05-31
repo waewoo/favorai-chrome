@@ -45,7 +45,7 @@
         <section class="section">
           <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px;" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
           <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="sectionLaunchDesc">
-            The extension will analyze duplicates, dead links, and query AI to organize your bookmarks.
+            The extension will analyze smart duplicates, dead links, and query AI to organize your bookmarks.
           </p>
 
           <!-- Privacy/Transmission warning -->
@@ -79,7 +79,7 @@
 
           <div class="form-group" style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="checkDeadLinks" style="width: 14px; height: 14px; margin-top: 1px; accent-color: var(--accent-color); cursor: pointer;" />
-            <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Check dead links (slow)</label>
+            <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Check dead links, redirects and article duplicates (slow)</label>
           </div>
           
           <div class="btn-group" id="reorgBtnGroup">
@@ -310,7 +310,7 @@
           <div style="margin-bottom: 16px;">
             <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutTitle">✨ What is FavorAI?</p>
             <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; line-height: 1.5; color: var(--text-main);" data-i18n="aboutDescription">
-              FavorAI is a Chrome extension that uses artificial intelligence to intelligently organize your bookmarks. It analyzes your bookmark structure, detects duplicates and dead links, then proposes or applies semantic reorganization.
+              FavorAI is a Chrome extension that uses artificial intelligence to intelligently organize your bookmarks. It analyzes your bookmark structure, detects smart duplicates and dead links, then proposes or applies semantic reorganization.
             </div>
           </div>
 
@@ -319,7 +319,7 @@
             <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutFeatures">🎯 Core Features</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDuplicates">🔍 Duplicate detection</p>
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDuplicates">🔍 Smart duplicate detection</p>
               </div>
               <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
                 <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDeadLinks">🔗 Dead link detection</p>
@@ -430,7 +430,7 @@
           <div style="margin-bottom: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px;">
             <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 12px; color: #818cf8;" data-i18n="docsOverviewTitle">✨ What is FavorAI?</p>
             <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.5;" data-i18n="docsOverviewText">
-              FavorAI is an intelligent bookmark manager that uses artificial intelligence to organize your Chrome bookmarks automatically. It analyzes your bookmark structure, detects duplicates and dead links, and proposes semantic reorganization.
+              FavorAI is an intelligent bookmark manager that uses artificial intelligence to organize your Chrome bookmarks automatically. It analyzes your bookmark structure, detects smart duplicates and dead links, and proposes semantic reorganization.
             </p>
           </div>
 
@@ -439,7 +439,7 @@
             <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsFeatures">🎯 Core Features</p>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature1">📊 Duplicate Detection</p>
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature1">📊 Smart Duplicate Detection</p>
               </div>
               <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
                 <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature2">🔗 Dead Link Detection</p>
@@ -533,7 +533,7 @@
                 <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip1">🔍 Start with "Minimal" mode to review changes first</p>
               </div>
               <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip2">⚙️ Check "Dead Links" option for large libraries</p>
+                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip2">⚙️ Enable advanced link checks for redirects and cross-domain article duplicates</p>
               </div>
               <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
                 <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip3">💾 History keeps your last 50 sessions</p>
