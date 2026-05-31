@@ -26,8 +26,8 @@ jobs:
     - name: Run Linter
       run: make lint
 
-    - name: Run Unit Tests
-      run: make test
+    - name: Run Unit Tests with Coverage
+      run: make test-coverage
 
     - name: Run Security Scan
       run: make security

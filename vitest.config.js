@@ -16,7 +16,13 @@ export default defineConfig({
         'src/background/orchestrator.js',
         'src/popup/**',
         'src/llm/providers/**'
-      ]
+      ],
+      thresholds: {
+        statements: 100,
+        branches: 100,
+        functions: 100,
+        lines: 100
+      }
     }
   }
 });

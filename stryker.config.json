@@ -10,6 +10,11 @@
   "vitest": {
     "configFile": "vitest.config.js"
   },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 80
+  },
   "mutate": [
     "src/background/diff.js",
     "src/background/apply.js",
