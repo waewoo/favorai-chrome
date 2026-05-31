@@ -54,5 +54,5 @@ export async function cleanup(context, tmpDir) {
   await context.close();
   try {
     fs.rmSync(tmpDir, { recursive: true, force: true });
-  } catch (_) {}
+  } catch {}
 }

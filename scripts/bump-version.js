@@ -36,14 +36,14 @@ let isGit = false;
 try {
   execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
   isGit = true;
-} catch (e) {
+} catch {
   // Not a git repo
 }
 
 if (isGit) {
   try {
     lastTag = execSync('git describe --tags --abbrev=0', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
-  } catch (e) {
+  } catch {
     // No tags exist
   }
 
@@ -66,7 +66,7 @@ if (isGit) {
       
       commits.push({ hash, subject, body });
     }
-  } catch (e) {
+  } catch {
     console.warn('⚠️ Could not fetch git commits.');
   }
 }
@@ -150,7 +150,7 @@ if (isGit) {
     try {
       execSync('gh auth status', { stdio: 'ignore' });
       ghLoggedIn = true;
-    } catch (_) {
+    } catch {
       // Not logged in or gh CLI not installed
     }
     

@@ -107,7 +107,7 @@ export function cleanAndParseJSON(text) {
           try {
             return JSON.parse(cleanText.substring(0, pos));
           /* v8 ignore next 2 */
-          } catch (_) { /* fall through to brace extraction */ }
+          } catch { /* fall through to brace extraction */ }
         }
       }
     }
@@ -196,7 +196,7 @@ export function cleanAndParseJSON(text) {
         try {
           return JSON.parse(cleanText.substring(fBr, endIdx + 1));
         /* v8 ignore next 2 */
-        } catch (__) { /* ignore */ }
+        } catch { /* ignore */ }
       }
     }
     // Detect if the JSON was truncated (LLM hit max_tokens)

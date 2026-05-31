@@ -84,7 +84,7 @@ let releaseExists = false;
 try {
   execSync(`gh release view ${tag}`, { stdio: 'ignore' });
   releaseExists = true;
-} catch (e) {
+} catch {
   // Release doesn't exist
 }
 

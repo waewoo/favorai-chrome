@@ -102,7 +102,7 @@ export function formatExplanation(text) {
   let explanation = null;
   try {
     explanation = JSON.parse(str);
-  } catch (e) {
+  } catch {
     // Not JSON, return as-is
     return str.replace(/\r?\n/g, '\n');
   }

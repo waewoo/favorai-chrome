@@ -61,9 +61,9 @@ export async function rollbackSession(historyEntries) {
         });
         idMap[entry.nodeId] = created.id;
       }
-    } catch (err) {
+    } catch {
       // Rollback error - continue
-      // // console.error('Rollback error for entry:', entry, err);
+      // // console.error('Rollback error for entry:', entry);
     }
   }
 }
