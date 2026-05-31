@@ -398,5 +398,28 @@ describe('applyChanges', () => {
     expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('40');
     expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('30');
   });
+
+  it('should not call saveSessionToHistory when no history entries are produced', async () => {
+    // All actions fail or produce no history entries
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockRejectedValue(new Error('Create failed'));
+
+    const pendingActions = [
+      {
+        id: 'act_fail',
+        type: 'create_folder',
+        params: { tempId: 'new_fail', title: 'Fail Folder', parentId: '1', targetPath: 'A' }
+      }
+    ];
+
+    // Stub getChildren to avoid side-effects in post-cleanup
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    await applyChanges(['act_fail'], pendingActions, 'complete', 'No history produced');
+
+    // saveSessionToHistory should NOT have been called since no operations succeeded
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
 });
 

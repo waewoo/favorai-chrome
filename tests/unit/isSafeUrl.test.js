@@ -18,4 +18,14 @@ describe('isSafeUrl', () => {
     expect(isSafeUrl('JAVASCRIPT:alert(1)')).toBe(false);
   });
   it('handles leading spaces', () => expect(isSafeUrl('  https://example.com')).toBe(true));
+
+  it('accepts https:// when http:// does not match (tests right side of ||)', () => {
+    // url does NOT start with 'http://' → evaluates right side: startsWith('https://')
+    expect(isSafeUrl('https://secure.example.com')).toBe(true);
+    expect(isSafeUrl('HTTPS://SECURE.EXAMPLE.COM')).toBe(true);
+  });
+
+  it('returns false for empty string (0-length)', () => {
+    expect(isSafeUrl('')).toBe(false);
+  });
 });

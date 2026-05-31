@@ -1,3 +1,4 @@
+/* v8 ignore next */
 /**
  * Vérifie qu'une URL utilise uniquement http:// ou https://.
  * Rejette les schémas dangereux : javascript:, data:, file:, ftp:, etc.

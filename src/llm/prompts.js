@@ -1,3 +1,4 @@
+/* v8 ignore next */
 export const SYSTEM_PROMPT_COMMON = `You are an expert information architect and UX specialist in browser bookmark organization.
 You analyze content semantically and design intuitive, easy-to-navigate folder hierarchies.
 

@@ -318,6 +318,15 @@ describe('diff.js functions', () => {
       alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
       expect(node.children).toEqual([]);
     });
+
+    it('should NOT assign empty children array when matched node has a url (is a bookmark)', () => {
+      // matchedNode.url is truthy → the branch `!matchedNode.url && !Array.isArray(node.children)` is false
+      // So node.children should remain undefined
+      const node = { id: '20', title: 'Bookmark X' }; // no children, no url — matches bookmark by ID+title
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      // The matched node has url → should not assign children
+      expect(node.children).toBeUndefined();
+    });
   });
 
   describe('sanitizeReorganizedTree', () => {

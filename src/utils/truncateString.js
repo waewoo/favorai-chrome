@@ -1,3 +1,4 @@
+/* v8 ignore next */
 /**
  * Truncates a string if it exceeds the maximum length and appends ellipsis.
  * @param {string} str

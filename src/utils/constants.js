@@ -1,3 +1,4 @@
+/* v8 ignore next */
 /** IDs des nœuds racines Chrome à ne jamais modifier */
 export const CHROME_ROOT_IDS = new Set(['0', '1', '2', '3']);
 

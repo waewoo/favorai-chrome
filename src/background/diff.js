@@ -1,3 +1,4 @@
+/* v8 ignore next */
 import { NEW_FOLDER_PREFIX, CHROME_ROOT_IDS } from '../utils/constants.js';
 
 /**

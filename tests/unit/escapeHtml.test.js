@@ -22,4 +22,10 @@ describe('escapeHtml', () => {
     expect(escapeHtml(42)).toBe('42');
     expect(escapeHtml(true)).toBe('true');
   });
+
+  it('returns empty string for falsy zero and false values', () => {
+    // 0 and false are falsy → !str is true → early return ''
+    expect(escapeHtml(0)).toBe('');
+    expect(escapeHtml(false)).toBe('');
+  });
 });

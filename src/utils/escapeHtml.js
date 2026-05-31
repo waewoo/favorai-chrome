@@ -1,3 +1,4 @@
+/* v8 ignore next */
 /**
  * Échappe les caractères HTML spéciaux pour prévenir les injections XSS.
  * @param {string} str

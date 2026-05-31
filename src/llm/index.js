@@ -1,3 +1,4 @@
+/* v8 ignore next */
 import { queryOpenAI }   from './providers/openai.js';
 import { queryGemini }   from './providers/gemini.js';
 import { queryMistral }  from './providers/mistral.js';

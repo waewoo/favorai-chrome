@@ -67,6 +67,38 @@ describe('saveSessionToHistory', () => {
     expect(savedHistory).toHaveLength(50);
     expect(savedHistory[0].explanation).toBe('Capping test');
   });
+
+  it('should NOT trim history when length equals MAX_HISTORY_SESSIONS after adding (boundary)', async () => {
+    // Set existing history to exactly MAX_HISTORY_SESSIONS - 1 entries
+    const existingHistory = Array.from({ length: 29 }, (_, i) => ({
+      sessionId: `sess_${i}`,
+      mode: 'minimal',
+      entries: []
+    }));
+
+    chrome.storage.local.get.mockImplementation((keys, callback) => {
+      callback({ reorgHistory: existingHistory });
+    });
+
+    await saveSessionToHistory([{ type: 'move', nodeId: '1' }], 'complete', 'Boundary test');
+
+    const callArgs = chrome.storage.local.set.mock.calls;
+    const lastCall = callArgs[callArgs.length - 1];
+    const savedHistory = lastCall[0].reorgHistory;
+
+    // Should have exactly 30 entries (29 existing + 1 new) — no pop() called
+    expect(savedHistory).toHaveLength(30);
+    expect(savedHistory[0].explanation).toBe('Boundary test');
+  });
+
+  it('should serialize concurrent saveSessionToHistory calls via queue', async () => {
+    // Both calls should succeed in sequence without data corruption
+    const p1 = saveSessionToHistory([{ type: 'move', nodeId: '1' }], 'minimal', 'First');
+    const p2 = saveSessionToHistory([{ type: 'rename', nodeId: '2' }], 'complete', 'Second');
+    await Promise.all([p1, p2]);
+
+    expect(chrome.storage.local.set).toHaveBeenCalledTimes(2);
+  });
 });
 
 

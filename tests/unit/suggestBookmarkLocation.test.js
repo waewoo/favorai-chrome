@@ -194,7 +194,7 @@ describe('suggestBookmarkLocation - all providers', () => {
       { id: '3', path: 'Barre de favoris > Recommended' }
     ];
 
-    const result = await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, ['2']);
+    await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, ['2']);
 
     expect(queryOpenAI).toHaveBeenCalled();
     // Check that avoidInstruction was built
@@ -203,5 +203,44 @@ describe('suggestBookmarkLocation - all providers', () => {
     const finalPrompt = callArgs[3]; // prompt is the 4th argument (index 3)
     expect(finalPrompt).toContain('CRITICAL CONSTRAINT');
     expect(finalPrompt).toContain('avoid');
+  });
+
+  it('should NOT append avoidInstruction when ignoredFolderIds have no match in folders list', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '1',
+      explanation: 'No ignored folders matched'
+    });
+
+    const config = {
+      provider: 'openai',
+      apiKey: 'test-key',
+      modelName: 'gpt-5.5'
+    };
+
+    const foldersWithIgnored = [
+      { id: '1', path: 'Barre de favoris' },
+      { id: '2', path: 'Barre de favoris > Tech' }
+    ];
+
+    // ignoredFolderIds contains IDs not present in foldersWithIgnored → ignoredPaths.length === 0
+    await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, ['999']);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    const finalPrompt = callArgs[3];
+    // avoidInstruction should NOT be appended
+    expect(finalPrompt).not.toContain('CRITICAL CONSTRAINT');
+  });
+
+  it('should handle null ignoredFolderIds without avoidInstruction', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ action: 'use_existing', targetFolderId: '1', explanation: 'ok' });
+    const config = { provider: 'openai', apiKey: 'test-key' };
+    const foldersWithIgnored = [{ id: '1', path: 'Barre de favoris' }];
+
+    await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, null);
+
+    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
+    const finalPrompt = callArgs[3];
+    expect(finalPrompt).not.toContain('CRITICAL CONSTRAINT');
   });
 });

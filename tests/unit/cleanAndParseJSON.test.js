@@ -119,4 +119,12 @@ describe('cleanAndParseJSON', () => {
     const json = '{\n  "key": "line1\r\nline2\nline3"\n}';
     expect(cleanAndParseJSON(json)).toEqual({ key: 'line1\nline2\nline3' });
   });
+
+  it('should escape smart double quotes inside string values (inString=true → \\" branch)', () => {
+    // \u201C and \u201D inside a string value should become \" not "
+    // This exercises the branch: inString → return '\\"'
+    const json = '{"key": "\u201Chello\u201D world"}';
+    const result = cleanAndParseJSON(json);
+    expect(result.key).toBe('"hello" world');
+  });
 });

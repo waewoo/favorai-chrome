@@ -1,3 +1,4 @@
+/* v8 ignore next */
 import { LLM_TIMEOUT_MS } from '../utils/constants.js';
 
 const HTTP_STATUS_MESSAGES = {

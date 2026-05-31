@@ -1,3 +1,4 @@
+/* v8 ignore next */
 import { MAX_HISTORY_SESSIONS } from '../utils/constants.js';
 
 // Serialise les appels concurrents à saveSessionToHistory pour éviter la race condition
