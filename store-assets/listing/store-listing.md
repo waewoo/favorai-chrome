@@ -56,6 +56,9 @@ The full UI adapts to your browser language automatically. (More languages plann
 • Minimal: only fixes clear semantic mismatches (e.g. "Docker Guide" sitting in "Personal"). Preserves your existing folder structure.
 • Complete: full redesign — the AI rethinks your entire bookmark hierarchy from scratch with 6–8 top-level folders.
 
+⚡ Compact Quick-Add Popup
+Click the extension icon to bookmark the current tab instantly. The AI proposes the optimal folder and suggests a clean title. It also warns you of duplicates on the spot, with quick links to configure your API key or launch a full reorganization.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚙️ HOW IT WORKS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -161,6 +164,9 @@ L'interface s'adapte automatiquement à la langue de votre navigateur.
 ⚡ Deux modes de réorganisation
 • Minimal : corrige uniquement les incohérences sémantiques évidentes. Préserve votre structure de dossiers existante.
 • Complet : refonte totale — l'IA repense toute votre hiérarchie de favoris avec 6 à 8 dossiers de premier niveau.
+
+⚡ Popup compact d'ajout rapide
+Cliquez sur l'icône de l'extension pour enregistrer l'onglet actif instantanément. L'IA propose le dossier optimal et nettoie le titre. Il vous avertit également en cas de doublons sur le champ, avec des raccourcis pour configurer votre clé API ou lancer une réorganisation complète.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚙️ COMMENT ÇA MARCHE

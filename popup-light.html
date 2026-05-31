@@ -261,6 +261,64 @@
       color: #fff;
     }
 
+    /* ── Config warning banner ── */
+    .config-alert-card {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      animation: fadeIn 0.2s ease;
+    }
+    #btnLightConfigureAI:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: rgba(245, 158, 11, 0.6);
+    }
+
+    /* ── Quick reorganization banner ── */
+    .quick-reorg-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 14px;
+      margin-bottom: 4px;
+      text-align: left;
+      animation: fadeIn 0.2s ease;
+    }
+    .quick-reorg-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #818cf8;
+      margin-bottom: 4px;
+    }
+    .quick-reorg-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .btn-reorg {
+      width: 100%;
+      padding: 8px 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    }
+    .btn-reorg:hover {
+      opacity: 0.9;
+    }
+    .btn-reorg:active {
+      transform: scale(0.98);
+    }
+
     /* ── Footer ── */
     .footer {
       text-align: center;
@@ -296,6 +354,18 @@
 
     <!-- Error banner (hidden by default) -->
     <div id="errorBanner" class="error-banner hidden"></div>
+
+    <!-- Configuration warning (hidden by default) -->
+    <div id="lightConfigAlert" class="config-alert-card hidden">
+      <div style="display: flex; align-items: flex-start; gap: 8px;">
+        <span style="font-size: 14px; flex-shrink: 0; margin-top: 1px;">⚠️</span>
+        <div style="flex: 1;">
+          <div class="config-alert-title" id="lightConfigAlertTitle" data-i18n="lightConfigAlertTitle" style="font-weight: 700; color: #fbbf24; margin-bottom: 2px;"></div>
+          <div class="config-alert-desc" id="lightConfigAlertDesc" data-i18n="lightConfigAlertDesc" style="color: var(--text-muted); font-size: 10px; line-height: 1.4; margin-bottom: 6px;"></div>
+          <button class="btn" id="btnLightConfigureAI" data-i18n="lightConfigAlertBtn" style="width: auto; padding: 4px 8px; font-size: 10px; font-weight: 600; border-radius: 4px; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.12); color: #fbbf24; cursor: pointer; transition: all 0.15s; font-family: var(--font-family);"></button>
+        </div>
+      </div>
+    </div>
 
     <!-- Tab details -->
     <div class="tab-box">
@@ -376,6 +446,13 @@
 
     <!-- Confirm button -->
     <button class="btn-success hidden" id="btnLightConfirm" data-i18n="lightConfirmBtn"></button>
+
+    <!-- Quick Reorganization Card -->
+    <div class="quick-reorg-card" id="lightQuickReorgCard">
+      <div class="quick-reorg-title" id="lightQuickReorgTitle" data-i18n="lightQuickReorgTitle"></div>
+      <p class="quick-reorg-desc" id="lightQuickReorgDesc" data-i18n="lightQuickReorgDesc"></p>
+      <button class="btn-reorg" id="btnLightReorgAll" data-i18n="lightQuickReorgBtn"></button>
+    </div>
 
   </div>
 

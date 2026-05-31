@@ -131,4 +131,103 @@ test.describe('Popup Light (Minimal Interface)', () => {
       await cleanup(context, tmpDir);
     }
   });
+
+  test('should show config warning banner if API key is missing', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+
+      const configAlert = page.locator('#lightConfigAlert');
+      await expect(configAlert).toBeVisible();
+
+      // Analyze button should be disabled with title
+      const btnAnalyze = page.locator('#btnLightAnalyze');
+      await expect(btnAnalyze).toBeDisabled();
+      await expect(btnAnalyze).toHaveAttribute('title', /API/);
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should hide config warning banner if provider is ollama or API key is set', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+
+      // Set provider to ollama via page evaluate in storage
+      await page.evaluate(() => {
+        return new Promise((resolve) => {
+          chrome.storage.sync.set({ provider: 'ollama', apiKey: '' }, resolve);
+        });
+      });
+
+      await page.reload();
+      await page.waitForLoadState('domcontentloaded');
+      await page.waitForTimeout(150);
+
+      const configAlert = page.locator('#lightConfigAlert');
+      await expect(configAlert).toBeHidden();
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should open config tab in advanced mode when clicking Configure AI button', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+
+      const configureBtn = page.locator('#btnLightConfigureAI');
+      await expect(configureBtn).toBeVisible();
+
+      // Click the button
+      await configureBtn.click();
+
+      // Wait for storage write to propagate
+      await page.waitForTimeout(200);
+
+      // Verify that activeTab is set to 'config' in chrome.storage.local
+      const activeTab = await page.evaluate(() => {
+        return new Promise((resolve) => {
+          chrome.storage.local.get(['activeTab'], (res) => resolve(res.activeTab));
+        });
+      });
+      expect(activeTab).toBe('config');
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should show quick reorg card and open organization tab when clicking Start Reorganization', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+
+      const reorgCard = page.locator('#lightQuickReorgCard');
+      await expect(reorgCard).toBeVisible();
+
+      const reorgBtn = page.locator('#btnLightReorgAll');
+      await expect(reorgBtn).toBeVisible();
+
+      // Click the button
+      await reorgBtn.click();
+
+      // Wait for storage write to propagate
+      await page.waitForTimeout(200);
+
+      // Verify that activeTab is set to 'rangement' in chrome.storage.local
+      const activeTab = await page.evaluate(() => {
+        return new Promise((resolve) => {
+          chrome.storage.local.get(['activeTab'], (res) => resolve(res.activeTab));
+        });
+      });
+      expect(activeTab).toBe('rangement');
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
 });

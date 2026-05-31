@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Suppress Node.js deprecation warnings (e.g., DEP0205 module.register) in Playwright and its workers
+process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --no-deprecation`.trim();
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const extensionPath = __dirname;
 

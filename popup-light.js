@@ -44,6 +44,9 @@ const elReason     = document.getElementById('lightSuggestionReason');
 const elToast      = document.getElementById('lightToast');
 const elDuplicateWarning = document.getElementById('lightDuplicateWarning');
 const elDuplicateLocation = document.getElementById('lightDuplicateLocation');
+const elConfigAlert       = document.getElementById('lightConfigAlert');
+const btnConfigureAI      = document.getElementById('btnLightConfigureAI');
+const btnReorgAll         = document.getElementById('btnLightReorgAll');
 
 const btnAnalyze          = document.getElementById('btnLightAnalyze');
 const btnAlternative      = document.getElementById('btnLightAlternative');
@@ -127,6 +130,23 @@ function resetSuggestion() {
   btnAlternative.classList.add('hidden');
 }
 
+// ── Check configuration status ──────────────────────────────────────────────
+function checkConfig() {
+  chrome.storage.sync.get(['provider', 'apiKey'], (res) => {
+    const provider = res.provider || 'openai';
+    const apiKey = res.apiKey || '';
+
+    if (provider !== 'ollama' && !apiKey) {
+      elConfigAlert.classList.remove('hidden');
+      btnAnalyze.disabled = true;
+      btnAnalyze.title = 'Veuillez configurer votre clé API IA d\'abord';
+    } else {
+      elConfigAlert.classList.add('hidden');
+      btnAnalyze.title = '';
+    }
+  });
+}
+
 // ── Load active tab ───────────────────────────────────────────────────────────
 function loadActiveTab() {
   elTitle.value = chrome.i18n.getMessage('lightLoading');
@@ -156,7 +176,17 @@ function loadActiveTab() {
       elUrl.textContent = activeUrl;
 
       if (activeUrl.startsWith('http://') || activeUrl.startsWith('https://')) {
-        btnAnalyze.disabled = false;
+        chrome.storage.sync.get(['provider', 'apiKey'], (res) => {
+          const provider = res.provider || 'openai';
+          const apiKey = res.apiKey || '';
+          if (provider !== 'ollama' && !apiKey) {
+            btnAnalyze.disabled = true;
+            btnAnalyze.title = 'Veuillez configurer votre clé API IA d\'abord';
+          } else {
+            btnAnalyze.disabled = false;
+            btnAnalyze.title = '';
+          }
+        });
       } else {
         elTitle.value = chrome.i18n.getMessage('lightTabNotSupported');
         elUrl.textContent = chrome.i18n.getMessage('lightOnlyHttps');
@@ -413,8 +443,19 @@ btnManualConfirm.addEventListener('click', saveManualBookmark);
 
 btnAdvanced.addEventListener('click', openAdvanced);
 btnPrivacy.addEventListener('click', openPrivacy);
+btnConfigureAI.addEventListener('click', () => {
+  chrome.storage.local.set({ activeTab: 'config' }, () => {
+    openAdvanced();
+  });
+});
+btnReorgAll.addEventListener('click', () => {
+  chrome.storage.local.set({ activeTab: 'rangement' }, () => {
+    openAdvanced();
+  });
+});
 
 // ── Auto-load on open ─────────────────────────────────────────────────────────
 applyI18n();
 loadActiveTab();
 loadFolders();
+checkConfig();
