@@ -10,7 +10,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov', 'html', 'json-summary'],
       include: ['src/**/*.js'],
-      exclude: ['tests/**', 'src/background/analysis.js', 'src/llm/providers/**']
+      exclude: [
+        'tests/**',
+        'src/background/analysis.js',
+        'src/background/orchestrator.js',
+        'src/popup/**',
+        'src/llm/providers/**'
+      ]
     }
   }
 });

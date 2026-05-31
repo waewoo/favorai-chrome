@@ -14,4 +14,17 @@ describe('getPathFromMap', () => {
     expect(getPathFromMap('10', nodeMap)).toBe('Folder A');
     expect(getPathFromMap('1', nodeMap)).toBe('Barre de favoris');
   });
+
+  it('should handle and break cycle relationships gracefully', () => {
+    const nodeMap = {
+      '0': { id: '0', title: 'Root', parentId: null },
+      '1': { id: '1', title: 'Barre de favoris', parentId: '0' },
+      '10': { id: '10', title: 'Folder A', parentId: '20' },
+      '20': { id: '20', title: 'Folder B', parentId: '10' }
+    };
+    expect(() => getPathFromMap('20', nodeMap)).not.toThrow();
+    const result = getPathFromMap('20', nodeMap);
+    expect(result).toContain('Folder A');
+    expect(result).toContain('Folder B');
+  });
 });

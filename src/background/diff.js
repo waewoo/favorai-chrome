@@ -42,7 +42,13 @@ export function buildReorganizedMap(node, map = {}, parentId = null) {
 export function getPathFromMap(nodeId, nodeMap) {
   const parts = [];
   let currentId = nodeId;
+  const visited = new Set();
   while (currentId && nodeMap[currentId]) {
+    if (visited.has(currentId)) {
+      /* v8 ignore next */
+      break;
+    }
+    visited.add(currentId);
     const node = nodeMap[currentId];
     if (!CHROME_ROOT_IDS.has(currentId)) parts.unshift(node.title);
     currentId = node.parentId;
