@@ -32,6 +32,7 @@
       <button class="tab-btn active" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
       <button class="tab-btn" id="tabConfigBtn" data-i18n="tabConfig">⚙️ Configuration</button>
       <button class="tab-btn" id="tabHistoryBtn" data-i18n="tabHistory">📜 History</button>
+      <button class="tab-btn" id="tabForgottenBtn" data-i18n="tabForgotten">🕰️ Forgotten</button>
       <button class="tab-btn" id="tabDocsBtn" data-i18n="tabDocumentation">📖 Docs</button>
       <button class="tab-btn" id="tabAboutBtn" data-i18n="tabAbout">ℹ️ About</button>
     </div>
@@ -282,6 +283,13 @@
         <div class="action-list-container" id="historyListContainer" style="max-height: 400px; margin-bottom: 0;">
           <!-- History sessions will be rendered here -->
         </div>
+      </section>
+    </div>
+
+    <!-- FORGOTTEN PANEL (TAB FORGOTTEN) -->
+    <div id="tabForgottenPanel" class="tab-panel hidden">
+      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto; padding: 14px;">
+        <!-- Content injected by forgotten.js -->
       </section>
     </div>
 

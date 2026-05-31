@@ -6,6 +6,7 @@ import { translatePage, showToast, showConfirm, addLog, removeLoadingLog } from 
 import { switchTab, showView } from './src/popup/navigation.js';
 import { loadConfig, checkConfigStatus, bindConfigEvents } from './src/popup/config.js';
 import { renderHistory } from './src/popup/history.js';
+import { renderForgotten } from './src/popup/forgotten.js';
 import { 
   loadBookmarkFolders, 
   startReorganization, 
@@ -23,6 +24,7 @@ import {
 const tabRangementBtn = document.getElementById('tabRangementBtn');
 const tabConfigBtn = document.getElementById('tabConfigBtn');
 const tabHistoryBtn = document.getElementById('tabHistoryBtn');
+const tabForgottenBtn = document.getElementById('tabForgottenBtn');
 const tabAboutBtn = document.getElementById('tabAboutBtn');
 const tabDocsBtn = document.getElementById('tabDocsBtn');
 
@@ -71,6 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     tabHistoryBtn.addEventListener('click', () => {
       switchTab('history');
       renderHistory();
+    });
+  }
+  if (tabForgottenBtn) {
+    tabForgottenBtn.addEventListener('click', () => {
+      switchTab('forgotten');
+      renderForgotten();
     });
   }
 

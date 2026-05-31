@@ -7,6 +7,7 @@ export function switchTab(tabId) {
     rangement: { btn: 'tabRangementBtn', panel: 'tabRangementPanel' },
     config: { btn: 'tabConfigBtn', panel: 'tabConfigPanel' },
     history: { btn: 'tabHistoryBtn', panel: 'tabHistoryPanel' },
+    forgotten: { btn: 'tabForgottenBtn', panel: 'tabForgottenPanel' },
     docs: { btn: 'tabDocsBtn', panel: 'tabDocumentationPanel' },
     about: { btn: 'tabAboutBtn', panel: 'tabAboutPanel' }
   };
