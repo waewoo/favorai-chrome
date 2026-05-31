@@ -98,7 +98,7 @@ test.describe('History Tab', () => {
       // Go to Config
       const tabConfigBtn = page.locator('#tabConfigBtn');
       await tabConfigBtn.click();
-      let configPanel = page.locator('#tabConfigPanel');
+      const configPanel = page.locator('#tabConfigPanel');
       await expect(configPanel).toBeVisible();
 
       // Back to History

@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
 
-// Mock some bookmarks in storage before test
+// Note: setupMockBookmarks is defined for future use when extension APIs support direct mocking
+// eslint-disable-next-line no-unused-vars
 async function setupMockBookmarks(context) {
   // Create bookmarks structure in extension storage
   const mockBookmarks = [

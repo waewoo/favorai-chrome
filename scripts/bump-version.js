@@ -30,7 +30,7 @@ let bumpType = args[0] || 'auto'; // 'auto', 'major', 'minor', 'patch', or a spe
 
 // 1. Fetch commits since the last tag
 let lastTag = '';
-let commits = [];
+let commits = []; // eslint-disable-line prefer-const
 let isGit = false;
 
 try {
@@ -158,7 +158,7 @@ function analyzeBumpType(commitsList) {
   let hasMajor = false;
   let hasMinor = false;
 
-  const conventionalPattern = /^(\w+)(?:\(([^)]+)\))?(!?):\s*(.*)$/;
+  const conventionalPattern = /^(\w+)(?:\(([^)]+)\))?(!?):\s*(.*)$/; // eslint-disable-line security/detect-unsafe-regex
 
   for (const commit of commitsList) {
     const { subject, body } = commit;
@@ -203,7 +203,7 @@ function updateChangelog(commitsList, version) {
   const fixed = [];
   const changed = [];
 
-  const conventionalPattern = /^(\w+)(?:\(([^)]+)\))?(!?):\s*(.*)$/;
+  const conventionalPattern = /^(\w+)(?:\(([^)]+)\))?(!?):\s*(.*)$/; // eslint-disable-line security/detect-unsafe-regex
 
   for (const commit of commitsList) {
     const { subject, hash } = commit;
@@ -264,7 +264,7 @@ function updateChangelog(commitsList, version) {
     notesBlock += `### Fixed\n${fixed.join('\n')}\n\n`;
   }
 
-  let changelogBlock = `## [${version}] - ${dateStr}\n\n` + notesBlock;
+  const changelogBlock = `## [${version}] - ${dateStr}\n\n` + notesBlock;
 
   let changelogContent = fs.readFileSync(changelogPath, 'utf8');
   const firstEntryIndex = changelogContent.indexOf('## [');

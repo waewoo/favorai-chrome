@@ -217,7 +217,7 @@ test.describe('Configuration Tab', () => {
       await navigateToConfig(page);
 
       const providerSelect = page.locator('#provider');
-      const currentValue = await providerSelect.inputValue();
+      // Note: initial value not checked — we only assert the new selection
 
       // Select different provider if available
       await providerSelect.selectOption('openai');

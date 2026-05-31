@@ -180,6 +180,8 @@ test.describe('UI Structure and Layout', () => {
 
       // Check tab panels
       const tabPanels = await page.locator('.tab-panel').count();
+      // Suppress unused-var: tabPanels counted but explicit panels check below is primary assertion
+      void tabPanels;
       // At least some panels should exist
       const explicitPanels = await page.locator(
         '#tabRangementPanel, #tabConfigPanel, #tabHistoryPanel'
@@ -214,7 +216,7 @@ test.describe('UI Structure and Layout', () => {
 
       const duplicateIds = await page.evaluate(() => {
         const ids = {};
-        let duplicates = [];
+        const duplicates = [];
 
         document.querySelectorAll('[id]').forEach(el => {
           if (ids[el.id]) {

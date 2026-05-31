@@ -204,7 +204,7 @@ test.describe('Error Handling and Edge Cases', () => {
       await gotoPopup(page, extensionId);
 
       // Get initial DOM size
-      let elementCount = await page.locator('*').count();
+      const elementCount = await page.locator('*').count();
 
       // Switch tabs multiple times
       for (let i = 0; i < 10; i++) {
