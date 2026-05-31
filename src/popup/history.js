@@ -26,7 +26,11 @@ export function renderHistory() {
     
     history.forEach((session) => {
       const dateStr = new Date(session.timestamp).toLocaleString();
-      const modeLabel = session.mode === 'complete' ? (chrome.i18n.getMessage('btnComplete') || 'Complet') : (chrome.i18n.getMessage('btnMinimal') || 'Minimal');
+      const modeLabel = session.mode === 'complete'
+        ? (chrome.i18n.getMessage('btnComplete') || 'Complet')
+        : session.mode === 'forgotten'
+          ? (chrome.i18n.getMessage('tabForgotten') || '🕰️ Oubliés')
+          : (chrome.i18n.getMessage('btnMinimal') || 'Minimal');
       
       const sessionDiv = document.createElement('div');
       sessionDiv.className = 'action-group';

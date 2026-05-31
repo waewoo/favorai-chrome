@@ -47,7 +47,7 @@ test.describe('Forgotten Bookmarks Tab', () => {
 
       const select = page.locator('#forgottenThreshold');
       await expect(select).toBeVisible();
-      await expect(select).toHaveValue('6');
+      await expect(select).toHaveValue('60');
     } finally {
       await cleanup(context, tmpDir);
     }

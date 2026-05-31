@@ -124,7 +124,7 @@ function formatErrorMessage(error) {
       if (parsed.error && typeof parsed.error === 'object' && parsed.error.message) {
         return parsed.error.message;
       }
-    } catch (e) {
+    } catch {
       // Si le parsing échoue, continuer avec le message original
     }
   }
@@ -315,6 +315,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: false, error: error.message });
         });
     });
+    return true;
+  }
+
+  if (message.action === 'save_forgotten_deletion') {
+    saveSessionToHistory(message.entries, 'forgotten', '')
+      .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
 
