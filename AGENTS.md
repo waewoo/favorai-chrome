@@ -11,11 +11,11 @@ We follow a strict **Separation of Concerns** to isolate UI logic, background or
 ```
 FavorAI/
 ├── manifest.json                    # Extension metadata, permissions & service worker declaration
-├── background.js                    # Service Worker entrypoint (event router, keep-alive alarm listener)
+├── background.js                    # Service Worker entrypoint (loads background/orchestrator.js)
 ├── popup.html                       # Full popup UI layout (localized via data-i18n attributes)
 ├── popup-light.html                 # Lightweight popup variant for the browser action quick access
 ├── popup.css                        # UI styling rules (shared by both popup variants)
-├── popup.js                         # UI logic, state management, chrome.runtime messaging sender
+├── popup.js                         # Main UI entrypoint (boots modular UI components from src/popup/)
 ├── popup-light.js                   # Simplified UI logic for the lightweight popup variant
 ├── Makefile                         # Unified interface for linting, testing, and packaging
 ├── scripts/
@@ -27,6 +27,7 @@ FavorAI/
 │   └── get-refresh-token.mjs        # One-time OAuth2 refresh token helper
 ├── src/
 │   ├── background/
+│   │   ├── orchestrator.js          # Service worker state, event router, keep-alive alarm listener
 │   │   ├── analysis.js              # Runs duplicate detections, dead-link checks, orchestrates LLM call
 │   │   ├── diff.js                  # Aligns reorganized LLM outputs and builds node mappings
 │   │   ├── apply.js                 # Safe updates, parent ID resolutions, deletions, and moves
@@ -36,6 +37,12 @@ FavorAI/
 │   │   ├── prompts.js               # System and user prompt templates (PROMPT_COMPLETE, PROMPT_MINIMAL, PROMPT_SUGGEST)
 │   │   ├── utils.js                 # LLM response parser, JSON sanitation, and fetch timeout helpers
 │   │   └── providers/               # API client wrappers: openai, gemini, claude, mistral, deepseek, ollama, grok, custom
+│   ├── popup/                       # Modular popup UI submodules
+│   │   ├── config.js                # API models fetching, configuration state sync, form listeners
+│   │   ├── history.js               # Reorg history logging UI, rollback, and deletion
+│   │   ├── navigation.js            # Tab switching, main/validation view toggling
+│   │   ├── reorg.js                 # Progress bars, folder selection, launch workflow, inline modification edit panel
+│   │   └── utils.js                 # UI helpers: toast, confirm modals, logging helpers, formatting
 │   └── utils/
 │       ├── constants.js             # Shared static constraints and browser structural root IDs
 │       ├── escapeHtml.js            # XSS HTML escaper helper
@@ -98,6 +105,69 @@ The LLM response must be a valid JSON object containing a `reorganizedTree` and 
   },
   "explanation": "Here is a brief description of the changes made..."
 }
+```
+
+---
+
+## 🗺️ LLM Providers Architecture & System Flows
+
+### 1. LLM Providers Dispatch Architecture
+The LLM integration is modularized to support multiple AI backends seamlessly. The entry point is [src/llm/index.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/index.js), which exposes:
+* `dispatchToProvider(config, systemPrompt, userPrompt, signal)`: Centralized router that maps the configured `provider` string to the correct provider wrapper.
+
+Each provider is implemented as a standalone module inside `src/llm/providers/`:
+* [openai.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/openai.js): Integrates with standard OpenAI models and supports custom endpoints.
+* [gemini.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/gemini.js): Wraps Google's Gemini API via its native JSON format.
+* [claude.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/claude.js): Wraps Anthropic's Claude API.
+* Other platforms ([mistral.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/mistral.js), [deepseek.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/deepseek.js), [ollama.js](file:///d:/Travail/Projet/favorai-chrome/src/llm/providers/ollama.js)): Specialized wrappers tailored to each platform's distinct API structures.
+
+```mermaid
+graph TD
+    UI[Popup / Popup-Light] -->|chrome.runtime.sendMessage| SW[background.js / orchestrator.js]
+    SW -->|dispatchToProvider| Router["src/llm/index.js"]
+    Router --> ProviderOpenAI["src/llm/providers/openai.js"]
+    Router --> ProviderGemini["src/llm/providers/gemini.js"]
+    Router --> ProviderClaude["src/llm/providers/claude.js"]
+    Router --> ProviderOllama["src/llm/providers/ollama.js"]
+```
+
+### 2. Bookmark Reorganization Sequence Flow
+The following flow diagram shows the complete sequence of actions from launching the reorganization to validating and applying modifications:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Popup UI
+    participant SW as SW (orchestrator.js)
+    participant Lib as src/background/analysis.js
+    participant LLM as src/llm/index.js
+    participant Apply as src/background/apply.js
+
+    User->>UI: Click Reorganize (Minimal / Complete)
+    UI->>SW: Send 'start_analysis'
+    SW->>Lib: Call runAnalysis()
+    activate Lib
+    Lib->>Lib: 1. Smart Duplicate Detection (Local)
+    Lib->>Lib: 2. Dead Link Validation (HTTP GET/HEAD)
+    Lib->>Lib: 3. Clean tree representation for LLM
+    Lib->>LLM: 4. dispatchToProvider(tree)
+    LLM-->>Lib: Return reorganized tree JSON (Only IDs)
+    Lib->>Lib: 5. Align Reorganized Tree & Map original titles
+    Lib->>Lib: 6. Calculate Diff Action Checklist
+    Lib-->>SW: Return action checklist & explanation
+    deactivate Lib
+    SW->>UI: Send 'analysis_completed'
+    UI->>User: Display proposed modifications with filter checkboxes
+    User->>UI: Select items & click "Confirm & Apply"
+    UI->>SW: Send 'apply_changes' with approvedActionIds
+    SW->>Apply: Call applyChanges()
+    activate Apply
+    Apply->>Apply: Perform sequential chrome.bookmarks operations (Move, Create, Delete)
+    Apply-->>SW: Finished applying changes
+    deactivate Apply
+    SW-->>UI: Send success response
+    UI->>User: Show success message & revert to idle state
 ```
 
 ---

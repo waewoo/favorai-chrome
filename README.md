@@ -1,5 +1,7 @@
 # FavorAI
 
+[![FavorAI Extension CI](https://github.com/waewoo/favorai-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/waewoo/favorai-chrome/actions/workflows/ci.yml)
+
 FavorAI is a Chrome and Chromium-based browser extension that helps you clean up and reorganize your bookmarks using AI.
 
 ## Key Features
@@ -15,18 +17,19 @@ FavorAI is a Chrome and Chromium-based browser extension that helps you clean up
 
 ```
 ├── manifest.json            # Manifest file (MV3)
-├── background.js            # Background service worker entry point
+├── background.js            # Background service worker entry point (loads src/background/orchestrator.js)
 ├── popup.html               # Full popup view structure
 ├── popup-light.html         # Lightweight popup for quick bookmark saving
-├── popup.js                 # Popup event handlers and UI localization
+├── popup.js                 # Popup UI initialization (loads submodules from src/popup/)
 ├── popup-light.js           # Lightweight popup logic
 ├── popup.css                # Shared popup styling
 ├── _locales/                # Internationalization folder
 │   ├── en/messages.json
 │   └── fr/messages.json
 ├── src/                     # Module files
-│   ├── background/          # Background logic modules (analysis, apply, history, diff)
+│   ├── background/          # Background logic modules (orchestrator, analysis, apply, history, diff)
 │   ├── llm/                 # LLM client wrappers + provider dispatch
+│   ├── popup/               # Modular UI modules (config, history, navigation, reorg, utils)
 │   └── utils/               # Sanitization helpers and constants
 └── tests/                   # Automated Vitest unit tests and Playwright e2e tests
     ├── unit/                # 172 unit tests (Vitest)
