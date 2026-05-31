@@ -104,18 +104,7 @@ test.describe('Popup Light (Minimal Interface)', () => {
     }
   });
 
-  test('should have detach button in main popup', async () => {
-    const { context, page, extensionId, tmpDir } = await launchExtension();
 
-    try {
-      await gotoPopup(page, extensionId);
-
-      const detachBtn = page.locator('#btnDetach');
-      await expect(detachBtn).toBeVisible();
-    } finally {
-      await cleanup(context, tmpDir);
-    }
-  });
 
   test('popup should be responsive and properly sized', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();

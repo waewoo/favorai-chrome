@@ -31,7 +31,7 @@ console.log(`🚀 Preparing GitHub Release for ${tag}...`);
 const changelogContent = fs.readFileSync(changelogPath, 'utf8');
 
 // Find the block under `## [version]`
-const versionHeaderRegex = new RegExp(`##\\s*\\[${version.replace(/\./g, '\\.')}\\][^\n]*`);
+const versionHeaderRegex = new RegExp(`##\\s*\\[${version.replace(/\./g, '\\.')}\\][^\n]*`); // eslint-disable-line security/detect-non-literal-regexp
 const match = changelogContent.match(versionHeaderRegex);
 
 if (!match) {

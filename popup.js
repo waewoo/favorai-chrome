@@ -138,7 +138,6 @@ Your response MUST be a valid JSON object matching this schema:
 };
 
 // Cache DOM elements
-const btnDetach = document.getElementById('btnDetach');
 const tabRangementBtn = document.getElementById('tabRangementBtn');
 const tabConfigBtn = document.getElementById('tabConfigBtn');
 const tabHistoryBtn = document.getElementById('tabHistoryBtn');
@@ -481,22 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnDetach) {
-    btnDetach.addEventListener('click', () => {
-      chrome.windows.create({
-        url: chrome.runtime.getURL('popup.html'),
-        type: 'popup',
-        width: 1200,
-        height: 1050,
-        left: 100,
-        top: 100
-      }, () => {
-        if (chrome.runtime.lastError) {
-          console.error('Erreur lors de l\'ouverture de la fenêtre:', chrome.runtime.lastError);
-        }
-      });
-    });
-  }
+
 
   btnClearHistory.addEventListener('click', async () => {
     const title = chrome.i18n.getMessage('btnClearHistory') || 'Clear History';

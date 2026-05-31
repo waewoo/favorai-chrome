@@ -204,7 +204,6 @@
   "bookmarkNameLabel": { "message": "Bookmark name" },
   "targetFolderLabel": { "message": "Target folder" },
   "confirmSaveBtn": { "message": "💾 Confirm & Save Bookmark" },
-  "detachButtonTitle": { "message": "Detach in a window" },
   "toastConfigSaved": { "message": "Configuration saved!" },
   "allBookmarks": { "message": "All bookmarks (Root)" },
   "btnPrivacyPolicy": { "message": "Privacy Policy" },

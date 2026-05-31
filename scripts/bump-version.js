@@ -146,8 +146,6 @@ if (isGit) {
     console.log('\n📦 Packaging the extension zip...');
     execSync('npm run package', { stdio: 'inherit' });
     
-    const zipName = `favorai-extension-v${newVersion}.zip`;
-    
     let ghLoggedIn = false;
     try {
       execSync('gh auth status', { stdio: 'ignore' });

@@ -204,7 +204,6 @@
   "bookmarkNameLabel": { "message": "Nom du favori" },
   "targetFolderLabel": { "message": "Dossier cible" },
   "confirmSaveBtn": { "message": "💾 Confirmer & Enregistrer" },
-  "detachButtonTitle": { "message": "Détacher dans une fenêtre" },
   "toastConfigSaved": { "message": "Configuration enregistrée !" },
   "allBookmarks": { "message": "Tous les favoris (Racine)" },
   "btnPrivacyPolicy": { "message": "Politique de confidentialité" },
