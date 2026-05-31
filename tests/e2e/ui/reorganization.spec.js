@@ -21,7 +21,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     try {
       await gotoPopup(page, extensionId);
 
-      const launchSection = page.locator('text=Lancer le Rangement');
+      const launchSection = page.locator('[data-i18n="sectionLaunchTitle"]');
       await expect(launchSection).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
@@ -66,7 +66,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     try {
       await gotoPopup(page, extensionId);
 
-      const statusSection = page.locator('text=Console de Statut');
+      const statusSection = page.locator('[data-i18n="sectionStatus"]');
       await expect(statusSection).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
@@ -121,7 +121,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
     try {
       await gotoPopup(page, extensionId);
 
-      const privacyNote = page.locator('text=Aucune donnée n\'est collectée');
+      const privacyNote = page.locator('[data-i18n="privacyNote"]');
       await expect(privacyNote).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);

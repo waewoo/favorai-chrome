@@ -112,8 +112,9 @@ test.describe('Internationalization (i18n)', () => {
       await gotoPopup(page, extensionId);
 
       // Check if any privacy/data collection text is present (in French or English)
-      const pageContent = await page.content();
-      expect(pageContent).toContain('donn');  // Contains "données" (French for data)
+      // Use data-i18n attribute to verify the privacy note element is present regardless of locale
+      const privacyNote = page.locator('[data-i18n="privacyNote"]');
+      await expect(privacyNote).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }

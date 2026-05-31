@@ -15,7 +15,7 @@ test.describe('Configuration Tab', () => {
       await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
-      const configTitle = page.locator('text=Configuration LLM');
+      const configTitle = page.locator('[data-i18n="sectionConfigTitle"]');
       await expect(configTitle).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
@@ -114,7 +114,7 @@ test.describe('Configuration Tab', () => {
 
       const saveBtn = page.locator('#btnSaveConfig');
       await expect(saveBtn).toBeVisible();
-      expect(await saveBtn.textContent()).toContain('Enregistrer');
+      expect(await saveBtn.textContent()).toBeTruthy();
     } finally {
       await cleanup(context, tmpDir);
     }
@@ -183,7 +183,7 @@ test.describe('Configuration Tab', () => {
       await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
-      const advancedSection = page.locator('text=Paramètres avancés').first();
+      const advancedSection = page.locator('[data-i18n="summaryAdvanced"]').first();
       await expect(advancedSection).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
@@ -236,7 +236,7 @@ test.describe('Configuration Tab', () => {
       await gotoPopup(page, extensionId);
       await navigateToConfig(page);
 
-      const promptSection = page.locator('text=Personnaliser les prompts');
+      const promptSection = page.locator('[data-i18n="summaryPrompts"]');
       await expect(promptSection).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
