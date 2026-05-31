@@ -160,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
       switchTab(res.activeTab);
       if (res.activeTab === 'history') {
         renderHistory();
+      } else if (res.activeTab === 'forgotten') {
+        renderForgotten();
       }
       chrome.storage.local.remove('activeTab');
     } else {
