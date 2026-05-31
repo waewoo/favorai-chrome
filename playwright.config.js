@@ -26,7 +26,9 @@ export default defineConfig({
           args: [
             `--disable-extensions-except=${extensionPath}`,
             `--load-extension=${extensionPath}`,
-            '--no-sandbox'
+            '--no-sandbox',
+            '--lang=fr',           // Force French locale so chrome.i18n returns 'fr' in CI and locally
+            '--accept-lang=fr,fr-FR'
           ]
         }
       }
