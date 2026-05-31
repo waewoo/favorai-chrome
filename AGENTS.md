@@ -18,6 +18,12 @@ FavorAI/
 ├── popup.js                         # UI logic, state management, chrome.runtime messaging sender
 ├── popup-light.js                   # Simplified UI logic for the lightweight popup variant
 ├── Makefile                         # Unified interface for linting, testing, and packaging
+├── scripts/
+│   ├── security-check.js            # Unified security audit (npm audit + ESLint + web-ext lint)
+│   ├── bump-version.js              # SemVer bump, CHANGELOG generation, commit & tag automation
+│   ├── package.js                   # Extension ZIP packaging for the Chrome Web Store
+│   ├── publish.mjs                  # Chrome Web Store upload & publish via OAuth2
+│   └── get-refresh-token.mjs        # One-time OAuth2 refresh token helper
 ├── src/
 │   ├── background/
 │   │   ├── analysis.js              # Runs duplicate detections, dead-link checks, orchestrates LLM call
@@ -26,6 +32,7 @@ FavorAI/
 │   │   └── history.js              # History tracking and bookmarks rollback mechanics
 │   ├── llm/
 │   │   ├── index.js                 # Unified LLM query routing via dispatchToProvider()
+│   │   ├── prompts.js               # System and user prompt templates (PROMPT_COMPLETE, PROMPT_MINIMAL, PROMPT_SUGGEST)
 │   │   ├── utils.js                 # LLM response parser, JSON sanitation, and fetch timeout helpers
 │   │   └── providers/               # API client wrappers: openai, gemini, claude, mistral, deepseek, ollama, grok, custom
 │   └── utils/
@@ -109,9 +116,9 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 
 | Command | Description |
 |---|---|
-| `make lint` | ESLint — validates code style and catches syntax errors. **Run first.** |
+| `make lint` | ESLint — validates **all** JS files (src/, popup*.js, scripts/, tests/, config). **Run first.** |
 | `make lint-fix` | ESLint auto-fix |
-| `make test` | Vitest unit tests (160 tests, 100% coverage). **Run after lint.** |
+| `make test` | Vitest unit tests (172 tests, 100% coverage). **Run after lint.** |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + formatted global coverage summary |
 | `make test-e2e` | Playwright e2e tests (106 tests, UI + integration). Runs `clean-e2e` first. |
@@ -129,7 +136,7 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make upload` | Build ZIP + upload to Chrome Web Store as draft (no publish) |
 | `make publish` | Build ZIP + upload + publish to all users |
 | `make publish-testers` | Build ZIP + upload + publish to trusted testers only |
-| `make security` | Scan dependencies for high/critical vulnerabilities (npm audit) |
+| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint |
 
 **Recommended workflow before committing:**
 ```bash
@@ -143,11 +150,12 @@ make lint && make test && make test-e2e
 
 ### 3. Test Coverage Requirements
 
-**Unit Tests** (160 tests, 100% coverage):
+**Unit Tests** (172 tests, 100% coverage):
 - Located in `tests/unit/`
 - Test utility functions, analysis logic, LLM parsing, diff calculations
 - Mock Chrome APIs using `tests/mocks/chrome.js`
 - **CRITICAL**: The unit test coverage rate MUST always be 100% across all files and columns/types (Statements, Branches, Functions, and Lines). Any modification or new feature must be accompanied by relevant unit tests to maintain this 100% rate.
+- **Note on V8 synthetic branches**: The v8 coverage provider generates phantom branches on `import` statements and JSDoc block comments at line 1 of each file. These cannot be covered by user-land tests. Suppress them with `/* v8 ignore next */` placed on its own line immediately before the affected statement. Do not add this comment elsewhere.
 - Run with: `make test` or `make test-coverage`
 
 **E2E Tests** (106 tests, 10 spec files):

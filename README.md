@@ -29,7 +29,7 @@ FavorAI is a Chrome and Chromium-based browser extension that helps you clean up
 │   ├── llm/                 # LLM client wrappers + provider dispatch
 │   └── utils/               # Sanitization helpers and constants
 └── tests/                   # Automated Vitest unit tests and Playwright e2e tests
-    ├── unit/                # 160 unit tests (Vitest)
+    ├── unit/                # 172 unit tests (Vitest)
     ├── e2e/                 # 106 e2e tests (Playwright)
     │   ├── helpers.js       # Shared launchExtension / gotoPopup / cleanup helpers
     │   ├── ui/              # UI spec files (structure, navigation, config, history, i18n, …)
@@ -56,7 +56,7 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make install` | Install Node.js dependencies |
 | `make lint` | Run ESLint code validation |
 | `make lint-fix` | Auto-fix linter warnings |
-| `make test` | Run Vitest unit tests (160 tests, 100% coverage) |
+| `make test` | Run Vitest unit tests (172 tests, 100% coverage) |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + coverage summary |
 | `make test-e2e` | Run all Playwright e2e tests (106 tests) |
@@ -73,7 +73,7 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make upload` | Build ZIP and upload to Chrome Web Store (draft, no publish) |
 | `make publish` | Build ZIP, upload and publish to all users |
 | `make publish-testers` | Build ZIP, upload and publish to trusted testers only |
-| `make security` | Scan dependencies for high/critical vulnerabilities (npm audit) |
+| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint |
 
 #### Recommended workflow before committing
 
