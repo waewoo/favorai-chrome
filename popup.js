@@ -589,7 +589,10 @@ function addLoadingLog(message) {
   const entry = document.createElement('div');
   entry.id = 'loadingLogEntry';
   entry.className = 'log-entry loading';
-  entry.innerHTML = `<span class="loading-spinner"></span>${message}`;
+  const spinner = document.createElement('span');
+  spinner.className = 'loading-spinner';
+  entry.appendChild(spinner);
+  entry.appendChild(document.createTextNode(message));
   logContainer.appendChild(entry);
   logContainer.scrollTop = logContainer.scrollHeight;
 }

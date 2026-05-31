@@ -42,7 +42,7 @@ lint-fix:
 	npm run lint:fix
 
 security:
-	npm audit --audit-level=high
+	node scripts/security-check.js
 
 test:
 	npm run test
