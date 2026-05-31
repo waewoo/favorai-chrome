@@ -530,5 +530,170 @@ describe('diff.js functions', () => {
       expect(result.children).toHaveLength(2);
       expect(result.children.map(c => c.id)).toEqual(['10', '30']);
     });
+
+    it('should NOT include url key on folder nodes (if(node.url) guard)', () => {
+      const node = { id: '10', title: 'Folder', children: [] };
+      const result = cleanTreeForLLM(node, new Set(), new Set());
+      // Using toStrictEqual to catch url: undefined being incorrectly added
+      expect(result).toStrictEqual({ id: '10', title: 'Folder', children: [] });
+    });
+  });
+
+  describe('alignReorganizedIds – additional mutation kills', () => {
+    let originalMap;
+    let originalFoldersByTitle;
+    let originalBookmarksByTitle;
+
+    beforeEach(() => {
+      originalMap = {
+        '10': { id: '10', title: 'Folder A', parentId: '0', children: [] },
+        '20': { id: '20', title: 'Bookmark X', parentId: '10', url: 'https://x.com' },
+      };
+      originalFoldersByTitle = { 'folder a': [originalMap['10']] };
+      originalBookmarksByTitle = { 'bookmark x': [originalMap['20']] };
+    });
+
+    it('should trim whitespace from node title when building titleKey (line 65)', () => {
+      // ' Folder A ' should normalize to 'folder a' and match original '10'
+      const node = { id: 'new_x', title: '  Folder A  ', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id).toBe('10');
+    });
+
+    it('should trim whitespace from byId.title when comparing for exact match (line 70)', () => {
+      // Original node has padded title; incoming node has clean title
+      originalMap['10'].title = '  Folder A  ';
+      const node = { id: '10', title: 'Folder A', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id).toBe('10'); // exact match still works after trim
+    });
+
+    it('should select the candidate matching the given parentId (not always first candidate)', () => {
+      // Two folders with same name under different parents — must pick the one with parentId='30'
+      const cand1 = { id: '50', title: 'Twin', parentId: '10' };
+      const cand2 = { id: '60', title: 'Twin', parentId: '30' };
+      originalMap['30'] = { id: '30', title: 'Parent30', parentId: '0', children: [] }; // must be in map
+      originalMap['50'] = cand1;
+      originalMap['60'] = cand2;
+      originalFoldersByTitle['twin'] = [cand1, cand2];
+
+      const node = { id: 'new_twin', title: 'Twin', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle, '30');
+      expect(node.id).toBe('60');
+    });
+
+    it('should fall back to first candidate when no candidate matches parentId', () => {
+      const cand1 = { id: '50', title: 'Solo', parentId: '10' };
+      originalMap['50'] = cand1;
+      originalFoldersByTitle['solo'] = [cand1];
+
+      // parentId '99' is not in originalMap → falls back to candidates[0]
+      const node = { id: 'new_s', title: 'Solo', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle, '99');
+      expect(node.id).toBe('50');
+    });
+
+    it('should dequeue matched candidate so second match of same title gets different node', () => {
+      const cand1 = { id: '50', title: 'Dup', parentId: '0', children: [] };
+      const cand2 = { id: '60', title: 'Dup', parentId: '0', children: [] };
+      originalMap['50'] = cand1;
+      originalMap['60'] = cand2;
+      // Two candidates with same name
+      originalFoldersByTitle['dup'] = [cand1, cand2];
+
+      const nodeA = { id: 'new_a', title: 'Dup', children: [] };
+      const nodeB = { id: 'new_b', title: 'Dup', children: [] };
+      const root = { id: '0', title: 'Root', children: [nodeA, nodeB] };
+      alignReorganizedIds(root, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+
+      // cand1 removed after first match; second match must use cand2 (not cand1 again)
+      expect(nodeA.id).toBe('50');
+      expect(nodeB.id).toBe('60');
+    });
+
+    it('should treat node as isNew when id starts with new_ even if in map via || check', () => {
+      // startsWith('new_') || !originalMap[id]: if only && is used, this would fail for new_+in-map
+      const node = { id: 'new_50', title: 'Unknown', children: [] };
+      // Put 'new_50' in originalMap (shouldn't matter — startsWith is enough)
+      originalMap['new_50'] = { id: 'new_50', title: 'Other', parentId: '0', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      // node.id must NOT be replaced (it already starts with new_, so isNew=true → no new id generated)
+      // The id either stays 'new_50' or gets matched by title — since title 'Unknown' has no match,
+      // it keeps 'new_50' (isNew is true so the else branch doesn't fire)
+      expect(node.id).not.toMatch(/^new_[a-f0-9]{9}$/); // should NOT generate a second new id
+    });
+
+    it('should use || for isNew check: node with id not in originalMap is isNew', () => {
+      // !originalMap[node.id] = true → isNew=true → no new id generated (it's already "new")
+      const node = { id: 'nonexistent_id', title: 'Unknown Folder', children: [] };
+      // id not in originalMap → isNew = startsWith('new_') || !originalMap[...] = false || true = true
+      // → don't generate new id (keep existing)
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      expect(node.id).toBe('nonexistent_id');
+    });
+
+    it('should generate UUID-based id with exactly 9 alphanumeric chars after new_ prefix', () => {
+      originalMap['5'] = { id: '5', title: 'Old', parentId: '0', children: [] };
+      const node = { id: '5', title: 'Completely Different Title', children: [] };
+      alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+      // isNew=false (id in map, not starts with new_), isFolder=true → generates new_XXXXXXXXX
+      expect(node.id).toMatch(/^new_[a-z0-9]{9}$/);
+    });
+  });
+
+  describe('sanitizeReorganizedTree – additional mutation kills', () => {
+    it('should trim whitespace from child.title when building origFoldersByName (line 128)', () => {
+      // Original root has child with padded title; reorganized tree uses clean title for lookup
+      const originalMap = {
+        '0': { id: '0', title: 'Root', children: [
+          { id: '10', title: '  Folder A  ', parentId: '0', children: [] }  // padded title
+        ]},
+        '10': { id: '10', title: '  Folder A  ', parentId: '0', children: [] }
+      };
+      const node = {
+        id: '0', title: 'Root',
+        children: [{ id: 'new_fa', title: 'Folder A', children: [] }]
+      };
+      const idMap = {};
+      sanitizeReorganizedTree(node, originalMap, idMap);
+      // Should merge 'Folder A' (clean) with '  Folder A  ' (padded) via trim
+      expect(node.children[0].id).toBe('10');
+    });
+
+    it('should trim whitespace from child.title in reorganized tree for lookup (line 134)', () => {
+      // Reorganized tree has padded child title; should still match original folder
+      const originalMap = {
+        '0': { id: '0', title: 'Root', children: [
+          { id: '10', title: 'Folder B', parentId: '0', children: [] }
+        ]},
+        '10': { id: '10', title: 'Folder B', parentId: '0', children: [] }
+      };
+      const node = {
+        id: '0', title: 'Root',
+        children: [{ id: 'new_fb', title: '  Folder B  ', children: [] }]  // padded
+      };
+      const idMap = {};
+      sanitizeReorganizedTree(node, originalMap, idMap);
+      expect(node.children[0].id).toBe('10');
+    });
+
+    it('should NOT merge old (in-map) folder even if same name exists (isNew=false guard)', () => {
+      // child.id is in originalMap → isNew=false → should NOT be merged into existing same-name folder
+      const originalMap = {
+        '0': { id: '0', title: 'Root', children: [
+          { id: '10', title: 'Folder C', parentId: '0', children: [] }
+        ]},
+        '10': { id: '10', title: 'Folder C', parentId: '0', children: [] },
+        '99': { id: '99', title: 'Folder C', parentId: '0', children: [] } // old ID, same name
+      };
+      const node = {
+        id: '0', title: 'Root',
+        children: [{ id: '99', title: 'Folder C', children: [] }] // old ID (in map) → isNew=false
+      };
+      const idMap = {};
+      sanitizeReorganizedTree(node, originalMap, idMap);
+      // Should keep id '99' (not merge into '10') because isNew=false
+      expect(node.children[0].id).toBe('99');
+    });
   });
 });

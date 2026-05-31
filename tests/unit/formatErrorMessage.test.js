@@ -83,4 +83,37 @@ describe('formatErrorMessage', () => {
     const result = formatErrorMessage('Claude', 500, payload);
     expect(result).toBe('Erreur Claude (500: Server Error)');
   });
+
+  it('should use "Unknown Error" fallback for unknown status when plain text cannot be used', () => {
+    // HTML payload prevents the plain-text catch-block override → initial 'Unknown Error' must appear
+    const result = formatErrorMessage('Test', 999, '<html>error</html>');
+    expect(result).toBe('Erreur Test (999: Unknown Error)');
+  });
+
+  it('should NOT use a message of exactly 200 chars (< 200, not <= 200)', () => {
+    const msg200 = 'x'.repeat(200);
+    const result = formatErrorMessage('Test', 400, JSON.stringify({ message: msg200 }));
+    // 200 chars is NOT < 200 → must fall back to status description
+    expect(result).toBe('Erreur Test (400: Bad Request)');
+  });
+
+  it('should NOT use plain text of exactly 200 chars (< 200, not <= 200)', () => {
+    const text200 = 'a'.repeat(200); // 200 chars, no HTML, not JSON
+    const result = formatErrorMessage('Test', 400, text200);
+    // 200 is NOT < 200 → fall back to status description
+    expect(result).toBe('Erreur Test (400: Bad Request)');
+  });
+
+  it('should use a plain text response of exactly 199 chars (boundary: 199 < 200 is true)', () => {
+    const text199 = 'b'.repeat(199);
+    const result = formatErrorMessage('Test', 400, text199);
+    expect(result).toBe(`Erreur Test (400: ${'b'.repeat(199)})`);
+  });
+
+  it('should not use a non-string error field value (typeof check)', () => {
+    // error.message is an object → typeof check must reject it
+    const payload = JSON.stringify({ error: { message: { nested: 'obj' } } });
+    const result = formatErrorMessage('Test', 400, payload);
+    expect(result).toBe('Erreur Test (400: Bad Request)');
+  });
 });

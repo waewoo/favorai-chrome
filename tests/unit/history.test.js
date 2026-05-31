@@ -99,6 +99,39 @@ describe('saveSessionToHistory', () => {
 
     expect(chrome.storage.local.set).toHaveBeenCalledTimes(2);
   });
+
+  it('should use empty string as default explanation when not provided', async () => {
+    const entries = [{ type: 'move', nodeId: '1' }];
+    await saveSessionToHistory(entries, 'minimal');
+
+    const callArgs = chrome.storage.local.set.mock.calls;
+    const lastCall = callArgs[callArgs.length - 1];
+    const saved = lastCall[0].reorgHistory[0];
+    expect(saved.explanation).toBe('');
+  });
+
+  it('should generate session IDs starting with sess_', async () => {
+    await saveSessionToHistory([{ type: 'move', nodeId: '1' }], 'complete', 'Test');
+
+    const callArgs = chrome.storage.local.set.mock.calls;
+    const lastCall = callArgs[callArgs.length - 1];
+    const saved = lastCall[0].reorgHistory[0];
+    expect(saved.id).toMatch(/^sess_\d+$/);
+  });
+
+  it('should start with empty history when storage returns no existing history', async () => {
+    chrome.storage.local.get.mockImplementationOnce((keys, callback) => {
+      callback({});  // no reorgHistory key → must start with []
+    });
+
+    await saveSessionToHistory([{ type: 'move', nodeId: '1' }], 'minimal', 'Solo');
+
+    const callArgs = chrome.storage.local.set.mock.calls;
+    const lastCall = callArgs[callArgs.length - 1];
+    const savedHistory = lastCall[0].reorgHistory;
+    expect(savedHistory).toHaveLength(1);
+    expect(savedHistory[0].explanation).toBe('Solo');
+  });
 });
 
 
@@ -187,6 +220,30 @@ describe('rollbackSession', () => {
       title: 'Old Bookmark',
       url: 'https://old.com'
     });
+  });
+
+  it('should NOT include url in update when oldUrl is falsy (strict: no url key)', async () => {
+    chrome.bookmarks.update.mockClear();
+    const historyEntries = [
+      { type: 'rename', nodeId: '30', oldTitle: 'Folder', oldUrl: null }
+    ];
+
+    await rollbackSession(historyEntries);
+
+    const updateCall = chrome.bookmarks.update.mock.calls.find(c => c[0] === '30');
+    expect(updateCall).toBeDefined();
+    // url key must be absent, not just undefined — use toStrictEqual
+    expect(updateCall[1]).toStrictEqual({ title: 'Folder' });
+  });
+
+  it('should NOT trigger delete branch for unknown entry types', async () => {
+    chrome.bookmarks.create.mockClear();
+    const historyEntries = [
+      { type: 'unknown_type', nodeId: '99' }
+    ];
+
+    await rollbackSession(historyEntries);
+    expect(chrome.bookmarks.create).not.toHaveBeenCalled();
   });
 
   it('should recreate deleted bookmark without URL if url is not provided', async () => {

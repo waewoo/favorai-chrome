@@ -698,6 +698,109 @@ describe('applyChanges', () => {
     );
   });
 
+  it('should use the nodeMap-derived path (not raw ID) in create_folder history entry', async () => {
+    // Tests the try { nodeMap = buildNodeMap(trees[0]) } block
+    // With populated nodeMap: getPathFromMap('11', map) → 'Dev' (named folder)
+    // With empty nodeMap:     getPathFromMap('11', {})  → '11' (raw ID fallback)
+    chrome.bookmarks.getTree.mockResolvedValue([{
+      id: '0', title: 'Root',
+      children: [{
+        id: '1', title: 'Bar', children: [
+          { id: '11', title: 'Dev', parentId: '1', children: [] }
+        ]
+      }]
+    }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'new-id', title: 'MyFolder' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'a1', type: 'create_folder', params: { tempId: 'new_f', title: 'MyFolder', parentId: '11', targetPath: 'Bar > Dev' } }
+    ];
+
+    await applyChanges(['a1'], pendingActions, 'complete');
+
+    const lastSet = chrome.storage.local.set.mock.calls.at(-1);
+    const entry = lastSet[0].reorgHistory[0].entries.find(e => e.type === 'create_folder');
+    // Populated nodeMap: path resolves to named path, not the raw ID '11'
+    expect(entry.targetPath).toBe('Dev');
+    expect(entry.targetPath).not.toBe('11');
+  });
+
+  it('should generate entry IDs in format ent_<9chars>_<timestamp>', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'fid', title: 'F' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    await applyChanges(
+      ['a1'],
+      [{ id: 'a1', type: 'create_folder', params: { tempId: 'new_x', title: 'F', parentId: '1', targetPath: 'A' } }],
+      'complete'
+    );
+
+    const lastSet = chrome.storage.local.set.mock.calls.at(-1);
+    const entryId = lastSet[0].reorgHistory[0].entries[0].id;
+    expect(entryId).toMatch(/^ent_[a-z0-9]{9}_\d+$/);
+  });
+
+  it('should not delete Chrome root folders (CHROME_ROOT_IDS) even when empty', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockImplementation(async (id) => {
+      if (id === '0') return [{ id: '1', title: 'Barre de favoris' }]; // root folder '1'
+      if (id === '1') return []; // root folder is empty
+      return [];
+    });
+    chrome.bookmarks.removeTree.mockClear();
+
+    await applyChanges([], [], 'complete');
+
+    // '1' is in CHROME_ROOT_IDS — must never be deleted
+    expect(chrome.bookmarks.removeTree).not.toHaveBeenCalledWith('1');
+  });
+
+  it('should skip (continue) bookmarks with url in removeEmptyFoldersRecursive', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockImplementation(async (id) => {
+      if (id === '0') return [
+        { id: 'bm1', title: 'A Bookmark', url: 'https://bm.com' }, // bookmark — must be skipped
+        { id: 'folder1', title: 'Empty Folder' }                    // empty folder — must be deleted
+      ];
+      if (id === 'folder1') return [];
+      return [];
+    });
+    chrome.bookmarks.removeTree.mockClear();
+
+    await applyChanges([], [], 'complete');
+
+    // Only the empty folder should be removed, not the bookmark
+    expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('folder1');
+    expect(chrome.bookmarks.removeTree).not.toHaveBeenCalledWith('bm1');
+    // getChildren must NOT have been called on the bookmark
+    const getChildrenIds = chrome.bookmarks.getChildren.mock.calls.map(c => c[0]);
+    expect(getChildrenIds).not.toContain('bm1');
+  });
+
+  it('should record post-cleanup history entry with correct type, isFolder, and sourcePath', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockImplementation(async (id) => {
+      if (id === '0') return [{ id: 'empty1', title: 'Dead Folder' }];
+      if (id === 'empty1') return [];
+      return [];
+    });
+    chrome.bookmarks.removeTree.mockResolvedValue(undefined);
+    chrome.storage.local.set.mockClear();
+
+    await applyChanges([], [], 'complete');
+
+    const lastSet = chrome.storage.local.set.mock.calls.at(-1);
+    const entry = lastSet[0].reorgHistory[0].entries.find(e => e.nodeId === 'empty1');
+    expect(entry).toBeDefined();
+    expect(entry.type).toBe('delete');
+    expect(entry.isFolder).toBe(true);
+    expect(entry.sourcePath).toContain('post-cleanup');
+  });
+
   it('should sort create_folder correctly when some folders have no targetPath (|| fallback)', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
     chrome.bookmarks.getChildren.mockResolvedValue([]);

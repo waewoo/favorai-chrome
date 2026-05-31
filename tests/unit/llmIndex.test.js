@@ -572,4 +572,57 @@ describe('llm/index.js', () => {
     const systemPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[4];
     expect(systemPrompt).toContain('strict JSON classifier');
   });
+
+  // ─── Profile threshold boundary: exactly 0.65 must be MIXED (not TECH/PERSONAL) ─
+
+  it('should classify as MIXED when tech/total equals exactly 0.65 (> not >=)', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'OK' });
+
+    // 13 tech, 7 personal → total=20, tech/total = 0.65 (exactly)
+    // With > 0.65: false → MIXED  |  With >= 0.65: true → TECH (wrong)
+    const tree = {
+      id: '0', title: 'root',
+      children: [{
+        id: '1', title: 'Mix',
+        children: [
+          { id: '1', title: 'Python dev', url: 'https://a.com' },
+          { id: '2', title: 'Docker dev', url: 'https://b.com' },
+          { id: '3', title: 'Linux server', url: 'https://c.com' },
+          { id: '4', title: 'React frontend', url: 'https://d.com' },
+          { id: '5', title: 'Node api', url: 'https://e.com' },
+          { id: '6', title: 'Git github', url: 'https://f.com' },
+          { id: '7', title: 'AWS cloud', url: 'https://g.com' },
+          { id: '8', title: 'SQL database', url: 'https://h.com' },
+          { id: '9', title: 'Kubernetes devops', url: 'https://i.com' },
+          { id: '10', title: 'Vim vscode', url: 'https://j.com' },
+          { id: '11', title: 'Rust golang', url: 'https://k.com' },
+          { id: '12', title: 'ML tensorflow', url: 'https://l.com' },
+          { id: '13', title: 'Data analytics', url: 'https://m.com' },
+          { id: '14', title: 'Cooking food', url: 'https://n.com' },
+          { id: '15', title: 'Travel trip', url: 'https://o.com' },
+          { id: '16', title: 'Fitness gym', url: 'https://p.com' },
+          { id: '17', title: 'Music movie', url: 'https://q.com' },
+          { id: '18', title: 'Pet cat', url: 'https://r.com' },
+          { id: '19', title: 'Recipe cooking', url: 'https://s.com' },
+          { id: '20', title: 'Gaming game', url: 'https://t.com' },
+        ]
+      }]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const userPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[3];
+    expect(userPrompt).toContain('User profile: MIXED');
+  });
+
+  it('should NOT include Stryker garbage in prompt when ignoredFolderIds is empty (avoidInstruction default)', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ action: 'use_existing', targetFolderId: '1' });
+    const config = { provider: 'openai', apiKey: 'k' };
+
+    await suggestBookmarkLocation(config, { title: 'T', url: 'https://t.com' }, [{ id: '1', path: 'Root' }], [], null);
+
+    const userPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[3];
+    expect(userPrompt).not.toContain('Stryker');
+    // The prompt should not have any trailing garbage after the template substitutions
+    expect(userPrompt.endsWith('\n')).toBe(false);
+  });
 });
