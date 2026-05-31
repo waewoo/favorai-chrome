@@ -1,0 +1,24 @@
+changelog:
+  exclude:
+    labels:
+      - skip-release
+      - documentation
+      - chore
+  categories:
+    - title: Added
+      labels:
+        - enhancement
+    - title: Fixed
+      labels:
+        - bug
+        - security
+    - title: Changed
+      labels:
+        - refactor
+        - performance
+        - ci
+        - tests
+        - chore
+    - title: Documentation
+      labels:
+        - documentation

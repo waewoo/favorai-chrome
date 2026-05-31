@@ -1,6 +1,10 @@
 # FavorAI
 
 [![FavorAI Extension CI](https://github.com/waewoo/favorai-chrome/actions/workflows/ci.yml/badge.svg)](https://github.com/waewoo/favorai-chrome/actions/workflows/ci.yml)
+[![E2E Tests](https://github.com/waewoo/favorai-chrome/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/waewoo/favorai-chrome/actions/workflows/e2e-tests.yml)
+[![Latest Release](https://img.shields.io/github/v/release/waewoo/favorai-chrome?display_name=tag&label=release)](https://github.com/waewoo/favorai-chrome/releases/latest)
+[![Coverage](https://img.shields.io/badge/coverage-setup%20pending-lightgrey)](./README.md#local-development)
+[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE.md)
 
 FavorAI is a Chrome and Chromium-based browser extension that helps you clean up and reorganize your bookmarks using AI.
 

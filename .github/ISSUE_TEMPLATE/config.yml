@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: mailto:ftzpr-chrome@yahoo.com
+    about: Report a security issue privately instead of opening a public issue.
