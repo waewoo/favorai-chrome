@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "reporters": [
+    "html",
+    "clear-text",
+    "progress"
+  ],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.js"
+  },
+  "mutate": [
+    "src/background/diff.js",
+    "src/background/apply.js",
+    "src/background/history.js",
+    "src/llm/index.js",
+    "src/llm/prompts.js",
+    "src/llm/utils.js",
+    "src/utils/*.js"
+  ]
+}

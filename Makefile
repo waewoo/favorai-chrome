@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release
+.PHONY: help install lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release
 
 # Default goal: show help instructions
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  make test                  Execute all Vitest unit tests (95%+ coverage)"
 	@echo "  make test-watch            Execute Vitest in interactive watch mode"
 	@echo "  make test-coverage         Run Vitest tests and generate code coverage report"
+	@echo "  make test-mutation         Run Stryker mutation testing to check test suite strength"
 	@echo "  make test-e2e              Execute ALL E2E tests with Playwright (UI + Integration)"
 	@echo "  make test-e2e-ui           Execute UI E2E tests only (structure, navigation, forms)"
 	@echo "  make test-e2e-integration  Execute Integration E2E tests only (workflows, flows)"
@@ -54,6 +55,9 @@ test-watch:
 test-coverage:
 	npm run test:coverage
 	@node -e "const fs = require('fs'); const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); console.log('\n======================================================'); console.log(' GLOBAL COVERAGE SUMMARY:'); console.log('  Statements: ' + summary.total.statements.pct + '%% (' + summary.total.statements.covered + '/' + summary.total.statements.total + ')'); console.log('  Branches:   ' + summary.total.branches.pct + '%% (' + summary.total.branches.covered + '/' + summary.total.branches.total + ')'); console.log('  Functions:  ' + summary.total.functions.pct + '%% (' + summary.total.functions.covered + '/' + summary.total.functions.total + ')'); console.log('  Lines:      ' + summary.total.lines.pct + '%% (' + summary.total.lines.covered + '/' + summary.total.lines.total + ')'); console.log('======================================================\n');"
+
+test-mutation:
+	npm run test:mutation
 
 test-e2e: clean-e2e
 	npm run test:e2e
