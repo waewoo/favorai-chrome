@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>FavorAI — Forgotten Bookmarks</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  width:1280px;height:800px;overflow:hidden;
+  background:linear-gradient(135deg,#12093a 0%,#0a0621 55%,#1a0d40 100%);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative;
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 650px 400px at 20% 80%,rgba(99,102,241,0.11) 0%,transparent 68%),
+    radial-gradient(ellipse 400px 300px at 80% 15%,rgba(139,92,246,0.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.top-badge{
+  position:absolute;top:28px;left:50%;transform:translateX(-50%);
+  background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);
+  color:#a78bfa;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+  padding:5px 16px;border-radius:20px;white-space:nowrap;
+}
+.headline-wrap{
+  position:absolute;top:62px;left:0;right:0;
+  text-align:center;padding:0 80px;
+}
+.headline{
+  font-size:38px;font-weight:900;line-height:1.18;color:#fff;
+  letter-spacing:-0.02em;margin-bottom:10px;
+}
+.headline em{
+  font-style:normal;
+  background:linear-gradient(90deg,#a78bfa,#818cf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.sub{font-size:16px;color:rgba(255,255,255,0.5);font-weight:400;}
+
+/* ── Mock UI panel (right) ── */
+.mock-panel{
+  position:absolute;top:170px;right:60px;bottom:30px;
+  width:320px;
+  background:rgba(15,10,35,0.85);
+  border:1px solid rgba(99,102,241,0.25);
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.mock-tabs{
+  display:flex;border-bottom:1px solid rgba(99,102,241,0.15);
+  padding:0 8px;
+  flex-shrink:0;
+}
+.mock-tab{
+  font-size:10px;padding:9px 8px;color:rgba(255,255,255,0.35);
+  border-bottom:2px solid transparent;white-space:nowrap;cursor:default;
+}
+.mock-tab.active{color:#818cf8;border-bottom-color:#818cf8;font-weight:600;}
+.mock-body{padding:14px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:10px;}
+.mock-section-title{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.05em;color:#818cf8;
+}
+.mock-desc{font-size:10px;color:rgba(255,255,255,0.4);line-height:1.4;}
+.mock-controls{display:flex;gap:6px;align-items:center;}
+.mock-label{font-size:10px;color:rgba(255,255,255,0.4);white-space:nowrap;}
+.mock-select{
+  flex:1;font-size:10px;padding:4px 8px;border-radius:6px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(99,102,241,0.25);
+  color:rgba(255,255,255,0.7);
+}
+.mock-btn-scan{
+  font-size:10px;padding:4px 12px;border-radius:6px;
+  background:linear-gradient(135deg,#818cf8,#6366f1);
+  color:#fff;font-weight:600;border:none;white-space:nowrap;
+}
+.mock-count{font-size:10px;color:rgba(255,255,255,0.45);}
+
+/* bookmark cards */
+.mock-card{
+  padding:9px 10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(99,102,241,0.15);
+  border-radius:8px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+.card-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-age{font-size:10px;color:rgba(255,255,255,0.35);white-space:nowrap;flex-shrink:0;}
+.card-url{font-size:10px;color:rgba(255,255,255,0.3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.card-path{font-size:9px;color:rgba(255,255,255,0.25);margin-bottom:2px;}
+.card-actions{display:flex;gap:5px;}
+.card-btn{
+  font-size:9px;padding:2px 7px;border-radius:5px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.5);
+}
+.card-btn.keep{border-color:rgba(99,102,241,0.3);color:#818cf8;}
+.card-btn.del{border-color:rgba(239,68,68,0.3);color:#ef4444;}
+
+.mock-bulk{
+  display:flex;gap:6px;margin-top:auto;padding-top:8px;
+  border-top:1px solid rgba(99,102,241,0.12);
+}
+.bulk-btn{
+  flex:1;font-size:9px;padding:5px;border-radius:6px;text-align:center;
+  background:rgba(255,255,255,0.03);
+}
+.bulk-btn.del{border:1px solid rgba(239,68,68,0.25);color:#ef4444;}
+.bulk-btn.keep{border:1px solid rgba(99,102,241,0.25);color:#818cf8;}
+
+/* ── Feature bullets (left) ── */
+.bullets{
+  position:absolute;top:185px;left:60px;
+  width:280px;display:flex;flex-direction:column;gap:18px;
+}
+.bullet{display:flex;gap:14px;align-items:flex-start;}
+.bullet-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.bullet-text{}
+.bullet-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:3px;}
+.bullet-desc{font-size:11px;color:rgba(255,255,255,0.45);line-height:1.4;}
+</style>
+</head>
+<body>
+
+<div class="top-badge">NEW — Forgotten Bookmarks</div>
+
+<div class="headline-wrap">
+  <div class="headline">Rediscover what you forgot.<br><em>Clean up in one pass.</em></div>
+  <div class="sub">Find bookmarks untouched for months — keep, visit, or delete.</div>
+</div>
+
+<!-- Feature bullets -->
+<div class="bullets">
+  <div class="bullet">
+    <div class="bullet-icon">🕰️</div>
+    <div class="bullet-text">
+      <div class="bullet-title">Configurable threshold</div>
+      <div class="bullet-desc">3 months, 6 months, 1 year, or bookmarks you've never visited at all.</div>
+    </div>
+  </div>
+  <div class="bullet">
+    <div class="bullet-icon">📁</div>
+    <div class="bullet-text">
+      <div class="bullet-title">Full folder context</div>
+      <div class="bullet-desc">Each card shows the bookmark's location so you know exactly where it lives.</div>
+    </div>
+  </div>
+  <div class="bullet">
+    <div class="bullet-icon">⚡</div>
+    <div class="bullet-text">
+      <div class="bullet-title">Bulk actions</div>
+      <div class="bullet-desc">Delete all shown or keep all — review hundreds of bookmarks in seconds.</div>
+    </div>
+  </div>
+  <div class="bullet">
+    <div class="bullet-icon">🔒</div>
+    <div class="bullet-text">
+      <div class="bullet-title">100% local</div>
+      <div class="bullet-desc">Uses Chrome's built-in history API. No data leaves your device.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Mock UI panel -->
+<div class="mock-panel">
+  <div class="mock-tabs">
+    <div class="mock-tab">⚡</div>
+    <div class="mock-tab active">🕰️ Forgotten</div>
+    <div class="mock-tab">📜</div>
+    <div class="mock-tab">⚙️</div>
+    <div class="mock-tab">📖</div>
+  </div>
+  <div class="mock-body">
+    <div class="mock-section-title">🕰️ Forgotten</div>
+    <div class="mock-desc">Bookmarks you haven't visited for a while.</div>
+
+    <div class="mock-controls">
+      <div class="mock-label">Not visited since:</div>
+      <div class="mock-select">6 months ▾</div>
+      <div class="mock-btn-scan">🔍 Scan</div>
+    </div>
+
+    <div class="mock-count">8 forgotten bookmark(s) found</div>
+
+    <div class="mock-card">
+      <div class="card-header">
+        <div class="card-title">Getting Started with React</div>
+        <div class="card-age">14mo</div>
+      </div>
+      <div class="card-url">react.dev/learn/getting-started</div>
+      <div class="card-path">📁 Dev › Frontend</div>
+      <div class="card-actions">
+        <div class="card-btn">🔗 Visit</div>
+        <div class="card-btn keep">✓ Keep</div>
+        <div class="card-btn del">🗑 Delete</div>
+      </div>
+    </div>
+
+    <div class="mock-card">
+      <div class="card-header">
+        <div class="card-title">Old Company Handbook 2021</div>
+        <div class="card-age">No history</div>
+      </div>
+      <div class="card-url">notion.so/company/handbook-2021</div>
+      <div class="card-path">📁 Work</div>
+      <div class="card-actions">
+        <div class="card-btn">🔗 Visit</div>
+        <div class="card-btn keep">✓ Keep</div>
+        <div class="card-btn del">🗑 Delete</div>
+      </div>
+    </div>
+
+    <div class="mock-card">
+      <div class="card-header">
+        <div class="card-title">CSS Grid Complete Guide</div>
+        <div class="card-age">9mo</div>
+      </div>
+      <div class="card-url">css-tricks.com/snippets/css/complete-guide-grid</div>
+      <div class="card-path">📁 Dev › CSS</div>
+      <div class="card-actions">
+        <div class="card-btn">🔗 Visit</div>
+        <div class="card-btn keep">✓ Keep</div>
+        <div class="card-btn del">🗑 Delete</div>
+      </div>
+    </div>
+
+    <div class="mock-bulk">
+      <div class="bulk-btn del">🗑 Delete All Shown</div>
+      <div class="bulk-btn keep">✓ Keep All</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

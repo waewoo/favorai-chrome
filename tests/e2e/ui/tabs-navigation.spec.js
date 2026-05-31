@@ -12,10 +12,12 @@ test.describe('Tabs Navigation', () => {
       const tabRangement = page.locator('#tabRangementBtn');
       const tabConfig = page.locator('#tabConfigBtn');
       const tabHistory = page.locator('#tabHistoryBtn');
+      const tabForgotten = page.locator('#tabForgottenBtn');
 
       await expect(tabRangement).toBeVisible();
       await expect(tabConfig).toBeVisible();
       await expect(tabHistory).toBeVisible();
+      await expect(tabForgotten).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }
@@ -60,6 +62,25 @@ test.describe('Tabs Navigation', () => {
       const apiKeyInput = page.locator('#apiKey');
       await expect(providerSelect).toBeVisible();
       await expect(apiKeyInput).toBeVisible();
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should switch to Forgotten tab', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId);
+
+      const tabForgottenBtn = page.locator('#tabForgottenBtn');
+      const tabForgottenPanel = page.locator('#tabForgottenPanel');
+
+      await tabForgottenBtn.click();
+      await expect(tabForgottenPanel).toBeVisible();
+
+      const scanBtn = page.locator('#btnScanForgotten');
+      await expect(scanBtn).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }

@@ -27,6 +27,9 @@ Chaque changement proposé est listé dans une checklist : créations de dossier
 📜 Historique des sessions et rollback
 Chaque session est sauvegardée localement. Une erreur ? Annulez instantanément en un clic.
 
+🕰️ Favoris oubliés
+Un onglet dédié remonte les favoris que vous n'avez pas visités depuis des mois (3 mois, 6 mois, 1 an, ou jamais). Décidez pour chacun : visiter, garder ou supprimer — individuellement ou en masse.
+
 💡 Classement intelligent des favoris
 Lorsque vous enregistrez un nouveau favori, FavorAI suggère le meilleur dossier basé sur le contenu de la page — propulsé par votre IA. Acceptez la suggestion, demandez-en une autre ou choisissez manuellement.
 
@@ -44,6 +47,7 @@ COMMENT ÇA MARCHE
 3. Pour un nettoyage complet, cliquez sur "Réorganiser tous les favoris" pour scanner les doublons, vérifier les liens morts et tout restructurer.
 4. Examinez chaque changement proposé dans la checklist — approuvez tout, une partie ou rien.
 5. Utilisez l'onglet Historique pour consulter ou annuler une session instantanément.
+6. Ouvrez l'onglet Oubliés pour retrouver les favoris laissés de côté depuis des mois — et faites le tri en une seule passe.
 
 FOURNISSEURS D'IA SUPPORTÉS
 

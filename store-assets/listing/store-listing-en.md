@@ -27,6 +27,9 @@ Every proposed change is listed in a checklist: folder creations, moves, renames
 📜 Session History & Rollback
 Every session is saved locally. Made a mistake? Roll back instantly with one click.
 
+🕰️ Forgotten Bookmarks
+A dedicated tab surfaces bookmarks you haven't visited in months (3 months, 6 months, 1 year, or never). Review each one and decide: visit, keep, or delete — individually or all at once.
+
 💡 Smart Bookmark Placement
 When saving a new bookmark, FavorAI suggests the best folder based on the page content — powered by your AI. Accept the suggestion, ask for an alternative, or choose manually.
 
@@ -44,6 +47,7 @@ HOW IT WORKS
 3. For a full cleanup, click "Reorganize all bookmarks" to scan duplicates, check dead links, and restructure everything.
 4. Review every proposed change in the checklist — approve all, some, or none.
 5. Use the History tab to review or roll back any session instantly.
+6. Open the Forgotten tab to surface bookmarks left untouched for months — and clean them up in one pass.
 
 SUPPORTED AI PROVIDERS
 
