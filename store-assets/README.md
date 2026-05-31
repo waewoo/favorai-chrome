@@ -18,8 +18,9 @@ store-assets/
 │   ├── tile-promotional-440x280.html  440×280  — Small promotional tile
 │   └── banner-hero-1400x560.html     1400×560 — Large hero banner
 ├── listing/
-│   └── store-listing.md              All marketing texts (EN + FR, copy-paste ready)
-└── output/                           Generated PNGs (gitignored)
+│   ├── store-listing-en.md           Marketing text (English, copy-paste ready)
+│   └── store-listing-fr.md           Marketing text (French, copy-paste ready)
+├── output/                           Generated PNGs (gitignored)
     ├── screenshot-01-main-popup.png
     ├── screenshot-02-analysis-in-progress.png
     ├── screenshot-03-validation-checklist.png
@@ -53,12 +54,12 @@ Output goes to `store-assets/output/`.
 - [ ] Screenshots: 5 × PNG, 1280×800 px
 - [ ] Small promotional tile: 440×280 px
 - [ ] Large promotional banner: 1400×560 px
-- [ ] Summary (≤ 132 chars) → see `listing/store-listing.md`
-- [ ] Long description (EN) → see `listing/store-listing.md`
-- [ ] Long description (FR) → see `listing/store-listing.md`
-- [ ] Keywords → see `listing/store-listing.md`
+- [ ] Summary (≤ 132 chars) → see `listing/store-listing-en.md` / `store-listing-fr.md`
+- [ ] Long description (EN) → see `listing/store-listing-en.md`
+- [ ] Long description (FR) → see `listing/store-listing-fr.md`
+- [ ] Keywords
 - [ ] Privacy Policy URL: https://waewoo.github.io/favorai-privacy/privacy_policy.html
-- [ ] `<all_urls>` justification → see `listing/store-listing.md` section 6
+- [ ] `<all_urls>` justification → see `listing/store-listing-en.md` section 6 (if needed)
 - [ ] Category: Productivity
 - [ ] Price: Free
 - [ ] Support link: https://buymeacoffee.com/waewoo
