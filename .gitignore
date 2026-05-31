@@ -18,6 +18,8 @@ coverage/
 playwright-report/
 test-results/
 tests/e2e/tmp-user-data-*/
+.stryker-tmp/
+reports/
 
 # Store assets — generated PNGs (HTML sources are committed, PNGs regenerated via make screenshots)
 store-assets/output/

@@ -421,5 +421,308 @@ describe('applyChanges', () => {
     // saveSessionToHistory should NOT have been called since no operations succeeded
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
+
+  it('should filter out non-approved actions and only process approved ones', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'created-id', title: 'Approved' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const pendingActions = [
+      { id: 'approved', type: 'create_folder', params: { tempId: 'new_1', title: 'Approved', parentId: '1', targetPath: 'A' } },
+      { id: 'rejected', type: 'create_folder', params: { tempId: 'new_2', title: 'Rejected', parentId: '1', targetPath: 'A' } },
+    ];
+
+    chrome.bookmarks.create.mockClear();
+    await applyChanges(['approved'], pendingActions, 'complete');
+
+    // Only the approved action should have triggered a create call
+    expect(chrome.bookmarks.create).toHaveBeenCalledTimes(1);
+    expect(chrome.bookmarks.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Approved' }));
+    expect(chrome.bookmarks.create).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Rejected' }));
+  });
+
+  it('should sort create_folder by targetPath depth so shallow folders are created first', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const createOrder = [];
+    chrome.bookmarks.create.mockImplementation(async ({ title }) => {
+      createOrder.push(title);
+      return { id: `id-${title}`, title };
+    });
+
+    const pendingActions = [
+      // Submitted in reverse depth order to prove the sort works
+      { id: 'act_deep', type: 'create_folder', params: { tempId: 'new_deep', title: 'Child', parentId: '1', targetPath: 'Root > Parent' } },
+      { id: 'act_shallow', type: 'create_folder', params: { tempId: 'new_shallow', title: 'Parent', parentId: '1', targetPath: 'Root' } },
+    ];
+
+    await applyChanges(['act_deep', 'act_shallow'], pendingActions, 'complete');
+
+    expect(createOrder[0]).toBe('Parent');
+    expect(createOrder[1]).toBe('Child');
+  });
+
+  it('should resolve parentId "0" (Chrome virtual root) to "1"', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'new-id', title: 'Folder' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const pendingActions = [
+      { id: 'act_root', type: 'create_folder', params: { tempId: 'new_root', title: 'Folder', parentId: '0', targetPath: 'Root' } },
+    ];
+
+    await applyChanges(['act_root'], pendingActions, 'complete');
+
+    expect(chrome.bookmarks.create).toHaveBeenCalledWith({ parentId: '1', title: 'Folder' });
+  });
+
+  it('should record correct history entry fields for create, rename, move, and delete', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([
+      {
+        id: '0', title: 'Root',
+        children: [{ id: '1', title: 'Bar', children: [
+          { id: '10', title: 'Old Title', url: 'https://old.com', parentId: '1' }
+        ]}]
+      }
+    ]);
+
+    chrome.bookmarks.create.mockResolvedValue({ id: 'folder-id', title: 'New Folder' });
+    chrome.bookmarks.get.mockImplementation(async (id) => {
+      if (id === '10') return [{ id: '10', title: 'Old Title', url: 'https://old.com', parentId: '1' }];
+      return [];
+    });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'a1', type: 'create_folder', params: { tempId: 'new_f', title: 'New Folder', parentId: '1', targetPath: 'Bar' } },
+      { id: 'a2', type: 'rename_bookmark', params: { nodeId: '10', newTitle: 'New Title' } },
+      { id: 'a3', type: 'move_bookmark', params: { nodeId: '10', newParentId: 'new_f' } },
+      { id: 'a4', type: 'delete_dead', targetId: '10' },
+    ];
+
+    await applyChanges(['a1', 'a2', 'a3', 'a4'], pendingActions, 'minimal', 'detail test');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.arrayContaining([
+          expect.objectContaining({
+            entries: expect.arrayContaining([
+              expect.objectContaining({ type: 'create_folder', title: 'New Folder', realId: 'folder-id' }),
+              expect.objectContaining({ type: 'rename', nodeId: '10', oldTitle: 'Old Title', newTitle: 'New Title', oldUrl: 'https://old.com', newUrl: null, isFolder: false }),
+              expect.objectContaining({ type: 'move', nodeId: '10', isFolder: false, oldParentId: '1', newParentId: 'folder-id' }),
+              expect.objectContaining({ type: 'delete', nodeId: '10', title: 'Old Title', url: 'https://old.com', isFolder: false }),
+            ])
+          })
+        ])
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should record correct history entry for rename_folder (isFolder true) and rename with newUrl', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.get.mockImplementation(async (id) => {
+      if (id === '50') return [{ id: '50', title: 'Old Folder', parentId: '1' }]; // no url → folder
+      if (id === '60') return [{ id: '60', title: 'Old BM', url: 'https://old.com', parentId: '1' }];
+      return [];
+    });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'r1', type: 'rename_folder', params: { nodeId: '50', newTitle: 'New Folder' } },
+      { id: 'r2', type: 'rename_bookmark', params: { nodeId: '60', newTitle: 'New BM', newUrl: 'https://new.com' } },
+    ];
+
+    await applyChanges(['r1', 'r2'], pendingActions, 'complete');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.arrayContaining([
+          expect.objectContaining({
+            entries: expect.arrayContaining([
+              expect.objectContaining({ type: 'rename', nodeId: '50', isFolder: true, oldUrl: null }),
+              expect.objectContaining({ type: 'rename', nodeId: '60', isFolder: false, newUrl: 'https://new.com' }),
+            ])
+          })
+        ])
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should record correct history entry for move_folder and use act.title fallback', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    // get returns empty for node '70' → title falls back to act.title
+    chrome.bookmarks.get.mockResolvedValue([]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'm1', type: 'move_folder', title: 'Fallback Title', params: { nodeId: '70', newParentId: '1' } },
+    ];
+
+    await applyChanges(['m1'], pendingActions, 'complete');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.arrayContaining([
+          expect.objectContaining({
+            entries: expect.arrayContaining([
+              expect.objectContaining({ type: 'move', nodeId: '70', title: 'Fallback Title' }),
+            ])
+          })
+        ])
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should log correct console.warn messages when parent folder is not resolved', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const pendingActions = [
+      { id: 'c1', type: 'create_folder', params: { tempId: 'new_sub', title: 'Sub', parentId: 'new_unresolved', targetPath: 'A > B' } },
+      { id: 'm1', type: 'move_bookmark', title: 'My BM', params: { nodeId: '10', newParentId: 'new_unresolved' } },
+    ];
+
+    await applyChanges(['c1', 'm1'], pendingActions, 'complete');
+
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('[FavorAI]'));
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Sub'));
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('My BM'));
+  });
+
+  it('should delete bookmarks before folders and deepest folders first', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.get.mockImplementation(async (id) => [{ id, title: `Node ${id}`, url: id === 'bm1' || id === 'bm2' ? 'https://x.com' : undefined, parentId: '1' }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const opLog = [];
+    chrome.bookmarks.remove.mockImplementation(async (id) => { opLog.push({ op: 'remove', id }); });
+    chrome.bookmarks.removeTree.mockImplementation(async (id) => { opLog.push({ op: 'removeTree', id }); });
+
+    const pendingActions = [
+      // Submitted in "wrong" order: folder first, then bookmarks
+      { id: 'df1', type: 'delete_folder', targetId: 'folder-shallow', params: { sourcePath: 'A' } },
+      { id: 'df2', type: 'delete_folder', targetId: 'folder-deep', params: { sourcePath: 'A > B > C' } },
+      { id: 'dd1', type: 'delete_duplicate', targetId: 'bm1' },
+      { id: 'dd2', type: 'delete_dead', targetId: 'bm2' },
+    ];
+
+    await applyChanges(['df1', 'df2', 'dd1', 'dd2'], pendingActions, 'complete');
+
+    // All remove (bookmark) ops must come before any removeTree (folder) ops
+    const firstRemoveTree = opLog.findIndex(o => o.op === 'removeTree');
+    const lastRemove = opLog.map((o, i) => o.op === 'remove' ? i : -1).filter(i => i >= 0).pop();
+    expect(lastRemove).toBeLessThan(firstRemoveTree);
+
+    // Deeper folder must be removed before shallower folder
+    const treeCalls = opLog.filter(o => o.op === 'removeTree');
+    expect(treeCalls[0].id).toBe('folder-deep');
+    expect(treeCalls[1].id).toBe('folder-shallow');
+  });
+
+  it('should NOT add url to update payload when act is rename_folder even if newUrl is set', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.get.mockImplementation(async (id) =>
+      [{ id, title: 'Old Folder', parentId: '1' }] // no url → is a folder
+    );
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const pendingActions = [
+      { id: 'r1', type: 'rename_folder', params: { nodeId: '50', newTitle: 'New Name', newUrl: 'https://should-be-ignored.com' } },
+    ];
+
+    chrome.bookmarks.update.mockClear();
+    await applyChanges(['r1'], pendingActions, 'complete');
+
+    // For rename_folder, url must NOT be in the update payload regardless of newUrl
+    expect(chrome.bookmarks.update).toHaveBeenCalledWith('50', { title: 'New Name' });
+    expect(chrome.bookmarks.update).not.toHaveBeenCalledWith('50', expect.objectContaining({ url: expect.anything() }));
+  });
+
+  it('should use empty-string defaults for oldTitle and parentId when bookmarks.get returns empty', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    // get returns empty array → nodes?.[0] is falsy → initial defaults used
+    chrome.bookmarks.get.mockResolvedValue([]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'r1', type: 'rename_bookmark', params: { nodeId: '99', newTitle: 'Renamed' } },
+    ];
+
+    await applyChanges(['r1'], pendingActions, 'complete');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.arrayContaining([
+          expect.objectContaining({
+            entries: expect.arrayContaining([
+              expect.objectContaining({ type: 'rename', nodeId: '99', oldTitle: '', isFolder: true }),
+            ])
+          })
+        ])
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should use isFolder=false default for move when bookmarks.get returns empty', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.get.mockResolvedValue([]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    const pendingActions = [
+      { id: 'm1', type: 'move_bookmark', title: 'FallbackTitle', params: { nodeId: '99', newParentId: '1' } },
+    ];
+
+    await applyChanges(['m1'], pendingActions, 'complete');
+
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reorgHistory: expect.arrayContaining([
+          expect.objectContaining({
+            entries: expect.arrayContaining([
+              expect.objectContaining({ type: 'move', nodeId: '99', isFolder: false, title: 'FallbackTitle' }),
+            ])
+          })
+        ])
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('should sort create_folder correctly when some folders have no targetPath (|| fallback)', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const createOrder = [];
+    chrome.bookmarks.create.mockImplementation(async ({ title }) => {
+      createOrder.push(title);
+      return { id: `id-${title}`, title };
+    });
+
+    const pendingActions = [
+      // Deep path first (submitted reversed) so the sort must reorder it
+      { id: 'a1', type: 'create_folder', params: { tempId: 'new_1', title: 'Deep', parentId: '1', targetPath: 'A > B > C' } },
+      // No targetPath → depth 1 via `|| ''` fallback on both a and b sides
+      { id: 'a2', type: 'create_folder', params: { tempId: 'new_2', title: 'NoPathA', parentId: '1' } },
+      { id: 'a3', type: 'create_folder', params: { tempId: 'new_3', title: 'NoPathB', parentId: '1' } },
+    ];
+
+    await applyChanges(['a1', 'a2', 'a3'], pendingActions, 'complete');
+
+    // Deep (depth 3) must be created last; the two no-path items (depth 1) come first
+    const deepIndex = createOrder.indexOf('Deep');
+    expect(deepIndex).toBe(2);
+    expect(createOrder[0]).toMatch(/NoPath/);
+    expect(createOrder[1]).toMatch(/NoPath/);
+  });
 });
 

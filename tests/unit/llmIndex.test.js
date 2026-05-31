@@ -283,4 +283,293 @@ describe('llm/index.js', () => {
     // The placeholder {non_existent} is ignored by regex; {url} falls back to {url} via nullish coalescing
     expect(callArgs[3]).toContain('Recommend for My Bookmark and {url} and {non_existent}');
   });
+
+  // ─── Context block content assertions ───────────────────────────────────────
+
+  it('should embed TECH profile, bookmark count and folder names in userPrompt', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const tree = {
+      id: '0', title: 'root',
+      children: [
+        {
+          id: '1', title: 'Dev',
+          children: [
+            { id: '10', title: 'Python coding tutorial', url: 'https://python.org' },
+            { id: '20', title: 'Docker homelab setup', url: 'https://docker.com' },
+          ]
+        },
+        { id: '2', title: 'Archives', children: [] }
+      ]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const userPrompt = calls[calls.length - 1][3];
+
+    expect(userPrompt).toContain('User profile: TECH');
+    expect(userPrompt).toContain('Total bookmarks: 2');
+    expect(userPrompt).toContain('Current top-level folders: Dev, Archives');
+  });
+
+  it('should embed PERSONAL profile in userPrompt', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const tree = {
+      id: '0', title: 'root',
+      children: [{
+        id: '1', title: 'Lifestyle',
+        children: [
+          { id: '10', title: 'My cooking recipes', url: 'https://recipes.com' },
+          { id: '20', title: 'Summer travel trip', url: 'https://travel.com' },
+          { id: '30', title: 'Fitness gym workout', url: 'https://gym.com' },
+        ]
+      }]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'minimal', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const userPrompt = calls[calls.length - 1][3];
+
+    expect(userPrompt).toContain('User profile: PERSONAL');
+    expect(userPrompt).toContain('Total bookmarks: 3');
+  });
+
+  it('should embed MIXED profile when tech and personal are exactly balanced', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    // 1 tech, 1 personal → ratio 0.5 ≤ 0.65 → MIXED
+    const tree = {
+      id: '0', title: 'root',
+      children: [{
+        id: '1', title: 'Mix',
+        children: [
+          { id: '10', title: 'Python', url: 'https://p.com' },
+          { id: '20', title: 'Cooking', url: 'https://c.com' },
+        ]
+      }]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    expect(calls[calls.length - 1][3]).toContain('User profile: MIXED');
+  });
+
+  it('should embed MIXED when ratio is below threshold: 3 tech out of 5 (0.6 ≤ 0.65)', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    // 3 tech, 2 personal → total = 5, tech/total = 0.6 → NOT > 0.65 → MIXED
+    // also kills the tech-personal arithmetic mutant: total = 3-2 = 1, tech/total = 3 → TECH (wrong)
+    const tree = {
+      id: '0', title: 'root',
+      children: [{
+        id: '1', title: 'Mix',
+        children: [
+          { id: '10', title: 'Python dev', url: 'https://p.com' },
+          { id: '11', title: 'Docker dev', url: 'https://d.com' },
+          { id: '12', title: 'Linux server', url: 'https://l.com' },
+          { id: '20', title: 'Cooking food', url: 'https://c.com' },
+          { id: '21', title: 'Travel trip', url: 'https://t.com' },
+        ]
+      }]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    expect(calls[calls.length - 1][3]).toContain('User profile: MIXED');
+  });
+
+  it('should include (none) when top-level nodes are all bookmarks (no children)', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const tree = {
+      id: '0', title: 'root',
+      children: [
+        { id: '10', title: 'A bookmark', url: 'https://a.com' }
+      ]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const userPrompt = calls[calls.length - 1][3];
+    expect(userPrompt).toContain('Current top-level folders: (none)');
+    expect(userPrompt).toContain('Total bookmarks: 1');
+  });
+
+  it('should filter out top-level folders with empty or null titles (filter Boolean)', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+
+    const tree = {
+      id: '0', title: 'root',
+      children: [
+        { id: '1', title: 'ValidFolder', children: [] },
+        { id: '2', title: '', children: [] },
+        { id: '3', title: null, children: [] },
+      ]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, tree, 'complete', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const userPrompt = calls[calls.length - 1][3];
+    expect(userPrompt).toContain('Current top-level folders: ValidFolder');
+    expect(userPrompt).not.toMatch(/Current top-level folders: ValidFolder,\s*,/);
+  });
+
+  // ─── Language map coverage ───────────────────────────────────────────────────
+
+  it.each([
+    ['en', 'English'],
+    ['fr', 'French'],
+    ['de', 'German'],
+    ['es', 'Spanish'],
+    ['it', 'Italian'],
+    ['pt', 'Portuguese'],
+    ['ja', 'Japanese'],
+    ['zh', 'Chinese'],
+    ['ru', 'Russian'],
+    ['ko', 'Korean'],
+  ])('should map language code %s to %s in the system prompt', async (code, label) => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+    chrome.i18n.getUILanguage.mockReturnValueOnce(code);
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, emptyTree, 'minimal', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const systemPrompt = calls[calls.length - 1][4];
+    expect(systemPrompt).toContain(`Respond in ${label}`);
+  });
+
+  // ─── Default apiUrl/modelName fallbacks per provider ───────────────────────
+
+  it('should use default OpenAI apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'openai', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryOpenAI).toHaveBeenLastCalledWith(
+      'https://api.openai.com/v1', 'k', 'gpt-5.5',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default Gemini apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryGemini).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'google', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryGemini).toHaveBeenLastCalledWith(
+      'https://generativelanguage.googleapis.com', 'k', 'gemini-3.5-flash',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default Mistral apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryMistral).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'mistral', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryMistral).toHaveBeenLastCalledWith(
+      'https://api.mistral.ai/v1', 'k', 'mistral-medium-latest',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default Grok apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'grok', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryOpenAI).toHaveBeenLastCalledWith(
+      'https://api.x.ai/v1', 'k', 'grok-4-3',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default Claude apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryClaude).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'claude', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryClaude).toHaveBeenLastCalledWith(
+      'https://api.anthropic.com', 'k', 'claude-opus-4-7',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default DeepSeek apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryDeepSeek).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'deepseek', apiKey: 'k' }, emptyTree, 'minimal', null);
+    expect(queryDeepSeek).toHaveBeenLastCalledWith(
+      'https://api.deepseek.com/v1', 'k', 'deepseek-reasoner',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  it('should use default Ollama apiUrl and modelName when not specified', async () => {
+    vi.mocked(queryOllama).mockResolvedValue({ explanation: 'OK' });
+    await queryLLM({ provider: 'ollama' }, emptyTree, 'minimal', null);
+    expect(queryOllama).toHaveBeenLastCalledWith(
+      'http://localhost:11434', 'llama-4-scout',
+      expect.any(String), expect.any(String), null, undefined, 131072
+    );
+  });
+
+  // ─── Mode condition and promptMinimal ──────────────────────────────────────
+
+  it('should use custom promptMinimal when mode is minimal', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'OK' });
+    const config = { provider: 'openai', apiKey: 'k', promptMinimal: 'MY_MINIMAL_INSTRUCTION' };
+    await queryLLM(config, emptyTree, 'minimal', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    expect(calls[calls.length - 1][3]).toContain('MY_MINIMAL_INSTRUCTION');
+  });
+
+  it('should use default PROMPT_MINIMAL when mode is minimal and no custom prompt', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'OK' });
+    const config = { provider: 'openai', apiKey: 'k' }; // no promptMinimal
+    await queryLLM(config, emptyTree, 'minimal', null);
+    const calls = vi.mocked(queryOpenAI).mock.calls;
+    const userPrompt = calls[calls.length - 1][3];
+    // Default prompt must produce a non-empty prompt
+    expect(userPrompt.length).toBeGreaterThan(50);
+    // Complete prompt must differ from minimal prompt
+    await queryLLM({ ...config, promptComplete: 'COMPLETE_MARKER' }, emptyTree, 'complete', null);
+    const completePrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[3];
+    expect(completePrompt).toContain('COMPLETE_MARKER');
+    expect(completePrompt).not.toContain('MY_MINIMAL_INSTRUCTION');
+  });
+
+  // ─── suggestBookmarkLocation foldersList format ─────────────────────────────
+
+  it('should format foldersList as "id: path" joined with newlines in prompt', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ action: 'use_existing', targetFolderId: '1' });
+    const config = { provider: 'openai', apiKey: 'k' };
+    const bookmark = { title: 'Test', url: 'https://test.com' };
+    const folders = [
+      { id: '1', path: 'Root' },
+      { id: '2', path: 'Root > Sub' },
+    ];
+
+    await suggestBookmarkLocation(config, bookmark, folders, [], null);
+
+    const userPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[3];
+    expect(userPrompt).toContain('1: "Root"');
+    expect(userPrompt).toContain('2: "Root > Sub"');
+    expect(userPrompt).toContain('1: "Root"\n2: "Root > Sub"');
+  });
+
+  it('should join multiple ignoredPaths with newlines in avoidInstruction', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ action: 'use_existing', targetFolderId: '3' });
+    const config = { provider: 'openai', apiKey: 'k' };
+    const bookmark = { title: 'Test', url: 'https://test.com' };
+    const folders = [
+      { id: '1', path: 'Root' },
+      { id: '2', path: 'Root > Ignored A' },
+      { id: '3', path: 'Root > Recommended' },
+      { id: '4', path: 'Root > Ignored B' },
+    ];
+
+    await suggestBookmarkLocation(config, bookmark, folders, ['2', '4'], null);
+
+    const userPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[3];
+    expect(userPrompt).toContain('CRITICAL CONSTRAINT');
+    // The two ignored entries must be separated by newline, not concatenated
+    expect(userPrompt).toContain('2: "Root > Ignored A"\n4: "Root > Ignored B"');
+  });
+
+  it('should use JSON classifier system prompt in suggestBookmarkLocation', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ action: 'use_existing', targetFolderId: '1' });
+    const config = { provider: 'openai', apiKey: 'k' };
+    await suggestBookmarkLocation(config, { title: 'T', url: 'https://t.com' }, [{ id: '1', path: 'Root' }], [], null);
+    const systemPrompt = vi.mocked(queryOpenAI).mock.calls.at(-1)[4];
+    expect(systemPrompt).toContain('strict JSON classifier');
+  });
 });

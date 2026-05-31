@@ -90,4 +90,39 @@ describe('fetchWithTimeout', () => {
     const response = await fetchWithTimeout('https://api.example.com', {});
     expect(response.ok).toBe(true);
   });
+
+  it('should include the correct timeout value (divided by 1000) in the error message', async () => {
+    global.fetch.mockImplementation((url, init) => {
+      return new Promise((_, reject) => {
+        const signal = init?.signal;
+        if (signal) {
+          signal.addEventListener('abort', () => {
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        }
+      });
+    });
+
+    // With 5000ms timeout → message should say "5s", not "5000000s" (which * 1000 would produce)
+    await expect(fetchWithTimeout('https://api.example.com', {}, 5000)).rejects.toThrow('5s');
+  });
+
+  it('should call clearTimeout in finally to cancel the timeout timer', async () => {
+    global.fetch.mockResolvedValue({ ok: true });
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+
+    await fetchWithTimeout('https://api.example.com', {}, 5000);
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it('should remove the abort event listener from userSignal in finally', async () => {
+    global.fetch.mockResolvedValue({ ok: true });
+    const controller = new AbortController();
+    const removeListenerSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+    await fetchWithTimeout('https://api.example.com', { signal: controller.signal }, 5000);
+
+    expect(removeListenerSpy).toHaveBeenCalledWith('abort', expect.any(Function));
+  });
 });
