@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
+.PHONY: help install install-ci lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
 
 # Default goal: show help instructions
 help:
@@ -8,6 +8,7 @@ help:
 	@echo " FavorAI Bookmark Manager Extension - Available Commands"
 	@echo "========================================================================"
 	@echo "  make install               Install project dependencies (npm install)"
+	@echo "  make install-ci            Install dependencies for CI (npm ci --ignore-scripts)"
 	@echo "  make lint                  Run ESLint code validation checks"
 	@echo "  make lint-fix              Auto-fix linter warnings and format violations"
 	@echo "  make test                  Execute all Vitest unit tests (95%+ coverage)"
@@ -38,6 +39,9 @@ help:
 
 install:
 	npm install
+
+install-ci:
+	npm ci --ignore-scripts
 
 # Show all outdated devDependencies (non-zero exit if any are outdated)
 check-deps:
