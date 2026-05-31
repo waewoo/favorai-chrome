@@ -677,6 +677,59 @@ describe('diff.js functions', () => {
       expect(node.children[0].id).toBe('10');
     });
 
+    it('should cover _removeCandidate FALSE branch (idx === -1: node not in array)', () => {
+      // When folder is matched by ID+title, the second _removeCandidate call uses the opposite type map.
+      // If that map has entries for the same titleKey but NOT containing this node → idx = -1 → no-op branch.
+      const folderNode = { id: '10', title: 'Folder A', parentId: '0', children: [] };
+      const bookmarkNode = { id: '99', title: 'Folder A', parentId: '0', url: 'https://x.com' }; // same title, different node
+      const map = {
+        '10': folderNode,
+        '99': bookmarkNode,
+      };
+      const foldersByTitle = { 'folder a': [folderNode] };
+      // bookmarksByTitle has 'folder a' with a DIFFERENT node → indexOf(folderNode) = -1
+      const bookmarksByTitle = { 'folder a': [bookmarkNode] };
+
+      const node = { id: '10', title: 'Folder A', children: [] };
+      alignReorganizedIds(node, map, foldersByTitle, bookmarksByTitle);
+      expect(node.id).toBe('10'); // matched correctly; FALSE branch of idx !== -1 was exercised
+    });
+
+    it('should cover !child.url FALSE branch (bookmark child in origNode.children)', () => {
+      // origNode.children contains a bookmark (has url) → `if (!child.url)` is FALSE → not added to origFoldersByName
+      const originalMap = {
+        '0': { id: '0', title: 'Root', children: [
+          { id: '10', title: 'Folder C', parentId: '0', children: [] },
+          { id: '11', title: 'A bookmark', parentId: '0', url: 'https://bm.com' } // bookmark child
+        ]},
+        '10': { id: '10', title: 'Folder C', parentId: '0', children: [] },
+      };
+      const node = {
+        id: '0', title: 'Root',
+        children: [{ id: 'new_fc', title: 'Folder C', children: [] }]
+      };
+      const idMap = {};
+      sanitizeReorganizedTree(node, originalMap, idMap);
+      // Folder C must still be merged (the bookmark didn't interfere)
+      expect(node.children[0].id).toBe('10');
+    });
+
+    it('should cover if(child.children) FALSE branch (self-parented child with no children array)', () => {
+      // A self-parented node (child.id === origId) but with NO children array → false branch
+      const originalMap = {
+        '0': { id: '0', title: 'Root', children: [] },
+      };
+      const node = {
+        id: '0', title: 'Root',
+        children: [
+          { id: '0', title: 'Self-parent' } // no children array, same id as parent → auto-parented
+        ]
+      };
+      sanitizeReorganizedTree(node, originalMap);
+      // Self-parented child with no children array → nothing promoted → result is empty
+      expect(node.children).toHaveLength(0);
+    });
+
     it('should NOT merge old (in-map) folder even if same name exists (isNew=false guard)', () => {
       // child.id is in originalMap → isNew=false → should NOT be merged into existing same-name folder
       const originalMap = {

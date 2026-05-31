@@ -4,8 +4,8 @@
   "description": "AI-powered bookmark manager Chrome extension",
   "type": "module",
   "scripts": {
-    "lint": "eslint src/ background.js popup.js popup-light.js scripts/ tests/ vitest.config.js playwright.config.js --ext .js,.mjs",
-    "lint:fix": "eslint src/ background.js popup.js popup-light.js scripts/ tests/ vitest.config.js playwright.config.js --ext .js,.mjs --fix",
+    "lint": "eslint src/ background.js popup.js popup-light.js scripts/ tests/ vitest.config.js playwright.config.js eslint.config.js",
+    "lint:fix": "eslint src/ background.js popup.js popup-light.js scripts/ tests/ vitest.config.js playwright.config.js eslint.config.js --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -16,12 +16,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@stryker-mutator/core": "^8.7.1",
-    "@stryker-mutator/vitest-runner": "^8.7.1",
-    "@vitest/coverage-v8": "^1.6.0",
-    "eslint": "^8.57.0",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@vitest/coverage-v8": "^4.1.7",
+    "eslint": "^10.4.1",
     "eslint-plugin-security": "^4.0.0",
-    "vitest": "^1.6.0"
+    "globals": "^17.6.0",
+    "vitest": "^4.1.7"
   },
   "overrides": {
     "esbuild": "^0.25.0",

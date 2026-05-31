@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { queryLLM, suggestBookmarkLocation } from '../../src/llm/index.js';
 import { queryOpenAI } from '../../src/llm/providers/openai.js';
 import { queryGemini } from '../../src/llm/providers/gemini.js';
@@ -17,6 +17,8 @@ vi.mock('../../src/llm/providers/ollama.js');
 vi.mock('../../src/llm/providers/custom.js');
 
 describe('llm/index.js', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
   const techTree = {
     id: '0',
     title: 'root',

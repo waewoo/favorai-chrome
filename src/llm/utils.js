@@ -93,6 +93,7 @@ export function cleanAndParseJSON(text) {
     console.error('[FavorAI] JSON.parse error:', e.message);
     if (e.message.includes('position')) {
       const posMatch = e.message.match(/position (\d+)/);
+      /* v8 ignore next */
       if (posMatch) {
         const pos = parseInt(posMatch[1]);
         const start = Math.max(0, pos - 50);

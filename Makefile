@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release
+.PHONY: help install lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
 
 # Default goal: show help instructions
 help:
@@ -28,6 +28,8 @@ help:
 	@echo "  make publish               Build ZIP, upload and publish to all users"
 	@echo "  make publish-testers       Build ZIP, upload and publish to trusted testers only"
 	@echo "  make security              Scan dependencies for high/critical vulnerabilities (npm audit)"
+	@echo "  make check-deps            Show all outdated devDependencies with current vs latest versions"
+	@echo "  make update-deps           Upgrade all devDependencies to their latest versions (updates package.json)"
 	@echo "  make clean                 Remove reports, zip packages, and temporary folders"
 	@echo "  make clean-e2e             Remove leftover Playwright tmp dirs and test-results"
 	@echo "  make kill-e2e              Kill any stuck Playwright/Chrome processes from e2e runs"
@@ -36,6 +38,18 @@ help:
 
 install:
 	npm install
+
+# Show all outdated devDependencies (non-zero exit if any are outdated)
+check-deps:
+	@echo "Checking for outdated dependencies..."
+	@npm outdated || true
+
+# Upgrade all devDependencies to their latest published versions
+update-deps:
+	@echo "Upgrading all devDependencies to latest..."
+	npx npm-check-updates --upgrade
+	npm install
+	@echo "Done. Run 'make test' and 'make security' to validate."
 
 lint:
 	npm run lint

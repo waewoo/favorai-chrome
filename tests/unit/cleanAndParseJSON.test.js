@@ -127,4 +127,22 @@ describe('cleanAndParseJSON', () => {
     const result = cleanAndParseJSON(json);
     expect(result.key).toBe('"hello" world');
   });
+
+  it('should handle nested JSON objects (braceCount > 0 inner } FALSE branch)', () => {
+    // Inner `}` decrements braceCount to 1 (not 0 yet) — exercises the FALSE branch
+    const input = 'Prefix {"outer": {"inner": 1}} suffix';
+    expect(cleanAndParseJSON(input)).toEqual({ outer: { inner: 1 } });
+  });
+
+  it('should handle nested JSON arrays (bracketCount > 0 inner ] FALSE branch)', () => {
+    // Inner `]` decrements bracketCount to 1 (not 0 yet) — exercises the FALSE branch
+    const input = 'Text [[1, 2], [3, 4]] end';
+    expect(cleanAndParseJSON(input)).toEqual([[1, 2], [3, 4]]);
+  });
+
+  it('should propagate error when neither brace nor bracket extraction yields valid JSON', () => {
+    // Unclosed [ — bracket extraction: indexOf('[') !== -1 but no matching ] → endIdx = -1
+    // After all fallbacks fail, throws the generic error
+    expect(() => cleanAndParseJSON('[unclosed array')).toThrow();
+  });
 });

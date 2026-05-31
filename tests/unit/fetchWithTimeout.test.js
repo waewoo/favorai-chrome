@@ -103,8 +103,8 @@ describe('fetchWithTimeout', () => {
       });
     });
 
-    // With 5000ms timeout → message should say "5s", not "5000000s" (which * 1000 would produce)
-    await expect(fetchWithTimeout('https://api.example.com', {}, 5000)).rejects.toThrow('5s');
+    // With 100ms timeout → message should say "0.1s", not "100s" (which * 1000 would produce)
+    await expect(fetchWithTimeout('https://api.example.com', {}, 100)).rejects.toThrow('0.1s');
   });
 
   it('should call clearTimeout in finally to cancel the timeout timer', async () => {

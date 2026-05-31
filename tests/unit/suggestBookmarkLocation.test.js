@@ -74,6 +74,8 @@ describe('suggestBookmarkLocation', () => {
 });
 
 describe('suggestBookmarkLocation - all providers', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
   const bookmark = { title: 'New Bookmark', url: 'https://example.com' };
   const folders = [
     { id: '1', path: 'Barre de favoris' },
