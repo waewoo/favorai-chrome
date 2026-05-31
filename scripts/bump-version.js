@@ -141,18 +141,46 @@ if (isGit) {
     execSync(`git tag -a v${newVersion} --file=-`, { input: tagMessage, stdio: ['pipe', 'inherit', 'inherit'] });
     
     console.log(`✅ Release v${newVersion} committed and tagged locally!`);
+
+    // Packaging & GitHub Release
+    console.log('\n📦 Packaging the extension zip...');
+    execSync('npm run package', { stdio: 'inherit' });
+    
+    const zipName = `favorai-extension-v${newVersion}.zip`;
+    
+    let ghLoggedIn = false;
+    try {
+      execSync('gh auth status', { stdio: 'ignore' });
+      ghLoggedIn = true;
+    } catch (_) {
+      // Not logged in or gh CLI not installed
+    }
+    
+    if (ghLoggedIn) {
+      console.log('🚀 Pushing commits to GitHub (origin main)...');
+      execSync('git push origin main', { stdio: 'inherit' });
+      
+      console.log(`🚀 Creating GitHub Release v${newVersion} and uploading ${zipName}...`);
+      const notes = changelogNotes || `Release v${newVersion}`;
+      execSync(`gh release create v${newVersion} "${zipName}" --title "v${newVersion}" --notes-file=-`, {
+        input: notes,
+        stdio: ['pipe', 'inherit', 'inherit']
+      });
+      console.log(`✅ GitHub Release v${newVersion} successfully created and asset uploaded!`);
+    } else {
+      console.log('\n⚠️ GitHub CLI (gh) not logged in or not installed. Skipping GitHub Release creation.');
+      console.log('To manually push commits and tags, run:');
+      console.log('  git push origin main --tags');
+    }
   } catch (err) {
-    console.error('❌ Failed to execute Git commands:', err.message);
+    console.error('❌ Failed to execute Git or Release commands:', err.message);
   }
 }
 
 // 6. Print next steps
 console.log('\n======================================================');
-console.log(` Release v${newVersion} prepared, committed, and tagged!`);
+console.log(` Release v${newVersion} finished!`);
 console.log('======================================================');
-console.log('To push the release to the remote repository, run:');
-console.log(`  git push origin main --tags`);
-console.log('======================================================\n');
 
 function analyzeBumpType(commitsList) {
   let hasMajor = false;

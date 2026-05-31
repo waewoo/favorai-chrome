@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security
+.PHONY: help install lint lint-fix test test-watch test-coverage test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release
 
 # Default goal: show help instructions
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  make bump-patch            Increment patch version (e.g. 1.2.0 -> 1.2.1) manually"
 	@echo "  make bump-minor            Increment minor version (e.g. 1.2.0 -> 1.3.0) manually"
 	@echo "  make bump-major            Increment major version (e.g. 1.2.0 -> 2.0.0) manually"
+	@echo "  make release               Package extension, push commits/tags, and create GitHub release"
 	@echo "  make package               Package the extension into a ZIP file for Chrome Store"
 	@echo "  make screenshots           Generate all store asset PNGs from HTML sources"
 	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
@@ -114,4 +115,13 @@ bump-minor:
 
 bump-major:
 	node scripts/bump-version.js major
+
+release: clean-e2e
+	@echo "📦 Packaging the extension zip..."
+	npm run package
+	@echo "🚀 Pushing commits and tags to GitHub (origin main)..."
+	git push origin main --tags
+	@echo "🚀 Creating GitHub Release..."
+	@node -e "const fs = require('fs'); const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8')); const version = manifest.version; const zipName = 'favorai-extension-v' + version + '.zip'; const { execSync } = require('child_process'); execSync('gh release create v' + version + ' ' + zipName + ' --title v' + version + ' --generate-notes', { stdio: 'inherit' });"
+
 
