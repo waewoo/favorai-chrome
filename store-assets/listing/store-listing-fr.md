@@ -42,24 +42,16 @@ L'interface s'adapte automatiquement à la langue de votre navigateur.
 
 COMMENT ÇA MARCHE
 
-1. Configurez votre fournisseur d'IA (OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, ou Ollama en local). Entrez votre clé API — elle reste sur votre appareil.
+1. Configurez votre fournisseur d'IA. Entrez votre clé API — elle reste sur votre appareil.
 2. Lorsque vous enregistrez une page, FavorAI suggère instantanément le bon dossier. Acceptez, obtenez une autre suggestion ou choisissez manuellement.
 3. Pour un nettoyage complet, cliquez sur "Réorganiser tous les favoris" pour scanner les doublons intelligents, vérifier éventuellement redirections/liens morts, et tout restructurer.
 4. Examinez chaque changement proposé dans la checklist — approuvez tout, une partie ou rien.
 5. Utilisez l'onglet Historique pour consulter ou annuler une session instantanément.
 6. Ouvrez l'onglet Oubliés pour retrouver les favoris laissés de côté depuis des mois — et faites le tri en une seule passe.
 
-FOURNISSEURS D'IA SUPPORTÉS
+VOTRE FOURNISSEUR D'IA
 
-- 🟠 OpenAI — GPT-4o, GPT-4o mini, GPT-4 Turbo
-- 🔵 Google Gemini — Gemini 1.5 Pro, Gemini 2.0 Flash
-- ⚡ Anthropic Claude — Claude 3.5 Sonnet, Claude 3 Opus
-- 🟣 Mistral AI — Mistral Medium, Mistral Large
-- 🟢 DeepSeek — DeepSeek Chat, DeepSeek Reasoner
-- 🤖 Grok (xAI) — Grok-3 et modèles plus récents
-- 🏠 Ollama (Local) — 100% hors ligne, aucune donnée ne quitte votre machine
-
-Tout point de terminaison personnalisé compatible OpenAI est également supporté (vLLM, LM Studio, etc.).
+FavorAI fonctionne avec le service d'IA que vous configurez vous-même, qu'il soit local ou hébergé. Si vous utilisez déjà un point de terminaison personnalisé, vous pouvez aussi le connecter.
 
 CONFIDENTIALITÉ ET SÉCURITÉ
 

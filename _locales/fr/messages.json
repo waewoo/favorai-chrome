@@ -1,6 +1,6 @@
 {
   "appName": { "message": "FavorAI" },
-  "appDescription": { "message": "Organisez et nettoyez vos favoris intelligemment avec l'IA — compatible avec OpenAI, Gemini, Mistral, Ollama et tout endpoint personnalisé." },
+  "appDescription": { "message": "Organisez et nettoyez vos favoris avec l'IA. Vérifiez les changements proposés avant application." },
   "appTagline": { "message": "Gestion intelligente des favoris" },
   "tabOrganize": { "message": "⚡ Rangement" },
   "tabConfig": { "message": "⚙️ Config" },

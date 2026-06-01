@@ -42,24 +42,16 @@ The UI adapts to your browser language automatically.
 
 HOW IT WORKS
 
-1. Configure your AI provider (OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, or local Ollama). Enter your API key — it stays on your device.
+1. Configure your AI provider. Enter your API key — it stays on your device.
 2. When saving a page, FavorAI instantly suggests the right folder. Accept, get an alternative, or pick manually.
 3. For a full cleanup, click "Reorganize all bookmarks" to scan smart duplicates, optionally verify redirects/dead links, and restructure everything.
 4. Review every proposed change in the checklist — approve all, some, or none.
 5. Use the History tab to review or roll back any session instantly.
 6. Open the Forgotten tab to surface bookmarks left untouched for months — and clean them up in one pass.
 
-SUPPORTED AI PROVIDERS
+YOUR AI PROVIDER
 
--  🟠 OpenAI — GPT-4o, GPT-4o mini, GPT-4 Turbo
--  🔵 Google Gemini — Gemini 1.5 Pro, Gemini 2.0 Flash
--  ⚡ Anthropic Claude — Claude 3.5 Sonnet, Claude 3 Opus
--  🟣 Mistral AI — Mistral Medium, Mistral Large
--  🟢 DeepSeek — DeepSeek Chat, DeepSeek Reasoner
--  🤖 Grok (xAI) — Grok-3 and newer models
--  🏠 Ollama (Local) — 100% offline, no data leaves your machine
-
-Any custom OpenAI-compatible endpoint is also supported (vLLM, LM Studio, etc.).
+FavorAI works with the AI service you configure yourself, whether it runs locally or in the cloud. If you already use a custom endpoint, you can plug it in as well.
 
 PRIVACY & SECURITY
 

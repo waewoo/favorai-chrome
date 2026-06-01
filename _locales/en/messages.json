@@ -1,6 +1,6 @@
 {
   "appName": { "message": "FavorAI" },
-  "appDescription": { "message": "Organize and clean your bookmarks intelligently with AI — compatible with OpenAI, Gemini, Mistral, Ollama and any custom endpoint." },
+  "appDescription": { "message": "Organize and clean your bookmarks with AI. Review proposed changes before applying them." },
   "appTagline": { "message": "Intelligent bookmark management" },
   "tabOrganize": { "message": "⚡ Organization" },
   "tabConfig": { "message": "⚙️ Config" },
