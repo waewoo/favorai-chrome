@@ -8,12 +8,15 @@
 
 FavorAI is a Chrome and Chromium-based browser extension that helps you clean up and reorganize your bookmarks using AI.
 
+If FavorAI saves you time, you can also support the project here: <a href="https://buymeacoffee.com/waewoo"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="120"></a>
+
 ## Key Features
 
 - **Smart Duplicate Detection**: Identifies exact URL duplicates, http/https and www variants, tracking URLs, redirects to the same final page, and similar article content across domains.
 - **Dead Link Verifier**: Checks for 404s, connection errors, and timeouts.
 - **Bilingual Interface**: Seamlessly switches between English and French based on browser language.
 - **Multi-Provider LLM Integration**: Works with OpenAI, Google Gemini, Anthropic Claude, Mistral AI, DeepSeek, Grok, Ollama (local), or any custom OpenAI-compatible endpoint.
+- **Smart Bookmark Placement**: Suggests the best folder when you save a new bookmark, based on the page content.
 - **Session History & Rollback**: Safely revert any reorganization session with a single click.
 - **XSS Safe**: DOM content is rendered programmatically to avoid HTML injections.
 
