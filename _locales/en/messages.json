@@ -256,6 +256,7 @@
   "docsTip2": { "message": "⚙️ Enable advanced link checks to detect redirects, dead links and duplicate articles across domains" },
   "docsTip3": { "message": "💾 History tab keeps the last 50 sessions for undo operations" },
   "docsTip4": { "message": "🔌 Different AI providers may suggest different organizations — experiment!" },
+  "docsTip5": { "message": "✏️ You can customize the default prompts in the Configuration tab" },
   "configMissingWarning": { "message": "⚠️ LLM not configured" },
   "configMissingDesc": { "message": "No API key or provider found. Go to Configuration tab to set up your AI provider (OpenAI, Gemini, Mistral, etc.)" },
   "explanationAITitle": { "message": "AI EXPLANATION" },
