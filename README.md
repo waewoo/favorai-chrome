@@ -8,7 +8,9 @@
 
 FavorAI is a Chrome and Chromium-based browser extension that helps you clean up and reorganize your bookmarks using AI.
 
-If FavorAI saves you time, you can also support the project here: <a href="https://buymeacoffee.com/waewoo"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="120"></a>
+If FavorAI saves you time, you can also support the project here:
+
+<a href="https://buymeacoffee.com/waewoo"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="120"></a>
 
 ## Key Features
 
