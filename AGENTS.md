@@ -215,6 +215,8 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 make lint && make test
 ```
 
+**Commit message format:** All commits must follow Conventional Commits, for example `feat: add prompt presets`, `fix(ui): align footer links`, or `docs: update release notes`.
+
 **For UI or integration changes, also run e2e:**
 ```bash
 make lint && make test && make test-e2e
