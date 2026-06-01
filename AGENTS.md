@@ -19,7 +19,7 @@ FavorAI/
 ├── popup-light.js                   # Simplified UI logic for the lightweight popup variant
 ├── Makefile                         # Unified interface for linting, testing, and packaging
 ├── scripts/
-│   ├── security-check.js            # Unified security audit (npm audit + ESLint + web-ext lint)
+│   ├── security-check.js            # Unified security audit (npm audit + ESLint + web-ext lint + Gitleaks secret scanning)
 │   ├── bump-version.js              # SemVer bump, CHANGELOG generation, commit & tag automation
 │   ├── release.js                   # GitHub Release publisher (extracts notes & appends compare link)
 │   ├── package.js                   # Extension ZIP packaging for the Chrome Web Store
@@ -208,7 +208,7 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make upload` | Build ZIP + upload to Chrome Web Store as draft (no publish) |
 | `make publish` | Build ZIP + upload + publish to all users |
 | `make publish-testers` | Build ZIP + upload + publish to trusted testers only |
-| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint |
+| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint + Gitleaks secret scanning |
 
 **Recommended workflow before committing:**
 ```bash

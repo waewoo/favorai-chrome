@@ -3,10 +3,11 @@
  * scripts/security-check.js
  * Full security audit runner for FavorAI.
  *
- * Runs three tools in sequence:
+ * Runs four tools in sequence:
  *   1. npm audit --audit-level=high  → dependency vulnerability scan
  *   2. ESLint with security plugin   → static source code analysis
  *   3. web-ext lint                  → Chrome extension manifest + code scan
+ *   4. gitleaks detect               → secret leak detection
  *
  * Firefox-specific errors/warnings are silently ignored (FavorAI targets Chrome only).
  * ICON_SIZE_INVALID is a known cosmetic issue (non-blocking for Chrome).
@@ -14,6 +15,7 @@
  */
 
 import { execSync } from 'child_process';
+import path from 'path';
 
 const RED    = '\x1b[31m';
 const GREEN  = '\x1b[32m';
@@ -33,6 +35,16 @@ function run(label, cmd) {
   } catch {
     console.log(`${RED}❌ ${label}: FAILED${RESET}`);
     failures.push(label);
+  }
+}
+
+function hasCommand(cmd) {
+  const probe = process.platform === 'win32' ? `where ${cmd}` : `command -v ${cmd}`;
+  try {
+    execSync(probe, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -130,6 +142,26 @@ if (!jsonMatch) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 4. Gitleaks secret scan (native binary preferred, Docker fallback)
+let gitleaksCmd = '';
+if (hasCommand('gitleaks')) {
+  gitleaksCmd = 'gitleaks detect --source . --redact --no-banner --verbose';
+} else if (hasCommand('docker')) {
+  const repoPath = path.resolve('.').replace(/\\/g, '/');
+  gitleaksCmd = `docker run --rm -v "${repoPath}:/repo" zricethezav/gitleaks:latest detect --source /repo --redact --no-banner --verbose`;
+} else {
+  console.log(`\n${RED}❌ Gitleaks secret scan: FAILED${RESET}`);
+  console.log(`${YELLOW}   Install gitleaks locally or make Docker available, then rerun make security.${RESET}`);
+  failures.push('Gitleaks secret scan');
+}
+
+if (gitleaksCmd) {
+  run(
+    'Gitleaks secret scan  (committed secrets and git history)',
+    gitleaksCmd
+  );
+}
+
 // Final summary
 // ─────────────────────────────────────────────────────────────────────────────
 console.log(`\n${CYAN}══════════════════════════════════════════════${RESET}`);

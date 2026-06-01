@@ -59,6 +59,8 @@ If FavorAI saves you time, you can also support the project here: <a href="https
 
 To run tests, check linting, or package the extension, use the provided `Makefile`:
 
+`make security` also runs Gitleaks for secret leak detection. Install `gitleaks` locally, or make Docker available so the fallback scanner can run.
+
 #### Makefile Commands
 
 | Command | Description |
@@ -84,7 +86,7 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 | `make upload` | Build ZIP and upload to Chrome Web Store (draft, no publish) |
 | `make publish` | Build ZIP, upload and publish to all users |
 | `make publish-testers` | Build ZIP, upload and publish to trusted testers only |
-| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint |
+| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint + Gitleaks secret scanning |
 
 #### Recommended workflow before committing
 

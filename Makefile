@@ -28,7 +28,7 @@ help:
 	@echo "  make upload                Build ZIP and upload to Chrome Web Store (no publish)"
 	@echo "  make publish               Build ZIP, upload and publish to all users"
 	@echo "  make publish-testers       Build ZIP, upload and publish to trusted testers only"
-	@echo "  make security              Scan dependencies for high/critical vulnerabilities (npm audit)"
+	@echo "  make security              Run dependency, static analysis, extension, and secret leak scans"
 	@echo "  make check-deps            Show all outdated devDependencies with current vs latest versions"
 	@echo "  make update-deps           Upgrade all devDependencies to their latest versions (updates package.json)"
 	@echo "  make clean                 Remove reports, zip packages, and temporary folders"
@@ -145,6 +145,5 @@ release: clean-e2e
 	git push origin main --tags
 	@echo "🚀 Creating/updating GitHub Release..."
 	node scripts/release.js
-
 
 
