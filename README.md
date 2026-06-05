@@ -6,168 +6,279 @@
 [![Coverage](https://codecov.io/gh/waewoo/favorai-chrome/graph/badge.svg)](https://app.codecov.io/gh/waewoo/favorai-chrome)
 [![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE.md)
 
-FavorAI is a Chrome and Chromium-based browser extension that helps you clean up and reorganize your bookmarks using AI.
+FavorAI is a Chrome and Chromium extension that helps you clean up, reorganize, and maintain your bookmarks with AI-assisted suggestions and local safety checks.
 
-If FavorAI saves you time, you can also support the project here:
+If FavorAI saves you time, you can support the project here:
 
 <a href="https://buymeacoffee.com/waewoo"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="120"></a>
 
-## Key Features
+## Table of Contents
 
-- **Smart Duplicate Detection**: Identifies exact URL duplicates, http/https and www variants, tracking URLs, redirects to the same final page, and similar article content across domains.
-- **Dead Link Verifier**: Checks for 404s, connection errors, and timeouts.
-- **Bilingual Interface**: Seamlessly switches between English and French based on browser language.
-- **Multi-Provider LLM Integration**: Works with OpenAI, Google Gemini, Anthropic Claude, Mistral AI, DeepSeek, Grok, Ollama (local), or any custom OpenAI-compatible endpoint.
-- **Smart Bookmark Placement**: Suggests the best folder when you save a new bookmark, based on the page content.
-- **Session History & Rollback**: Safely revert any reorganization session with a single click.
-- **XSS Safe**: DOM content is rendered programmatically to avoid HTML injections.
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Load the Extension in Chrome](#load-the-extension-in-chrome)
+- [Project Structure](#project-structure)
+- [Development Workflow](#development-workflow)
+- [Makefile Commands](#makefile-commands)
+- [Testing](#testing)
+- [Security and Privacy](#security-and-privacy)
+- [Release and Publishing](#release-and-publishing)
+- [Architecture Notes](#architecture-notes)
+- [Contributing](#contributing)
 
-## Directory Structure
+## Features
 
-```
-├── manifest.json            # Manifest file (MV3)
-├── background.js            # Background service worker entry point (loads src/background/orchestrator.js)
-├── popup.html               # Full popup view structure
-├── popup-light.html         # Lightweight popup for quick bookmark saving
-├── popup.js                 # Popup UI initialization (loads submodules from src/popup/)
-├── popup-light.js           # Lightweight popup logic
-├── popup.css                # Shared popup styling
-├── _locales/                # Internationalization folder
-│   ├── en/messages.json
-│   └── fr/messages.json
-├── src/                     # Module files
-│   ├── background/          # Background logic modules (orchestrator, analysis, apply, history, diff)
-│   ├── llm/                 # LLM client wrappers + provider dispatch
-│   ├── popup/               # Modular UI modules (config, history, navigation, reorg, utils)
-│   └── utils/               # Sanitization helpers and constants
-└── tests/                   # Automated Vitest unit tests and Playwright e2e tests
-    ├── unit/                # 172 unit tests (Vitest)
-    ├── e2e/                 # 106 e2e tests (Playwright)
-    │   ├── helpers.js       # Shared launchExtension / gotoPopup / cleanup helpers
-    │   ├── ui/              # UI spec files (structure, navigation, config, history, i18n, …)
-    │   └── integration/     # Integration spec files (full reorganization flow)
-    └── mocks/               # Chrome API mocks for unit tests
-```
+- **AI bookmark reorganization**: reorganizes bookmark trees while preserving original bookmark metadata client-side.
+- **Duplicate detection**: detects exact URL duplicates, URL variants, tracking URLs, redirects to the same final page, and similar article content.
+- **Dead link checks**: detects unreachable pages, 404 responses, connection errors, and request timeouts.
+- **Smart bookmark placement**: suggests the best destination folder when saving a new bookmark.
+- **Multi-provider LLM support**: works with OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, Ollama, and custom OpenAI-compatible endpoints.
+- **Session history and rollback**: keeps reorganization sessions so users can revert safely.
+- **Bilingual UI**: supports English and French through Chrome i18n.
+- **XSS-conscious UI rendering**: avoids unsafe HTML injection patterns and uses escaping helpers where needed.
 
-## Setup Instructions
-
-### Loading the Extension in Chrome
-1. Open Chrome and navigate to `chrome://extensions/`.
-2. Toggle **Developer mode** in the top right.
-3. Click **Load unpacked** in the top left.
-4. Select the root folder of this project (`favorai-chrome`).
-
-### Local Development
-
-To run tests, check linting, or package the extension, use the provided `Makefile`:
-
-`make security` also runs Gitleaks for secret leak detection. Install `gitleaks` locally, or make Docker available so the fallback scanner can run.
-
-Git hooks are managed with Husky. After `npm install`, the `prepare` script installs the hooks automatically. To regenerate them manually, run:
+## Quick Start
 
 ```bash
-make install-hooks
+make install
+make lint
+make test
 ```
 
-That creates the tracked hooks in `.husky/`:
+Then load the project folder as an unpacked extension in Chrome.
 
-- `pre-commit`: runs `git diff --check`, `make lint`, `make test`, and `make security`
-- `commit-msg`: runs commitlint with `@commitlint/config-conventional`
-
-Commit messages can use Conventional Commits features like `feat!:` and `BREAKING CHANGE:` footers, and commitlint will validate them correctly.
-
-CodeGraph is an optional local knowledge graph for agentic code navigation. It gives Codex a pre-indexed view of this repo so structural questions can be answered with fewer file reads. To install it and build the local index, run:
+For UI or integration changes, run the E2E suite too:
 
 ```bash
-make install-codegraph
+make lint
+make test
+make test-e2e
 ```
 
-This uses `npx` to install and configure CodeGraph for the current project, then initializes the local `.codegraph/` index directory.
+## Load the Extension in Chrome
 
-#### Makefile Commands
+1. Open `chrome://extensions/`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the root folder of this repository.
 
-| Command | Description |
-|---|---|
-| `make install` | Install Node.js dependencies |
-| `make install-hooks` | Generate Husky hooks via `npm run prepare` |
-| `make install-codegraph` | Install and configure CodeGraph, then initialize the local project index |
-| `make lint` | Run ESLint code validation |
-| `make lint-fix` | Auto-fix linter warnings |
-| `make test` | Run Vitest unit tests (172 tests, 100% coverage) |
-| `make test-watch` | Vitest in interactive watch mode |
-| `make test-coverage` | Unit tests + coverage summary |
-| `make test-e2e` | Run all Playwright e2e tests (106 tests) |
-| `make test-e2e-ui` | UI e2e tests only |
-| `make test-e2e-integration` | Integration e2e tests only |
-| `make bump` | Auto-detect SemVer bump type (major/minor/patch) from git history & update CHANGELOG |
-| `make bump-patch` | Increment patch version (e.g. 1.2.0 -> 1.2.1) manually |
-| `make bump-minor` | Increment minor version (e.g. 1.2.0 -> 1.3.0) manually |
-| `make bump-major` | Increment major version (e.g. 1.2.0 -> 2.0.0) manually |
-| `make release` | Package extension, push commits/tags, and create/update GitHub release (with changelog extraction & comparison links) |
-| `make clean` | Remove coverage, reports, dist, zip files |
-| `make clean-e2e` | Remove leftover Playwright Chrome tmp dirs and reports |
-| `make kill-e2e` | Kill any stuck Playwright-spawned Chrome processes |
-| `make package` | Package the extension into a ZIP for the Chrome Web Store |
-| `make upload` | Build ZIP and upload to Chrome Web Store (draft, no publish) |
-| `make publish` | Build ZIP, upload and publish to all users |
-| `make publish-testers` | Build ZIP, upload and publish to trusted testers only |
-| `make security` | Unified security audit: npm audit + ESLint security rules + web-ext lint + Gitleaks secret scanning |
+## Project Structure
 
-#### Recommended workflow before committing
+```text
+favorai-chrome/
+|-- manifest.json                 # Extension metadata, permissions, and MV3 service worker
+|-- background.js                 # Service worker entrypoint
+|-- popup.html                    # Full popup UI
+|-- popup-light.html              # Lightweight popup variant
+|-- popup.css                     # Shared popup styling
+|-- popup.js                      # Full popup entrypoint
+|-- popup-light.js                # Lightweight popup entrypoint
+|-- Makefile                      # Project task runner
+|-- scripts/                      # Tooling, release, packaging, and cleanup scripts
+|-- src/
+|   |-- background/               # Analysis, diffing, applying changes, history, orchestration
+|   |-- llm/                      # Prompt templates, response parsing, provider dispatch
+|   |-- popup/                    # Modular popup UI logic
+|   `-- utils/                    # Shared utility helpers
+|-- tests/
+|   |-- unit/                     # Vitest unit tests
+|   |-- e2e/                      # Playwright UI and integration tests
+|   `-- mocks/                    # Chrome API mocks
+|-- store-assets/                 # Chrome Web Store listing assets and generators
+|-- icons/                        # Extension icons
+|-- fonts/                        # Bundled local fonts
+`-- _locales/                     # English and French translations
+```
+
+## Development Workflow
+
+Install dependencies once:
+
+```bash
+make install
+```
+
+Run the standard local check before committing:
 
 ```bash
 make lint && make test
 ```
 
-For UI or integration changes, also run e2e tests:
+For UI, browser, or integration changes:
 
 ```bash
 make lint && make test && make test-e2e
 ```
 
-#### Publishing to the Chrome Web Store
+Git hooks are managed with Husky. The `prepare` npm script installs them after `npm install`; to regenerate hooks manually:
 
 ```bash
-# One-time setup (do this once):
-cp .env.example .env          # fill in WEBSTORE_CLIENT_ID + WEBSTORE_CLIENT_SECRET
-node scripts/get-refresh-token.mjs   # opens browser → paste token in .env
-# Add WEBSTORE_EXTENSION_ID from the store dashboard URL
+make install-hooks
+```
 
-# Release workflow:
-# 1. Run all checks to ensure stability and security:
+The hooks currently enforce:
+
+- `pre-commit`: `git diff --check`, `make lint`, `make test`, and `make security`
+- `commit-msg`: Conventional Commits validation through commitlint
+
+CodeGraph is optional local indexing support for Codex and other MCP-aware agents:
+
+```bash
+make install-codegraph
+```
+
+This creates a local `.codegraph/` index, which is ignored by Git.
+
+## Makefile Commands
+
+Run `make` to print the command list.
+
+### Setup
+
+| Command | Description |
+|---|---|
+| `make install` | Install project dependencies with `npm install` |
+| `make install-ci` | Install dependencies for CI with `npm ci --ignore-scripts` |
+| `make install-hooks` | Regenerate Husky hooks through `npm run prepare` |
+| `make install-codegraph` | Install and initialize CodeGraph for local indexing |
+
+### Quality
+
+| Command | Description |
+|---|---|
+| `make lint` | Run ESLint validation checks |
+| `make lint-fix` | Auto-fix ESLint warnings and format issues |
+| `make test` | Run the Vitest unit test suite |
+| `make test-watch` | Run Vitest in interactive watch mode |
+| `make test-coverage` | Run unit tests and print a coverage summary |
+| `make test-mutation` | Run Stryker mutation testing |
+| `make security` | Run dependency, static analysis, extension, and secret scans |
+| `make check-deps` | Show outdated devDependencies |
+| `make update-deps` | Upgrade devDependencies to latest published versions |
+
+### E2E
+
+| Command | Description |
+|---|---|
+| `make test-e2e` | Run the full Playwright suite |
+| `make test-e2e-ui` | Run only Playwright UI specs |
+| `make test-e2e-integration` | Run only Playwright integration specs |
+
+### Release
+
+| Command | Description |
+|---|---|
+| `make bump` | Auto-detect the SemVer bump type and update the changelog |
+| `make bump-patch` | Increment the patch version manually |
+| `make bump-minor` | Increment the minor version manually |
+| `make bump-major` | Increment the major version manually |
+| `make release` | Package, push tags, and create or update the GitHub release |
+| `make package` | Package the extension into a ZIP file |
+| `make screenshots` | Generate Chrome Web Store asset PNGs |
+| `make upload` | Build the ZIP and upload it to the Chrome Web Store |
+| `make publish` | Build, upload, and publish to all users |
+| `make publish-testers` | Build, upload, and publish to trusted testers |
+
+### Cleanup
+
+| Command | Description |
+|---|---|
+| `make clean` | Remove build, test, mutation, and generated asset outputs |
+| `make clean-e2e` | Remove leftover Playwright reports and temporary directories |
+| `make kill-e2e` | Kill stuck Playwright or Chrome processes |
+
+`make clean-e2e` is intentionally narrow and runs before E2E tests. `make clean` is the broader project cleanup and also removes generated ZIP files.
+
+## Testing
+
+Unit tests use Vitest and Chrome API mocks from `tests/mocks/chrome.js`. Tests that call Chrome APIs should explicitly mock return values, for example:
+
+```javascript
+chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+```
+
+E2E tests use Playwright and load the extension as an unpacked Chromium extension. Shared helpers live in `tests/e2e/helpers.js`.
+
+Useful commands:
+
+```bash
+make test
+make test-coverage
+make test-e2e
+```
+
+## Security and Privacy
+
+- External network calls for LLM providers run from the background service worker.
+- API keys must never be logged; debug output should mask secrets.
+- Bookmark titles, URLs, and structure may be sent to the configured LLM provider for semantic classification.
+- FavorAI does not send bookmark data to FavorAI-owned servers.
+- User-facing DOM content should use `textContent`, DOM construction, or escaping helpers instead of raw `innerHTML`.
+- Prompt templates use single-pass replacement to reduce prompt injection risk through bookmark titles or URLs.
+
+Run the full local security audit with:
+
+```bash
+make security
+```
+
+The security workflow includes npm audit, ESLint security checks, web-ext lint, and Gitleaks. Install `gitleaks` locally or make Docker available for the fallback scanner.
+
+## Release and Publishing
+
+Create a local environment file:
+
+```bash
+cp .env.example .env
+```
+
+Fill in the Chrome Web Store credentials:
+
+- `WEBSTORE_CLIENT_ID`
+- `WEBSTORE_CLIENT_SECRET`
+- `WEBSTORE_EXTENSION_ID`
+- `WEBSTORE_REFRESH_TOKEN`
+
+To obtain a refresh token:
+
+```bash
+node scripts/get-refresh-token.mjs
+```
+
+Recommended release flow:
+
+```bash
 make lint && make test && make test-e2e && make security
-
-# 2. Bump the version, update CHANGELOG, commit, and tag locally:
-make bump                     # auto-detect bump type based on git commits, update CHANGELOG.md, commit & tag locally
-# or force manually:
-make bump-patch               # manual patch release, commit & tag locally
-make bump-minor               # manual minor release, commit & tag locally
-make bump-major               # manual major release, commit & tag locally
-
-# 3. Publish to the Chrome Web Store:
-make publish                  # build ZIP + upload + publish to all users
-# or
-make publish-testers          # or publish to trusted testers first
-# or
-make upload                   # or just upload as a draft without publishing
+make bump
+make publish
 ```
 
-Credentials are stored in `.env` (gitignored). See `.env.example` for the full setup instructions.
-
-#### Using npm scripts directly
-
-```bash
-npm install          # Install dependencies
-npm run lint         # Run ESLint
-npm run test         # Run unit tests
-npm run test:e2e     # Run e2e tests
-npm run package      # Package extension
-```
+Use `make upload` for a draft upload, or `make publish-testers` for trusted testers.
 
 ## Architecture Notes
 
-- **Service Worker**: All LLM queries and bookmark mutations run in the background service worker — never in the popup (requests abort on popup close).
-- **Storage**: `chrome.storage.local` is used for all dynamic state (status, pending actions, history, popup window ID). `chrome.storage.sync` is only used for user configuration (API keys, provider settings).
-- **Privacy**: Bookmark titles, structure, and URLs are sent to the configured external LLM provider for semantic classification. No data is sent to FavorAI servers.
-- **Security**: API keys are never logged. Prompt templates use single-pass regex replacement to prevent injection via bookmark content.
-- **i18n**: All user-facing strings use `chrome.i18n.getMessage()` with keys defined in `_locales/en/messages.json` and `_locales/fr/messages.json`.
+- **Background orchestration**: `background.js` loads `src/background/orchestrator.js`, which coordinates browser events, state, analysis, and applying changes.
+- **Analysis pipeline**: `src/background/analysis.js` handles local duplicate checks, dead link validation, LLM preparation, response alignment, and action checklist generation.
+- **LLM dispatch**: `src/llm/index.js` routes requests to provider modules in `src/llm/providers/`.
+- **Safe apply flow**: `src/background/apply.js` performs bookmark mutations sequentially and resolves newly created folder IDs before moving children.
+- **Popup modules**: `src/popup/` keeps configuration, navigation, history, reorganization, and utilities separated.
+- **Storage model**: dynamic state uses `chrome.storage.local`; user configuration uses `chrome.storage.sync`.
+- **Internationalization**: strings are stored in `_locales/en/messages.json` and `_locales/fr/messages.json`.
+
+## Contributing
+
+Use Conventional Commits, such as `feat: add prompt preset`, `fix(ui): align history panel`, or `docs: update release notes`.
+
+Before opening a pull request, run:
+
+```bash
+make lint && make test
+```
+
+For UI or integration changes, also run:
+
+```bash
+make test-e2e
+```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md), [SECURITY.md](./SECURITY.md), and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for project guidelines.
