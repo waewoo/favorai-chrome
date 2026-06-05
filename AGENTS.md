@@ -286,7 +286,7 @@ CodeGraph is optional local indexing for Codex and MCP-aware agents. It is not p
 - Wire the provider in `src/llm/index.js`.
 - Preserve `AbortSignal` support and fetch timeout behavior.
 - Mask API keys in debug logs.
-- Add unit tests in `tests/unit/llmIndex.test.js` or a focused provider test.
+- Add a focused unit test file at `tests/unit/<provider>Provider.test.js`. It must cover at minimum: 429 retry (one failure then success), 503 retry (one failure then success), and pre-aborted signal (no fetch call made). Use `vi.useFakeTimers()` and advance timers past the retry delay. Follow the pattern in `tests/unit/openaiProvider.test.js`.
 - Run `make lint && make test`.
 
 ### Change Reorganization Logic
@@ -295,6 +295,7 @@ CodeGraph is optional local indexing for Codex and MCP-aware agents. It is not p
 - Keep the `new_` folder contract intact.
 - Preserve metadata restoration through `restoreOriginalMetadata`.
 - Keep action generation deterministic enough for tests.
+- `applyChanges()` returns `{ failures }` — an array of `{ type, title, error }` objects for operations that threw. The orchestrator forwards this to the popup, which shows per-operation error details. Do not swallow errors silently in `apply.js` catch blocks; push to `failures` instead.
 - Update unit tests for diff/apply/history behavior.
 - Run `make lint && make test`.
 

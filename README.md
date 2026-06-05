@@ -33,6 +33,8 @@ If FavorAI saves you time, you can support the project here:
 - **Dead link checks**: detects unreachable pages, 404 responses, connection errors, and request timeouts.
 - **Smart bookmark placement**: suggests the best destination folder when saving a new bookmark.
 - **Multi-provider LLM support**: works with OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, Ollama, and custom OpenAI-compatible endpoints.
+- **Folder size estimation**: shows a live bookmark count and approximate token estimate when a target folder is selected, so users can gauge cost and scope before launching.
+- **Partial failure reporting**: apply operations collect per-operation failures and surface them individually in the UI instead of silently succeeding.
 - **Session history and rollback**: keeps reorganization sessions so users can revert safely.
 - **Bilingual UI**: supports English and French through Chrome i18n.
 - **XSS-conscious UI rendering**: avoids unsafe HTML injection patterns and uses escaping helpers where needed.
@@ -261,8 +263,8 @@ Use `make upload` for a draft upload, or `make publish-testers` for trusted test
 - **Background orchestration**: `background.js` loads `src/background/orchestrator.js`, which coordinates browser events, state, analysis, and applying changes.
 - **Analysis pipeline**: `src/background/analysis.js` handles local duplicate checks, dead link validation, LLM preparation, response alignment, and action checklist generation.
 - **LLM dispatch**: `src/llm/index.js` routes requests to provider modules in `src/llm/providers/`.
-- **Safe apply flow**: `src/background/apply.js` performs bookmark mutations sequentially and resolves newly created folder IDs before moving children.
-- **Popup modules**: `src/popup/` keeps configuration, navigation, history, reorganization, and utilities separated.
+- **Safe apply flow**: `src/background/apply.js` performs bookmark mutations sequentially, resolves newly created folder IDs before moving children, and returns `{ failures }` — an array of per-operation errors surfaced in the popup instead of silently swallowed.
+- **Popup modules**: `src/popup/` keeps configuration, navigation, history, reorganization, and utilities separated. `progress.js` exposes `updateFolderStats()` to estimate bookmark count and token usage for the selected folder before launch.
 - **Storage model**: dynamic state uses `chrome.storage.local`; user configuration uses `chrome.storage.sync`.
 - **Internationalization**: strings are stored in `_locales/en/messages.json` and `_locales/fr/messages.json`.
 
