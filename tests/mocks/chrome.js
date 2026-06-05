@@ -4,6 +4,7 @@ export function createChromeMock() {
   return {
     bookmarks: {
       getTree: vi.fn().mockResolvedValue([]),
+      getSubTree: vi.fn().mockResolvedValue([]),
       get: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockResolvedValue({ id: 'new-id', title: 'New' }),
       update: vi.fn().mockResolvedValue({}),
@@ -57,6 +58,7 @@ export function createChromeMock() {
       local: {
         get: vi.fn((keys, cb) => { if (cb) cb({}); return Promise.resolve({}); }),
         set: vi.fn((data, cb) => { if (cb) cb(); return Promise.resolve(); }),
+        remove: vi.fn((keys, cb) => { if (cb) cb(); return Promise.resolve(); }),
         clear: vi.fn((cb) => { if (cb) cb(); return Promise.resolve(); }),
       },
       sync: {

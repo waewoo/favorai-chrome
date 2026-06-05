@@ -17,7 +17,9 @@ import {
   showRetryButton,
   setControlsDisabled,
   displayRapport,
-  restoreStatus
+  restoreStatus,
+  markReorganizationIdle,
+  updateProgressBar
 } from './src/popup/reorg.js';
 
 // DOM Elements
@@ -182,14 +184,17 @@ document.addEventListener('DOMContentLoaded', () => {
 // Background messages listener
 chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
   if (message.action === 'progress_update') {
-    if (progressBarContainer) progressBarContainer.style.display = 'block';
-    if (progressBar) progressBar.style.width = `${message.percentage}%`;
+    updateProgressBar(progressBarContainer, progressBar, message.percentage);
     addLog(message.message, 'info');
   }
   else if (message.action === 'analysis_completed') {
+    markReorganizationIdle();
     removeLoadingLog();
     addLog('✓ Analyse terminée', 'success');
-    if (progressBarContainer) progressBarContainer.style.display = 'none';
+    if (progressBarContainer) {
+      progressBarContainer.style.display = 'none';
+      progressBarContainer.removeAttribute('aria-valuenow');
+    }
     
     const reorgBtnGroup = document.getElementById('reorgBtnGroup');
     if (reorgBtnGroup) reorgBtnGroup.classList.remove('hidden');
@@ -205,8 +210,12 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     }
   } 
   else if (message.action === 'analysis_failed') {
+    markReorganizationIdle();
     removeLoadingLog();
-    if (progressBarContainer) progressBarContainer.style.display = 'none';
+    if (progressBarContainer) {
+      progressBarContainer.style.display = 'none';
+      progressBarContainer.removeAttribute('aria-valuenow');
+    }
     
     const reorgBtnGroup = document.getElementById('reorgBtnGroup');
     if (reorgBtnGroup) reorgBtnGroup.classList.remove('hidden');

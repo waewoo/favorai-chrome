@@ -6,6 +6,7 @@ import {
   getPathFromMap, cleanTreeForLLM
 } from './diff.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
+import { buildBookmarkTreeFingerprint } from './tree-fingerprint.js';
 
 /** Compte tous les nœuds (favoris + dossiers) d'un arbre pour estimer les tokens de sortie. */
 function countNodes(node) {
@@ -434,6 +435,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     rootNode = trees[0];
   }
   const originalMap = buildNodeMap(rootNode);
+  const analysisTreeFingerprint = buildBookmarkTreeFingerprint(rootNode);
 
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
@@ -740,7 +742,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     console.log('==============================');
   }
 
-  return { actions, explanation };
+  return { actions, explanation, treeFingerprint: analysisTreeFingerprint, bookmarkFolderId };
 }
 
 /**

@@ -2,6 +2,7 @@
 import { NEW_FOLDER_PREFIX, CHROME_ROOT_IDS } from '../utils/constants.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
 import { saveSessionToHistory } from './history.js';
+import { buildBookmarkTreeFingerprint } from './tree-fingerprint.js';
 
 /**
  * Résout l'ID réel d'un parent (gestion des IDs temporaires new_).
@@ -21,16 +22,28 @@ export function resolveParentId(id, idMap) {
 /**
  * Applique les modifications approuvées par l'utilisateur sur les favoris Chrome.
  */
-export async function applyChanges(approvedActionIds, pendingActions, mode, explanation = '') {
+export async function applyChanges(approvedActionIds, pendingActions, mode, explanation = '', options = {}) {
   const approvedSet = new Set(approvedActionIds);
   const toRun = pendingActions.filter(a => approvedSet.has(a.id));
 
   let nodeMap = {};
+  let rootNode = null;
   try {
-    const trees = await chrome.bookmarks.getTree();
-    nodeMap = buildNodeMap(trees[0]);
+    rootNode = await readBookmarkRoot(options.bookmarkFolderId);
   } catch {
-    // Silently continue if unable to read tree
+    if (options.expectedTreeFingerprint) {
+      throw new Error(chrome.i18n.getMessage('errBookmarksChangedBeforeApply') || 'Bookmarks changed since analysis. Please run the analysis again before applying changes.');
+    }
+    // Silently continue if unable to read tree and no consistency guard was requested.
+  }
+  if (rootNode) {
+    if (options.expectedTreeFingerprint) {
+      const currentFingerprint = buildBookmarkTreeFingerprint(rootNode);
+      if (currentFingerprint !== options.expectedTreeFingerprint) {
+        throw new Error(chrome.i18n.getMessage('errBookmarksChangedBeforeApply') || 'Bookmarks changed since analysis. Please run the analysis again before applying changes.');
+      }
+    }
+    nodeMap = buildNodeMap(rootNode);
   }
 
   const idMap = {};
@@ -133,6 +146,15 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     }));
     await saveSessionToHistory(historyWithIds, mode, explanation);
   }
+}
+
+async function readBookmarkRoot(bookmarkFolderId) {
+  if (bookmarkFolderId && bookmarkFolderId !== 'root') {
+    const nodes = await chrome.bookmarks.getSubTree(bookmarkFolderId);
+    return nodes[0];
+  }
+  const trees = await chrome.bookmarks.getTree();
+  return trees[0];
 }
 
 /**

@@ -13,6 +13,8 @@ import { mergeAnalysisConfigWithStoredApiKey, sanitizeAnalysisConfig, sanitizeLl
 import { normalizeInterruptedAnalysisStatus } from './status.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
 
+const DIAGNOSTIC_LOG_LIMIT = 100;
+
 let pendingActions = [];
 // currentAbortController is intentionally not persisted: if the SW is killed mid-analysis
 // the get_current_status handler detects state=analyzing + no controller and resets to idle.
@@ -184,7 +186,9 @@ const currentStatus = {
   lastError: null,
   retryable: false,
   lastConfig: null,
-  lastCheckDeadLinks: false
+  lastCheckDeadLinks: false,
+  analysisTreeFingerprint: null,
+  bookmarkFolderId: null
 };
 
 function saveStatusToStorage() {
@@ -192,9 +196,41 @@ function saveStatusToStorage() {
 }
 
 function logStatus(text, type = 'info') {
-  currentStatus.logs.push({ text, type });
+  const entry = { text, type, at: Date.now() };
+  currentStatus.logs.push(entry);
+  if (currentStatus.logs.length > DIAGNOSTIC_LOG_LIMIT) {
+    currentStatus.logs.splice(0, currentStatus.logs.length - DIAGNOSTIC_LOG_LIMIT);
+  }
+  appendDiagnosticLog(entry);
   saveStatusToStorage();
 }
+
+function appendDiagnosticLog(entry) {
+  chrome.storage.local.get(['diagnosticLogs'], (res) => {
+    const diagnosticLogs = Array.isArray(res.diagnosticLogs) ? res.diagnosticLogs : [];
+    diagnosticLogs.push(entry);
+    chrome.storage.local.set({ diagnosticLogs: diagnosticLogs.slice(-DIAGNOSTIC_LOG_LIMIT) });
+  });
+}
+
+function registerGlobalErrorHandlers() {
+  if (typeof globalThis.addEventListener !== 'function') return;
+
+  globalThis.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason?.message || event.reason || 'Unhandled promise rejection';
+    const message = `[FavorAI] ${chrome.i18n.getMessage('bgUnhandledRejection') || 'Unhandled background promise rejection'}: ${reason}`;
+    console.error(message, event.reason);
+    appendDiagnosticLog({ text: message, type: 'error', at: Date.now() });
+  });
+
+  globalThis.addEventListener('error', (event) => {
+    const message = `[FavorAI] ${chrome.i18n.getMessage('bgUnhandledError') || 'Unhandled background error'}: ${event.message || 'Unknown error'}`;
+    console.error(message, event.error || event);
+    appendDiagnosticLog({ text: message, type: 'error', at: Date.now() });
+  });
+}
+
+registerGlobalErrorHandlers();
 
 function startKeepAlive() {
   chrome.alarms.create('keepAliveAlarm', { periodInMinutes: 0.1 });
@@ -230,7 +266,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'start_analysis') {
     if (currentAbortController) {
-      currentAbortController.abort();
+      sendResponse({
+        success: false,
+        error: chrome.i18n.getMessage('errAnalysisAlreadyRunning') || 'An analysis is already running.'
+      });
+      return false;
     }
     currentAbortController = new AbortController();
 
@@ -244,6 +284,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentStatus.retryable = false;
     currentStatus.lastConfig = sanitizeAnalysisConfig(message.config);
     currentStatus.lastCheckDeadLinks = message.checkDeadLinks !== false;
+    currentStatus.analysisTreeFingerprint = null;
+    currentStatus.bookmarkFolderId = message.bookmarkFolderId || null;
 
     chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
     startKeepAlive();
@@ -264,6 +306,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             currentStatus.state = 'idle';
             currentStatus.actions = [];
             currentStatus.explanation = '';
+            currentStatus.analysisTreeFingerprint = null;
             logStatus(chrome.i18n.getMessage('bgNoChangesNeeded') || 'Aucun changement nécessaire.', 'success');
 
             pendingActions = [];
@@ -279,6 +322,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             currentStatus.state = 'waiting_validation';
             currentStatus.actions = result.actions;
             currentStatus.explanation = result.explanation;
+            currentStatus.analysisTreeFingerprint = result.treeFingerprint || null;
+            currentStatus.bookmarkFolderId = result.bookmarkFolderId || message.bookmarkFolderId || null;
             logStatus(chrome.i18n.getMessage('bgAnalysisCompleted') || 'Analyse terminée avec succès.', 'success');
             logStatus(chrome.i18n.getMessage('bgChangesProposed', [String(result.actions.length)]), 'success');
 
@@ -305,6 +350,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const isRateLimit = !isAbort && (error.isRateLimit || rawErrorMsg.includes('429') || rawErrorMsg.toLowerCase().includes('rate limit'));
           currentStatus.lastError = errorMsg;
           currentStatus.retryable = isRateLimit;
+          currentStatus.analysisTreeFingerprint = null;
 
           logStatus(chrome.i18n.getMessage('bgReorgFailed', [errorMsg]), 'error');
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
@@ -337,10 +383,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       pendingActions = res.pendingActions || pendingActions || [];
       const status = res.extensionStatus || currentStatus;
       const explanation = status.explanation || '';
-      applyChanges(message.approvedActionIds, pendingActions, currentStatus.mode, explanation)
+      applyChanges(message.approvedActionIds, pendingActions, status.mode || currentStatus.mode, explanation, {
+        expectedTreeFingerprint: status.analysisTreeFingerprint,
+        bookmarkFolderId: status.bookmarkFolderId
+      })
         .then(() => {
           currentStatus.state = 'idle';
           currentStatus.logs = [];
+          currentStatus.analysisTreeFingerprint = null;
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
           sendResponse({ success: true });
         })
@@ -528,6 +578,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentStatus.state = 'idle';
     currentStatus.actions = [];
     currentStatus.explanation = '';
+    currentStatus.analysisTreeFingerprint = null;
     chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
     sendResponse({ success: true });
     return false;

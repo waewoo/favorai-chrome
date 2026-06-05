@@ -39,7 +39,7 @@ test.describe('Forgotten Bookmarks Tab', () => {
     }
   });
 
-  test('should show threshold selector with default value of 6 months', async () => {
+  test('should show threshold selector with default value of 60 days', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
     try {
       await gotoPopup(page, extensionId);
@@ -107,8 +107,8 @@ test.describe('Forgotten Bookmarks Tab', () => {
       await gotoPopup(page, extensionId);
       await navigateToForgotten(page);
 
-      await page.selectOption('#forgottenThreshold', '12');
-      await expect(page.locator('#forgottenThreshold')).toHaveValue('12');
+      await page.selectOption('#forgottenThreshold', '30');
+      await expect(page.locator('#forgottenThreshold')).toHaveValue('30');
 
       await page.selectOption('#forgottenThreshold', '0');
       await expect(page.locator('#forgottenThreshold')).toHaveValue('0');

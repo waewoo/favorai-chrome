@@ -9,6 +9,7 @@ import { showToast, showConfirm } from './utils.js';
 import { createOption } from './dom.js';
 
 const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
+const HISTORY_VISIT_BATCH_SIZE = 50;
 
 // Build a flat id→node map and a id→path map from the bookmark tree
 function buildPathMap(node, map = {}, pathMap = {}, parentPath = '') {
@@ -39,7 +40,7 @@ function timeAgo(ms) {
   return `${Math.floor(days / 365)}y`;
 }
 
-async function scanForgotten(days) {
+export async function scanForgotten(days, _batchSize = HISTORY_VISIT_BATCH_SIZE) {
   const trees = await chrome.bookmarks.getTree();
   const { pathMap } = buildPathMap(trees[0]);
   const bookmarks = flattenBookmarks(trees[0]);
@@ -63,9 +64,44 @@ async function scanForgotten(days) {
   return forgotten.sort((a, b) => a.lastVisit - b.lastVisit); // oldest first
 }
 
+export async function scanForgottenBatched(days, batchSize = HISTORY_VISIT_BATCH_SIZE) {
+  const trees = await chrome.bookmarks.getTree();
+  const { pathMap } = buildPathMap(trees[0]);
+  const bookmarks = flattenBookmarks(trees[0]);
+  const threshold = days === 0 ? 1 : Date.now() - days * 24 * 60 * 60 * 1000;
+  const forgotten = [];
+  let failedHistoryReads = 0;
+
+  for (let i = 0; i < bookmarks.length; i += batchSize) {
+    const batch = bookmarks.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async (bm) => {
+      try {
+        const visits = await chrome.history.getVisits({ url: bm.url });
+        const lastVisit = visits.length > 0 ? Math.max(...visits.map(v => v.visitTime)) : 0;
+        return lastVisit < threshold ? { ...bm, lastVisit, folderPath: pathMap[bm.parentId] || '' } : null;
+      } catch {
+        failedHistoryReads++;
+        return null;
+      }
+    }));
+
+    for (const bm of results) {
+      if (bm) forgotten.push(bm);
+    }
+  }
+
+  if (failedHistoryReads > 0) {
+    console.warn(`[FavorAI] Forgotten scan skipped ${failedHistoryReads} bookmark history reads.`);
+  }
+
+  return forgotten.sort((a, b) => a.lastVisit - b.lastVisit);
+}
+
 function createCard(bm, container, onDelete) {
-  const card = document.createElement('div');
+  const card = document.createElement('article');
   card.className = 'forgotten-card';
+  card.setAttribute('role', 'listitem');
+  card.setAttribute('aria-label', t('forgottenCardLabel', 'Forgotten bookmark: {title}').replace('{title}', bm.title || bm.url));
   card.dataset.id = bm.id;
   card.dataset.parentId = bm.parentId;
   card.dataset.title = bm.title || '';
@@ -77,8 +113,10 @@ function createCard(bm, container, onDelete) {
 
   const titleEl = document.createElement('div');
   titleEl.className = 'forgotten-card-title';
+  titleEl.id = `forgotten-title-${bm.id}`;
   titleEl.textContent = bm.title || bm.url;
   titleEl.title = bm.title || bm.url;
+  card.setAttribute('aria-labelledby', titleEl.id);
 
   const ageBadge = document.createElement('span');
   ageBadge.className = 'forgotten-card-age';
@@ -98,17 +136,20 @@ function createCard(bm, container, onDelete) {
 
   const actions = document.createElement('div');
   actions.className = 'forgotten-card-actions';
+  actions.setAttribute('aria-label', t('forgottenCardActionsLabel', 'Bookmark actions'));
 
   const visitBtn = document.createElement('button');
   visitBtn.className = 'btn btn-flat';
   visitBtn.classList.add('forgotten-card-button', 'forgotten-card-button--visit');
   visitBtn.textContent = t('forgottenVisit');
+  visitBtn.setAttribute('aria-label', t('forgottenVisitLabel', 'Open bookmark: {title}').replace('{title}', bm.title || bm.url));
   visitBtn.addEventListener('click', () => chrome.tabs.create({ url: bm.url }));
 
   const keepBtn = document.createElement('button');
   keepBtn.className = 'btn btn-flat';
   keepBtn.classList.add('forgotten-card-button', 'forgotten-card-button--keep');
   keepBtn.textContent = t('forgottenKeep');
+  keepBtn.setAttribute('aria-label', t('forgottenKeepLabel', 'Keep bookmark: {title}').replace('{title}', bm.title || bm.url));
   keepBtn.addEventListener('click', () => {
     card.style.opacity = '0';
     setTimeout(() => { card.remove(); updateCount(container); }, 200);
@@ -118,6 +159,7 @@ function createCard(bm, container, onDelete) {
   deleteBtn.className = 'btn btn-flat';
   deleteBtn.classList.add('forgotten-card-button', 'forgotten-card-button--delete');
   deleteBtn.textContent = t('forgottenDelete');
+  deleteBtn.setAttribute('aria-label', t('forgottenDeleteLabel', 'Delete bookmark: {title}').replace('{title}', bm.title || bm.url));
   deleteBtn.addEventListener('click', async () => {
     try {
       await chrome.bookmarks.remove(bm.id);
@@ -233,6 +275,7 @@ export async function renderForgotten() {
   const listContainer = document.createElement('div');
   listContainer.id = 'forgottenList';
   listContainer.className = 'forgotten-list';
+  listContainer.setAttribute('role', 'list');
 
   const bulkActions = document.createElement('div');
   bulkActions.id = 'forgottenBulk';
@@ -272,7 +315,7 @@ export async function renderForgotten() {
     bulkActions.style.display = 'none';
 
     try {
-      const forgotten = await scanForgotten(days);
+      const forgotten = await scanForgottenBatched(days);
       if (forgotten.length === 0) {
         countEl.textContent = t('forgottenNoneFound');
         scanBtn.textContent = t('forgottenScan');

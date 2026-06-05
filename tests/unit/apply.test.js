@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { applyChanges } from '../../src/background/apply.js';
+import { buildBookmarkTreeFingerprint } from '../../src/background/tree-fingerprint.js';
 
 describe('applyChanges', () => {
   beforeEach(() => {
@@ -827,5 +828,87 @@ describe('applyChanges', () => {
     expect(createOrder[0]).toMatch(/NoPath/);
     expect(createOrder[1]).toMatch(/NoPath/);
   });
-});
 
+  it('should refuse to apply when bookmarks changed since analysis', async () => {
+    const analyzedTree = {
+      id: '0',
+      title: 'Root',
+      children: [{ id: '1', title: 'Bar', children: [{ id: '10', title: 'Old', url: 'https://old.com', parentId: '1' }] }]
+    };
+    const changedTree = {
+      id: '0',
+      title: 'Root',
+      children: [{ id: '1', title: 'Bar', children: [{ id: '10', title: 'Changed', url: 'https://old.com', parentId: '1' }] }]
+    };
+
+    chrome.bookmarks.getTree.mockResolvedValue([changedTree]);
+    chrome.bookmarks.create.mockClear();
+
+    await expect(applyChanges(
+      ['a1'],
+      [{ id: 'a1', type: 'create_folder', params: { tempId: 'new_x', title: 'F', parentId: '1', targetPath: 'Bar' } }],
+      'complete',
+      '',
+      { expectedTreeFingerprint: buildBookmarkTreeFingerprint(analyzedTree) }
+    )).rejects.toThrow(/changed|favoris/i);
+
+    expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+  });
+
+  it('should validate the selected bookmark subtree before applying scoped changes', async () => {
+    const subtree = {
+      id: '42',
+      title: 'Work',
+      parentId: '1',
+      children: [{ id: '10', title: 'Old', url: 'https://old.com', parentId: '42' }]
+    };
+
+    chrome.bookmarks.getSubTree.mockResolvedValue([subtree]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'created-in-scope', title: 'Scoped Folder' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.storage.local.set.mockClear();
+
+    await applyChanges(
+      ['a1'],
+      [{ id: 'a1', type: 'create_folder', params: { tempId: 'new_scoped', title: 'Scoped Folder', parentId: '42', targetPath: 'Work' } }],
+      'minimal',
+      'scoped',
+      {
+        bookmarkFolderId: '42',
+        expectedTreeFingerprint: buildBookmarkTreeFingerprint(subtree)
+      }
+    );
+
+    expect(chrome.bookmarks.getSubTree).toHaveBeenCalledWith('42');
+    expect(chrome.bookmarks.create).toHaveBeenCalledWith({ parentId: '42', title: 'Scoped Folder' });
+  });
+
+  it('should use fallback consistency error when i18n message is missing for changed bookmarks', async () => {
+    const analyzedTree = { id: '0', title: 'Root', children: [] };
+    const changedTree = { id: '0', title: 'Changed', children: [] };
+
+    chrome.bookmarks.getTree.mockResolvedValue([changedTree]);
+    chrome.i18n.getMessage.mockReturnValueOnce('');
+
+    await expect(applyChanges(
+      ['a1'],
+      [{ id: 'a1', type: 'create_folder', params: { tempId: 'new_x', title: 'F', parentId: '1' } }],
+      'complete',
+      '',
+      { expectedTreeFingerprint: buildBookmarkTreeFingerprint(analyzedTree) }
+    )).rejects.toThrow('Bookmarks changed since analysis.');
+  });
+
+  it('should use fallback consistency error when guarded tree reads fail', async () => {
+    chrome.bookmarks.getTree.mockRejectedValue(new Error('tree unavailable'));
+    chrome.i18n.getMessage.mockReturnValueOnce('');
+
+    await expect(applyChanges(
+      [],
+      [],
+      'complete',
+      '',
+      { expectedTreeFingerprint: 'fnv1a:expected' }
+    )).rejects.toThrow('Bookmarks changed since analysis.');
+  });
+});

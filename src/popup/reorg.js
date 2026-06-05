@@ -14,7 +14,9 @@ export {
   retryReorganization,
   startReorganizationWithConfig,
   startReorganization,
-  restoreStatus
+  restoreStatus,
+  markReorganizationIdle,
+  updateProgressBar
 } from './progress.js';
 
 export {

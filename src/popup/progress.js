@@ -7,6 +7,23 @@ import { displayRapport } from './report.js';
 import { applyActionFilter } from './actions.js';
 import { formatFolderPath, createOption } from './dom.js';
 
+const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
+
+let startRequestInFlight = false;
+
+export function markReorganizationIdle() {
+  startRequestInFlight = false;
+}
+
+export function updateProgressBar(progressBarContainer, progressBar, percentage) {
+  const safePercentage = Math.max(0, Math.min(100, Number(percentage) || 0));
+  if (progressBarContainer) {
+    progressBarContainer.style.display = 'block';
+    progressBarContainer.setAttribute('aria-valuenow', String(safePercentage));
+  }
+  if (progressBar) progressBar.style.width = `${safePercentage}%`;
+}
+
 export function setControlsDisabled(disabled) {
   const providerSelect = document.getElementById('provider');
   const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
@@ -105,8 +122,7 @@ export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
   if (logContainer) logContainer.innerHTML = '';
   addLog(`> Nouvelle tentative (${mode === 'complete' ? 'Complète' : 'Minimale'})...`, 'info');
   addLoadingLog('Interrogation de l\'IA en cours...');
-  if (progressBarContainer) progressBarContainer.style.display = 'block';
-  if (progressBar) progressBar.style.width = '5%';
+  updateProgressBar(progressBarContainer, progressBar, 5);
 
   chrome.runtime.sendMessage({
     action: 'start_analysis',
@@ -118,15 +134,25 @@ export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
       const errorMsg = chrome.runtime.lastError?.message || (response?.error) || 'Impossible de lancer l\'analyse.';
       removeLoadingLog();
       addLog(`Échec du démarrage : ${errorMsg}`, 'error');
-      if (progressBarContainer) progressBarContainer.style.display = 'none';
+      if (progressBarContainer) {
+        progressBarContainer.style.display = 'none';
+        progressBarContainer.removeAttribute('aria-valuenow');
+      }
       if (reorgBtnGroup) reorgBtnGroup.classList.remove('hidden');
       if (btnStopReorg) btnStopReorg.classList.add('hidden');
       setControlsDisabled(false);
+      markReorganizationIdle();
     }
   });
 }
 
 export async function startReorganization(mode) {
+  if (startRequestInFlight) {
+    showToast(t('errAnalysisAlreadyRunning', 'An analysis is already running.'));
+    return;
+  }
+  startRequestInFlight = true;
+
   const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
   const providerSelect = document.getElementById('provider');
   const apiUrlInput = document.getElementById('apiUrl');
@@ -150,6 +176,7 @@ export async function startReorganization(mode) {
     if (!granted) {
       const approved = await chrome.permissions.request({ origins: ['<all_urls>'] });
       if (!approved) {
+        markReorganizationIdle();
         checkDeadLinksCheckbox.checked = false;
         chrome.storage.sync.set({ checkDeadLinks: false });
         addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée.', 'warning');
@@ -176,6 +203,7 @@ export async function startReorganization(mode) {
   };
 
   if (config.provider !== 'ollama' && !config.apiKey) {
+    markReorganizationIdle();
     showToast(chrome.i18n.getMessage('errApiKeyRequired') || 'Clé API requise');
     addLog(chrome.i18n.getMessage('errApiKeyRequired') || '> Erreur : Clé API requise.', 'error');
     return;
@@ -189,8 +217,7 @@ export async function startReorganization(mode) {
   const modeLabel = mode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
   addLog(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
   addLoadingLog('Interrogation de l\'IA en cours...');
-  if (progressBarContainer) progressBarContainer.style.display = 'block';
-  if (progressBar) progressBar.style.width = '5%';
+  updateProgressBar(progressBarContainer, progressBar, 5);
 
   const checkDeadLinks = checkDeadLinksCheckbox ? checkDeadLinksCheckbox.checked : false;
   const bookmarkFolderId = bookmarkFolderSelect ? bookmarkFolderSelect.value : '1';
@@ -206,10 +233,14 @@ export async function startReorganization(mode) {
       const errorMsg = chrome.runtime.lastError?.message || (response?.error) || 'Impossible de lancer l\'analyse.';
       removeLoadingLog();
       addLog(`Échec du démarrage : ${errorMsg}`, 'error');
-      if (progressBarContainer) progressBarContainer.style.display = 'none';
+      if (progressBarContainer) {
+        progressBarContainer.style.display = 'none';
+        progressBarContainer.removeAttribute('aria-valuenow');
+      }
       if (reorgBtnGroup) reorgBtnGroup.classList.remove('hidden');
       if (btnStopReorg) btnStopReorg.classList.add('hidden');
       setControlsDisabled(false);
+      markReorganizationIdle();
     }
   });
 }
@@ -243,8 +274,7 @@ export function restoreStatus() {
         status.logs.forEach(log => addLog(log.text, log.type));
       }
       addLoadingLog('Interrogation de l\'IA en cours...');
-      if (progressBarContainer) progressBarContainer.style.display = 'block';
-      if (progressBar) progressBar.style.width = `${status.percentage || 5}%`;
+      updateProgressBar(progressBarContainer, progressBar, status.percentage || 5);
     } else if (status.state === 'waiting_validation') {
       setControlsDisabled(false);
       if (reorgBtnGroup) reorgBtnGroup.classList.remove('hidden');

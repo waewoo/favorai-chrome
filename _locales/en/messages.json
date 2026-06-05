@@ -290,5 +290,20 @@
   "forgottenConfirmDeleteAll": { "message": "Delete all {n} shown bookmarks? This cannot be undone." },
   "forgottenDeletedAll": { "message": "{n} bookmark(s) deleted" },
   "forgottenNeverRecorded": { "message": "No history" },
-  "forgottenToday": { "message": "Today" }
+  "forgottenToday": { "message": "Today" },
+  "forgottenCardLabel": { "message": "Forgotten bookmark: {title}" },
+  "forgottenCardActionsLabel": { "message": "Bookmark actions" },
+  "forgottenVisitLabel": { "message": "Open bookmark: {title}" },
+  "forgottenKeepLabel": { "message": "Keep bookmark: {title}" },
+  "forgottenDeleteLabel": { "message": "Delete bookmark: {title}" },
+  "errAnalysisAlreadyRunning": { "message": "An analysis is already running." },
+  "errBookmarksChangedBeforeApply": { "message": "Bookmarks changed since analysis. Please run the analysis again before applying changes." },
+  "bgUnhandledRejection": { "message": "Unhandled background promise rejection" },
+  "bgUnhandledError": { "message": "Unhandled background error" },
+  "logCancelRequested": { "message": "> Cancellation request sent..." },
+  "btnRetryAnalysis": { "message": "Retry analysis" },
+  "errRetryConfigMissing": { "message": "Cannot retry: previous configuration was not found." },
+  "logAskingAI": { "message": "Querying AI..." },
+  "logRetryStarting": { "message": "> New attempt ({mode})..." },
+  "errApiKeyRequiredLog": { "message": "> Error: API key required." }
 }

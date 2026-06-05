@@ -25,7 +25,7 @@
     </header>
 
     <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="toast" data-i18n="toastConfigSaved"></div>
+    <div id="toast" class="toast" data-i18n="toastConfigSaved" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <!-- TAB NAVIGATION -->
     <div class="tab-nav">
@@ -104,7 +104,7 @@
           <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-label="Analysis Status Console">
             <div class="log-entry info" data-i18n="logReady">&gt; Ready to analyze your bookmarks. Save your API key then launch a reorganization.</div>
           </div>
-          <div class="progress-bar-container" id="progressBarContainer" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar-container" id="progressBarContainer" role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
             <div class="progress-bar" id="progressBar"></div>
           </div>
         </section>

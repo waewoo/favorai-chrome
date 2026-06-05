@@ -290,5 +290,20 @@
   "forgottenConfirmDeleteAll": { "message": "Supprimer les {n} favoris affichés ? Cette action est irréversible." },
   "forgottenDeletedAll": { "message": "{n} favori(s) supprimé(s)" },
   "forgottenNeverRecorded": { "message": "Jamais enregistré" },
-  "forgottenToday": { "message": "Aujourd'hui" }
+  "forgottenToday": { "message": "Aujourd'hui" },
+  "forgottenCardLabel": { "message": "Favori oublié : {title}" },
+  "forgottenCardActionsLabel": { "message": "Actions du favori" },
+  "forgottenVisitLabel": { "message": "Ouvrir le favori : {title}" },
+  "forgottenKeepLabel": { "message": "Garder le favori : {title}" },
+  "forgottenDeleteLabel": { "message": "Supprimer le favori : {title}" },
+  "errAnalysisAlreadyRunning": { "message": "Une analyse est déjà en cours." },
+  "errBookmarksChangedBeforeApply": { "message": "Les favoris ont changé depuis l'analyse. Relancez l'analyse avant d'appliquer les modifications." },
+  "bgUnhandledRejection": { "message": "Rejet de promesse non géré dans le service worker" },
+  "bgUnhandledError": { "message": "Erreur non gérée dans le service worker" },
+  "logCancelRequested": { "message": "> Demande d'interruption envoyÃ©e..." },
+  "btnRetryAnalysis": { "message": "Réessayer l'analyse" },
+  "errRetryConfigMissing": { "message": "Impossible de réessayer : la configuration précédente est introuvable." },
+  "logAskingAI": { "message": "Interrogation de l'IA en cours..." },
+  "logRetryStarting": { "message": "> Nouvelle tentative ({mode})..." },
+  "errApiKeyRequiredLog": { "message": "> Erreur : clé API requise." }
 }
