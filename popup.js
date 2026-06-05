@@ -7,19 +7,20 @@ import { switchTab, showView } from './src/popup/navigation.js';
 import { loadConfig, checkConfigStatus, bindConfigEvents } from './src/popup/config.js';
 import { renderHistory } from './src/popup/history.js';
 import { renderForgotten } from './src/popup/forgotten.js';
-import { 
-  loadBookmarkFolders, 
-  startReorganization, 
-  stopReorganization, 
-  applyCheckedActions, 
-  scheduleActionFilter, 
+import {
+  loadBookmarkFolders,
+  startReorganization,
+  stopReorganization,
+  applyCheckedActions,
+  scheduleActionFilter,
   toggleAllCheckboxes,
   showRetryButton,
   setControlsDisabled,
   displayRapport,
   restoreStatus,
   markReorganizationIdle,
-  updateProgressBar
+  updateProgressBar,
+  updateFolderStats
 } from './src/popup/reorg.js';
 
 // DOM Elements
@@ -86,6 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Bind config events
   bindConfigEvents();
+
+  // Update folder stats when selection changes
+  const bookmarkFolderSelect = document.getElementById('bookmarkFolderSelect');
+  if (bookmarkFolderSelect) {
+    bookmarkFolderSelect.addEventListener('change', () => updateFolderStats(bookmarkFolderSelect.value));
+  }
 
   // Bind reorg actions
   if (btnLaunch) btnLaunch.addEventListener('click', () => startReorganization());

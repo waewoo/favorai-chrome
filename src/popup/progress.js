@@ -60,7 +60,47 @@ export function loadBookmarkFolders() {
     if (!bookmarkFolderSelect.value || bookmarkFolderSelect.value === 'root') {
       bookmarkFolderSelect.value = '1';
     }
+
+    updateFolderStats(bookmarkFolderSelect.value);
   });
+}
+
+function countBookmarksInTree(node) {
+  if (!node) return 0;
+  if (node.url) return 1;
+  return (node.children || []).reduce((sum, child) => sum + countBookmarksInTree(child), 0);
+}
+
+function estimateTokens(node) {
+  if (!node) return 0;
+  if (node.url) return Math.ceil((node.title || '').length / 4) + 3;
+  const folderTokens = Math.ceil((node.title || '').length / 4) + 2;
+  return folderTokens + (node.children || []).reduce((sum, child) => sum + estimateTokens(child), 0);
+}
+
+export function updateFolderStats(folderId) {
+  const el = document.getElementById('folderStats');
+  if (!el) return;
+
+  const fetch = (id) => {
+    if (!id || id === 'root' || id === '0') {
+      chrome.bookmarks.getTree(trees => updateFolderStatsFromNode(el, trees?.[0]));
+    } else {
+      chrome.bookmarks.getSubTree(id, nodes => updateFolderStatsFromNode(el, nodes?.[0]));
+    }
+  };
+  fetch(folderId);
+}
+
+function updateFolderStatsFromNode(el, node) {
+  if (!node) { el.textContent = ''; return; }
+  const count = countBookmarksInTree(node);
+  const tokens = estimateTokens(node);
+  const countStr = count.toLocaleString();
+  const tokenStr = tokens.toLocaleString();
+  const bookmarksLabel = chrome.i18n.getMessage('folderStatsBookmarks', [countStr]) || `~${countStr} bookmarks`;
+  const tokensLabel = chrome.i18n.getMessage('folderStatsTokens', [tokenStr]) || `~${tokenStr} tokens est.`;
+  el.textContent = `${bookmarksLabel} · ${tokensLabel}`;
 }
 
 export function stopReorganization() {
