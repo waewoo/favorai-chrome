@@ -15,6 +15,14 @@ describe('escapeHtml', () => {
   it('handles all at once', () => {
     expect(escapeHtml('<script>alert(\'xss\')</script>')).toBe('&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;');
   });
+  it('neutralizes an event-handler payload before HTML insertion', () => {
+    const payload = '" autofocus onfocus="alert(1)" <script>alert(2)</script>';
+    const html = `<button title="${escapeHtml(payload)}">Safe</button>`;
+
+    expect(html).toBe('<button title="&quot; autofocus onfocus=&quot;alert(1)&quot; &lt;script&gt;alert(2)&lt;/script&gt;">Safe</button>');
+    expect(html).not.toContain('title="" autofocus');
+    expect(html).not.toContain('<script>');
+  });
   it('does not double-escape', () => {
     expect(escapeHtml('&amp;')).toBe('&amp;amp;');
   });

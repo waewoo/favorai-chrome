@@ -2,6 +2,10 @@
  * Popup Utilities & Constants
  */
 
+import { sanitizeText } from '../utils/sanitizeText.js';
+
+export { sanitizeText };
+
 export const PROVIDER_DEFAULTS = {
   openai:   { url: 'https://api.openai.com/v1',                   model: 'gpt-5.5',             maxTokens: '131072' },
   google:   { url: 'https://generativelanguage.googleapis.com',   model: 'gemini-3.5-flash',    maxTokens: '65536'  },
@@ -61,8 +65,8 @@ export function showConfirm(title, message) {
   const modalBtnConfirm = document.getElementById('modalBtnConfirm');
   const modalBtnCancel = document.getElementById('modalBtnCancel');
 
-  modalTitle.textContent = title;
-  modalMessage.textContent = message;
+  modalTitle.textContent = sanitizeText(title);
+  modalMessage.textContent = sanitizeText(message);
   confirmModal.classList.remove('hidden');
 
   return new Promise((resolve) => {
@@ -85,7 +89,7 @@ export function showToast(message, toastOrId = 'toast') {
     ? document.getElementById(toastOrId)
     : toastOrId;
   if (toast) {
-    toast.textContent = message;
+    toast.textContent = sanitizeText(message);
     toast.classList.add('show');
   }
 }
