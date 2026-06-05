@@ -176,11 +176,9 @@ export async function startReorganization(mode) {
     if (!granted) {
       const approved = await chrome.permissions.request({ origins: ['<all_urls>'] });
       if (!approved) {
-        markReorganizationIdle();
         checkDeadLinksCheckbox.checked = false;
         chrome.storage.sync.set({ checkDeadLinks: false });
-        addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée.', 'warning');
-        return;
+        addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée. L\'analyse continue.', 'warning');
       }
     }
   }

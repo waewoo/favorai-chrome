@@ -26,7 +26,7 @@
   "checkDeadLinksLabel": { "message": "Vérifier liens morts, redirections et articles doublons (lent)" },
   "bookmarkFolderLabel": { "message": "Dossier à réorganiser" },
   "bookmarkFolderHelp": { "message": "L'IA analysera et réorganisera uniquement le contenu situé sous ce dossier (permet de cibler précisément une partie de vos favoris)." },
-  "deadLinksPermissionDenied": { "message": "Permission refusée — vérifications avancées désactivées. Accordez l'accès à toutes les URLs pour vérifier les liens morts, redirections et articles doublons." },
+  "deadLinksPermissionDenied": { "message": "Permission refusée — vérification des liens désactivée. L'analyse continue sans cette étape. Accordez l'accès à toutes les URLs pour activer la vérification des liens." },
   "btnMinimal": { "message": "Minimal" },
   "btnComplete": { "message": "Complet" },
   "btnMinimalTitle": { "message": "Ranger uniquement les favoris mal classés, sans modifier la structure des dossiers existants." },

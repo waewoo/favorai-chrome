@@ -26,7 +26,7 @@
   "checkDeadLinksLabel": { "message": "Check dead links, redirects and article duplicates (slow)" },
   "bookmarkFolderLabel": { "message": "Bookmark Folder" },
   "bookmarkFolderHelp": { "message": "The AI will only reorganize bookmarks and subfolders inside this selected folder (allows you to target a specific folder)." },
-  "deadLinksPermissionDenied": { "message": "Permission denied — advanced link checks disabled. Grant access to all URLs to verify dead links, redirects and article duplicates." },
+  "deadLinksPermissionDenied": { "message": "Permission denied — dead link checks disabled. The analysis will continue without this step. Grant access to all URLs to enable link verification." },
   "btnMinimal": { "message": "Minimal" },
   "btnComplete": { "message": "Complete" },
   "btnMinimalTitle": { "message": "Only organize misplaced bookmarks, without modifying the existing folder structure." },

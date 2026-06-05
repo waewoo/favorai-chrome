@@ -189,7 +189,7 @@ async function inspectUrl(url, userSignal, includeContent = false) {
       if (userSignal?.aborted) throw e;
       response = await fetch(url, { method: 'GET', signal: controller.signal });
     }
-    if (response.status === 404 || response.status >= 500) {
+    if (response.status === 404 || response.status === 410) {
       return { dead: true, reason: `HTTP ${response.status}`, finalUrl: response.url };
     }
 
@@ -199,10 +199,9 @@ async function inspectUrl(url, userSignal, includeContent = false) {
       result.html = await response.text();
     }
     return result;
-  } catch (error) {
+  } catch {
     if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-    const isTimeout = error.name === 'AbortError' || error.message?.includes('timeout');
-    return { dead: true, reason: isTimeout ? 'Timeout (10s)' : 'Connection error (DNS/Network)' };
+    return { dead: false };
   } finally {
     clearTimeout(tid);
     if (userSignal) userSignal.removeEventListener('abort', onAbort);
