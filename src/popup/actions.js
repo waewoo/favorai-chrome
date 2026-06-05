@@ -5,6 +5,8 @@
 import { showConfirm, showToast, addLog } from './utils.js';
 import { showView } from './navigation.js';
 
+const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
+
 export function applyActionFilter(filterValue) {
   const actionListContainer = document.getElementById('actionListContainer');
   const actionCountSpan = document.getElementById('actionCount');
@@ -60,18 +62,18 @@ export async function applyCheckedActions() {
   const approvedActionIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
 
   if (approvedActionIds.length === 0) {
-    showToast('Aucune modification sélectionnée');
+    showToast(t('toastNoChangesSelected', 'No changes selected.'));
     return;
   }
 
-  const title = chrome.i18n.getMessage('btnApply') || 'Apply selected changes';
-  const message = chrome.i18n.getMessage('dialogConfirmApply') || 'Are you sure you want to apply changes?';
+  const title = t('btnApply', 'Apply selected changes');
+  const message = t('dialogConfirmApply', 'Are you sure you want to apply changes?');
   const ok = await showConfirm(title, message);
   if (!ok) return;
 
   if (btnApply) {
     btnApply.disabled = true;
-    btnApply.textContent = 'Application en cours...';
+    btnApply.textContent = t('btnApplying', 'Applying...');
   }
   if (btnCancel) btnCancel.disabled = true;
 
@@ -80,26 +82,26 @@ export async function applyCheckedActions() {
     approvedActionIds: approvedActionIds
   }, (response) => {
     if (btnApply) {
-      btnApply.textContent = 'Appliquer la sélection';
+      btnApply.textContent = t('btnApply', 'Apply selected changes');
       btnApply.disabled = false;
     }
     if (btnCancel) btnCancel.disabled = false;
 
     if (chrome.runtime.lastError) {
-      addLog(`Erreur système lors de l'application : ${chrome.runtime.lastError.message}`, 'error');
-      showToast("Échec de l'application");
+      addLog(t('logSystemApplyError', 'System apply error: {error}').replace('{error}', chrome.runtime.lastError.message), 'error');
+      showToast(t('toastApplyFailed', 'Apply failed.'));
       return;
     }
 
     if (response && response.success) {
-      showToast('Favoris mis à jour !');
+      showToast(t('toastBookmarksUpdated', 'Bookmarks updated.'));
       showView('main');
-      addLog('> Les modifications sélectionnées ont été appliquées avec succès !', 'success');
-      addLog('> Vos favoris sont maintenant à jour.', 'success');
+      addLog(t('logApplySuccess', '> Selected changes were applied successfully.'), 'success');
+      addLog(t('logBookmarksUpdated', '> Your bookmarks are now up to date.'), 'success');
     } else {
-      const errorMsg = response?.error || 'Erreur inconnue.';
-      addLog(`Erreur lors de l'application : ${errorMsg}`, 'error');
-      showToast("Échec de l'application");
+      const errorMsg = response?.error || t('errorUnknown', 'Unknown error.');
+      addLog(t('logApplyFailed', 'Apply error: {error}').replace('{error}', errorMsg), 'error');
+      showToast(t('toastApplyFailed', 'Apply failed.'));
     }
   });
 }

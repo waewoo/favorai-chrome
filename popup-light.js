@@ -90,7 +90,7 @@ function loadFolders() {
 
 // ── Populate folder select ─────────────────────────────────────────────────────
 function populateFolderSelect() {
-  manualFolderSelect.innerHTML = '';
+  manualFolderSelect.textContent = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
   placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');

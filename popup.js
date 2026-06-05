@@ -142,8 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!ok) return;
 
       chrome.storage.local.remove('reorgHistory', () => {
-        showToast('Historique effacé');
-        addLog('> Historique des réorganisations effacé.', 'info');
+        showToast(chrome.i18n.getMessage('toastHistoryCleared') || 'History cleared.');
+        addLog(chrome.i18n.getMessage('logHistoryCleared') || '> Reorganization history cleared.', 'info');
         renderHistory();
       });
     });

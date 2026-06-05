@@ -426,7 +426,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       const entry = session.entries[entryIndex];
       rollbackSession([entry])
-        .then(() => {
+        .then((result) => {
+          if (result.failureCount > 0) {
+            const failure = result.failures[0];
+            sendResponse({ success: false, error: failure?.message || chrome.i18n.getMessage('historyRollbackFailed') || 'Rollback failed.' });
+            return;
+          }
           session.entries.splice(entryIndex, 1);
           if (session.entries.length === 0) {
             history.splice(sessionIndex, 1);
@@ -480,10 +485,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       const session = history[sessionIndex];
       rollbackSession(session.entries)
-        .then(() => {
-          history.splice(sessionIndex, 1);
+        .then((result) => {
+          if (result.failureCount > 0) {
+            const failedIds = new Set(result.failedEntryIds);
+            session.entries = failedIds.size > 0
+              ? session.entries.filter(entry => failedIds.has(entry.id))
+              : session.entries;
+          } else {
+            history.splice(sessionIndex, 1);
+          }
           chrome.storage.local.set({ reorgHistory: history }, () => {
-            sendResponse({ success: true });
+            sendResponse({
+              success: result.failureCount === 0,
+              partial: result.successCount > 0 && result.failureCount > 0,
+              rollback: result
+            });
           });
         })
         .catch(err => {

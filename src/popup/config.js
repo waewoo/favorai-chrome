@@ -46,7 +46,7 @@ export function updateModelOptions(currentModelValue) {
   if (!modelSelect || !modelNameInput) return;
 
   // Clear existing options
-  modelSelect.innerHTML = '';
+  modelSelect.textContent = '';
 
   chrome.storage.local.get(['cachedApiModels'], (res) => {
     const cached = res.cachedApiModels || {};

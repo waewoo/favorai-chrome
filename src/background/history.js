@@ -33,10 +33,17 @@ export function saveSessionToHistory(entries, mode, explanation = '') {
  */
 export async function rollbackSession(historyEntries) {
   const reversed = [...historyEntries].reverse();
+  const result = {
+    successCount: 0,
+    failureCount: 0,
+    failedEntryIds: [],
+    failures: []
+  };
   const idMap = {}; // ancien ID → nouvel ID recréé
 
   for (const entry of reversed) {
     try {
+      let handled = true;
       if (entry.type === 'create_folder') {
         const realId = idMap[entry.realId] || entry.realId;
         await chrome.bookmarks.remove(realId);
@@ -60,10 +67,21 @@ export async function rollbackSession(historyEntries) {
           ...(entry.url ? { url: entry.url } : {})
         });
         idMap[entry.nodeId] = created.id;
+      } else {
+        handled = false;
       }
-    } catch {
-      // Rollback error - continue
-      // // console.error('Rollback error for entry:', entry);
+      if (handled) result.successCount++;
+    } catch (error) {
+      result.failureCount++;
+      if (entry.id) result.failedEntryIds.push(entry.id);
+      result.failures.push({
+        entryId: entry.id || '',
+        type: entry.type,
+        title: entry.title || entry.oldTitle || entry.newTitle || '',
+        message: error?.message || String(error)
+      });
     }
   }
+
+  return result;
 }

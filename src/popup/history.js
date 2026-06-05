@@ -4,6 +4,8 @@
 
 import { isSafeUrl, formatExplanation, showConfirm, showToast, addLog } from './utils.js';
 
+const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
+
 export function renderHistory() {
   const historyListContainer = document.getElementById('historyListContainer');
   const btnClearHistory = document.getElementById('btnClearHistory');
@@ -16,7 +18,7 @@ export function renderHistory() {
     if (history.length === 0) {
       const emptyDiv = document.createElement('div');
       emptyDiv.style.cssText = 'padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;';
-      emptyDiv.textContent = chrome.i18n.getMessage('historyEmpty') || 'Aucun historique de réorganisation disponible.';
+      emptyDiv.textContent = t('historyEmpty', 'No session history available.');
       historyListContainer.appendChild(emptyDiv);
       if (btnClearHistory) btnClearHistory.style.display = 'none';
       return;
@@ -27,10 +29,10 @@ export function renderHistory() {
     history.forEach((session) => {
       const dateStr = new Date(session.timestamp).toLocaleString();
       const modeLabel = session.mode === 'complete'
-        ? (chrome.i18n.getMessage('btnComplete') || 'Complet')
+        ? t('btnComplete', 'Complete')
         : session.mode === 'forgotten'
-          ? (chrome.i18n.getMessage('tabForgotten') || '🕰️ Oubliés')
-          : (chrome.i18n.getMessage('btnMinimal') || 'Minimal');
+          ? t('tabForgotten', 'Forgotten')
+          : t('btnMinimal', 'Minimal');
       
       const sessionDiv = document.createElement('div');
       sessionDiv.className = 'action-group';
@@ -46,18 +48,23 @@ export function renderHistory() {
       const modeBadge = document.createElement('span');
       modeBadge.style.cssText = 'margin-left: 6px; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);';
       modeBadge.textContent = modeLabel;
+
+      const countBadge = document.createElement('span');
+      countBadge.style.cssText = 'margin-left: 6px; font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05);';
+      countBadge.textContent = t('historyEntryCount', '{count} change(s)').replace('{count}', String(session.entries.length));
       
       const leftContainer = document.createElement('div');
       leftContainer.appendChild(titleSpan);
       leftContainer.appendChild(modeBadge);
+      leftContainer.appendChild(countBadge);
 
       const undoBtn = document.createElement('button');
       undoBtn.className = 'btn btn-flat btn-rollback';
       undoBtn.setAttribute('data-id', session.id);
       undoBtn.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); color: #818cf8;';
-      undoBtn.textContent = '⏪ ' + (chrome.i18n.getMessage('btnRollback') || 'Annuler Tout');
-      undoBtn.title = chrome.i18n.getMessage('btnRollback');
-      undoBtn.setAttribute('aria-label', `Annuler toute la session du ${dateStr}`);
+      undoBtn.textContent = '⏪ ' + t('btnRollback', 'Undo session');
+      undoBtn.title = t('btnRollback', 'Undo session');
+      undoBtn.setAttribute('aria-label', t('historyRollbackSessionLabel', 'Undo the full session from {date}').replace('{date}', dateStr));
 
       headerDiv.appendChild(leftContainer);
       headerDiv.appendChild(undoBtn);
@@ -137,7 +144,7 @@ export function renderHistory() {
         entryRollbackBtn.setAttribute('data-entry-id', entry.id);
         entryRollbackBtn.style.cssText = 'font-size: 8px; padding: 2px 4px; line-height: 1; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; border-radius: 4px; cursor: pointer;';
         entryRollbackBtn.textContent = '⏪';
-        entryRollbackBtn.title = 'Annuler cette modification spécifique';
+        entryRollbackBtn.title = t('historyRollbackEntryTitle', 'Undo this change');
 
         const entryDeleteBtn = document.createElement('button');
         entryDeleteBtn.className = 'btn-entry-delete';
@@ -231,8 +238,8 @@ export function renderHistory() {
         const sessionId = target.getAttribute('data-session-id');
         const entryId = target.getAttribute('data-entry-id');
         
-        const title = chrome.i18n.getMessage('btnRollback') || 'Annuler la modification';
-        const message = 'Voulez-vous vraiment annuler cette modification spécifique ?';
+        const title = t('btnRollback', 'Undo change');
+        const message = t('dialogConfirmRollbackEntry', 'Undo this specific change?');
         const ok = await showConfirm(title, message);
         if (!ok) return;
 
@@ -245,15 +252,15 @@ export function renderHistory() {
           entryId
         }, (response) => {
           if (chrome.runtime.lastError) {
-            showToast("Erreur système");
+            showToast(t('toastSystemError', 'System error'));
             renderHistory();
             return;
           }
           if (response && response.success) {
-            showToast("Modification annulée !");
+            showToast(t('toastRollbackEntrySuccess', 'Change undone.'));
             renderHistory();
           } else {
-            showToast(response?.error || "Échec de l'annulation");
+            showToast(response?.error || t('toastRollbackFailed', 'Undo failed.'));
             renderHistory();
           }
         });
@@ -268,8 +275,8 @@ export function renderHistory() {
         const sessionId = target.getAttribute('data-session-id');
         const entryId = target.getAttribute('data-entry-id');
         
-        const title = 'Supprimer de l\'historique';
-        const message = 'Voulez-vous supprimer cette ligne de l\'historique sans annuler la modification sur vos favoris ?';
+        const title = t('historyDeleteEntryTitle', 'Delete from history');
+        const message = t('dialogConfirmDeleteHistoryEntry', 'Delete this history row without undoing the bookmark change?');
         const ok = await showConfirm(title, message);
         if (!ok) return;
 
@@ -282,15 +289,15 @@ export function renderHistory() {
           entryId
         }, (response) => {
           if (chrome.runtime.lastError) {
-            showToast("Erreur système");
+            showToast(t('toastSystemError', 'System error'));
             renderHistory();
             return;
           }
           if (response && response.success) {
-            showToast("Ligne supprimée !");
+            showToast(t('toastHistoryEntryDeleted', 'History row deleted.'));
             renderHistory();
           } else {
-            showToast(response?.error || "Échec de la suppression");
+            showToast(response?.error || t('toastHistoryEntryDeleteFailed', 'Deletion failed.'));
             renderHistory();
           }
         });
@@ -300,13 +307,13 @@ export function renderHistory() {
 }
 
 export async function performRollback(sessionId, btnElement) {
-  const title = chrome.i18n.getMessage('btnRollback') || 'Undo Changes';
-  const message = chrome.i18n.getMessage('dialogConfirmRollback') || 'Are you sure you want to undo this session\'s changes?';
+  const title = t('btnRollback', 'Undo Changes');
+  const message = t('dialogConfirmRollback', 'Are you sure you want to undo this session\'s changes?');
   const ok = await showConfirm(title, message);
   if (!ok) return;
   
   const originalText = btnElement.textContent;
-  btnElement.textContent = chrome.i18n.getMessage('btnRollbacking') || 'Annulation...';
+  btnElement.textContent = t('btnRollbacking', 'Undoing...');
   btnElement.disabled = true;
   
   chrome.runtime.sendMessage({
@@ -317,19 +324,27 @@ export async function performRollback(sessionId, btnElement) {
     btnElement.disabled = false;
     
     if (chrome.runtime.lastError) {
-      showToast("Erreur système lors du rollback");
-      addLog(`Erreur système lors de la restauration : ${chrome.runtime.lastError.message}`, 'error');
+      showToast(t('toastSystemRollbackError', 'System error during undo.'));
+      addLog(t('logSystemRollbackError', 'System rollback error: {error}').replace('{error}', chrome.runtime.lastError.message), 'error');
       return;
     }
     
     if (response && response.success) {
-      showToast(chrome.i18n.getMessage('btnRollbacked') || "Annulation réussie !");
-      addLog("> Restauration de la session effectuée avec succès.", "success");
+      showToast(t('btnRollbacked', 'Undone'));
+      addLog(t('logRollbackSuccess', '> Session restored successfully.'), 'success');
+      renderHistory();
+    } else if (response?.partial) {
+      const rollback = response.rollback || {};
+      const summary = t('toastRollbackPartial', '{success} change(s) undone, {failed} failed.')
+        .replace('{success}', String(rollback.successCount || 0))
+        .replace('{failed}', String(rollback.failureCount || 0));
+      showToast(summary);
+      addLog(summary, 'warning');
       renderHistory();
     } else {
-      const errorMsg = response?.error || 'Erreur inconnue.';
-      showToast("Échec de l'annulation");
-      addLog(`Erreur de restauration : ${errorMsg}`, 'error');
+      const errorMsg = response?.error || t('errorUnknown', 'Unknown error.');
+      showToast(t('toastRollbackFailed', 'Undo failed.'));
+      addLog(t('logRollbackFailed', 'Rollback error: {error}').replace('{error}', errorMsg), 'error');
     }
   });
 }

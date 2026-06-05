@@ -222,7 +222,7 @@ function pickBestDuplicate(nodes, originalMap) {
   return best;
 }
 
-function collectDuplicateGroups(bookmarks, originalMap, getKey, seenDuplicateIds = new Set()) {
+function collectDuplicateGroups(bookmarks, originalMap, getKey, seenDuplicateIds = new Set(), matchType = 'url') {
   const groups = new Map();
   for (const bm of bookmarks) {
     const key = getKey(bm);
@@ -239,7 +239,7 @@ function collectDuplicateGroups(bookmarks, originalMap, getKey, seenDuplicateIds
     const best = pickBestDuplicate(candidates, originalMap);
     for (const node of candidates) {
       if (node.id !== best.id) {
-        duplicates.push({ duplicate: node, original: best });
+        duplicates.push({ duplicate: node, original: best, matchType });
         duplicateIds.add(node.id);
       }
     }
@@ -288,7 +288,7 @@ function collectContentDuplicateGroups(bookmarks, originalMap, signatures, seenD
     const best = pickBestDuplicate(uniqueCandidates, originalMap);
     for (const bm of uniqueCandidates) {
       if (bm.id !== best.id) {
-        duplicates.push({ duplicate: bm, original: best });
+        duplicates.push({ duplicate: bm, original: best, matchType: 'content' });
         duplicateIds.add(bm.id);
       }
     }
@@ -365,7 +365,7 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
 
   // Grouper par URL canonique: ignore http/https, www, fragments et tracking params.
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
-  let duplicates = collectDuplicateGroups(all, originalMap, bm => normalizeUrlForDuplicate(bm.url));
+  let duplicates = collectDuplicateGroups(all, originalMap, bm => normalizeUrlForDuplicate(bm.url), new Set(), 'url');
 
   let duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
   const unique = all.filter(bm => !duplicateIds.has(bm.id));
@@ -400,7 +400,8 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
       reachableUnique,
       originalMap,
       bm => finalUrls.get(bm.id),
-      duplicateIds
+      duplicateIds,
+      'redirect'
     );
     duplicates = duplicates.concat(redirectDuplicates);
     duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
@@ -623,7 +624,8 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
       params: {
         sourcePath: getPathFromMap(dup.parentId, originalMap),
         originalPath: getPathFromMap(original.parentId, originalMap),
-        originalTitle: original.title
+        originalTitle: original.title,
+        matchType: item.matchType || 'url'
       },
       category: 'clean'
     });
@@ -633,7 +635,7 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
     actions.push({
       id: `act_${counter++}`, type: 'delete_dead', targetId: bm.id,
       title: bm.title, url: bm.url, description: `${chrome.i18n.getMessage('actionDeadLink')} (${dead.reason})`,
-      params: { sourcePath: getPathFromMap(bm.parentId, originalMap) },
+      params: { sourcePath: getPathFromMap(bm.parentId, originalMap), reason: dead.reason },
       category: 'clean'
     });
   }

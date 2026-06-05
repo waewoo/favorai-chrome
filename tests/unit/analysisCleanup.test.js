@@ -68,6 +68,7 @@ describe('smart duplicate cleanup', () => {
     expect(result.duplicates).toHaveLength(1);
     expect(result.duplicates[0].duplicate.id).toBe('1');
     expect(result.duplicates[0].original.id).toBe('2');
+    expect(result.duplicates[0].matchType).toBe('url');
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
@@ -93,6 +94,7 @@ describe('smart duplicate cleanup', () => {
     expect(result.duplicates).toHaveLength(1);
     expect(result.duplicates[0].duplicate.id).toBe('1');
     expect(result.duplicates[0].original.id).toBe('2');
+    expect(result.duplicates[0].matchType).toBe('redirect');
   });
 
   it('detects same article content on different domains', async () => {
@@ -116,6 +118,7 @@ describe('smart duplicate cleanup', () => {
     expect(result.duplicates).toHaveLength(1);
     expect(result.duplicates[0].duplicate.id).toBe('2');
     expect(result.duplicates[0].original.id).toBe('1');
+    expect(result.duplicates[0].matchType).toBe('content');
   });
 
   it('detects syndicated articles with different site chrome around the same body', async () => {

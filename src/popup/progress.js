@@ -119,7 +119,7 @@ export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
   if (reorgBtnGroup) reorgBtnGroup.classList.add('hidden');
   if (btnStopReorg) btnStopReorg.classList.remove('hidden');
 
-  if (logContainer) logContainer.innerHTML = '';
+  if (logContainer) logContainer.textContent = '';
   addLog(`> Nouvelle tentative (${mode === 'complete' ? 'Complète' : 'Minimale'})...`, 'info');
   addLoadingLog('Interrogation de l\'IA en cours...');
   updateProgressBar(progressBarContainer, progressBar, 5);
@@ -213,7 +213,7 @@ export async function startReorganization(mode) {
   if (reorgBtnGroup) reorgBtnGroup.classList.add('hidden');
   if (btnStopReorg) btnStopReorg.classList.remove('hidden');
 
-  if (logContainer) logContainer.innerHTML = '';
+  if (logContainer) logContainer.textContent = '';
   const modeLabel = mode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
   addLog(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
   addLoadingLog('Interrogation de l\'IA en cours...');
@@ -270,7 +270,7 @@ export function restoreStatus() {
       if (btnStopReorg) btnStopReorg.classList.remove('hidden');
 
       if (logContainer) {
-        logContainer.innerHTML = '';
+        logContainer.textContent = '';
         status.logs.forEach(log => addLog(log.text, log.type));
       }
       addLoadingLog('Interrogation de l\'IA en cours...');
@@ -287,7 +287,7 @@ export function restoreStatus() {
       if (btnStopReorg) btnStopReorg.classList.add('hidden');
 
       if (logContainer && status.logs.length > 0) {
-        logContainer.innerHTML = '';
+        logContainer.textContent = '';
         status.logs.forEach(log => addLog(log.text, log.type));
       }
 

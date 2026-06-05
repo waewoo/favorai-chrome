@@ -6,6 +6,8 @@ import { formatExplanation, addLog, isSafeUrl } from './utils.js';
 import { updateApplyButtonState } from './actions.js';
 import { showView } from './navigation.js';
 
+const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
+
 export function displayRapport(actions, explanation, mode) {
   const explanationBlock = document.getElementById('explanationBlock');
   const iaExplanationText = document.getElementById('iaExplanationText');
@@ -20,7 +22,9 @@ export function displayRapport(actions, explanation, mode) {
   }
 
   if (reorgModeBadge) {
-    reorgModeBadge.textContent = mode === 'complete' ? 'Réorganisation Complète' : 'Réorganisation Minimale';
+    reorgModeBadge.textContent = mode === 'complete'
+      ? t('reportModeComplete', 'Complete reorganization')
+      : t('reportModeMinimal', 'Minimal reorganization');
     if (mode === 'complete') {
       reorgModeBadge.style.background = 'rgba(168, 85, 247, 0.2)';
       reorgModeBadge.style.color = '#c084fc';
@@ -96,9 +100,9 @@ export function displayRapport(actions, explanation, mode) {
   if (btnCancel) btnCancel.textContent = chrome.i18n.getMessage('btnBack') || 'Retour';
 
   const groups = {
-    clean: { title: '🧹 Nettoyage (Doublons & Liens morts)', list: [] },
-    structure: { title: '📁 Changements Structurels (Dossiers)', list: [] },
-    move: { title: '🔗 Déplacements de favoris', list: [] }
+    clean: { title: t('reportGroupClean', 'Cleanup'), list: [] },
+    structure: { title: t('reportGroupStructure', 'Folder changes'), list: [] },
+    move: { title: t('reportGroupMove', 'Bookmark moves'), list: [] }
   };
 
   for (const act of actions) {
@@ -188,7 +192,7 @@ export function displayRapport(actions, explanation, mode) {
       if (act.type === 'delete_duplicate') {
         const sub1 = document.createElement('span');
         sub1.className = 'action-sub';
-        sub1.textContent = 'Emplacement à supprimer : ';
+        sub1.textContent = t('reportDeleteLocation', 'Location to delete: ');
         const path1 = document.createElement('span');
         path1.className = 'path-highlight';
         path1.textContent = act.params.sourcePath;
@@ -197,7 +201,7 @@ export function displayRapport(actions, explanation, mode) {
 
         const sub2 = document.createElement('span');
         sub2.className = 'action-sub';
-        sub2.textContent = 'Existe déjà dans : ';
+        sub2.textContent = t('reportDuplicateOriginalLocation', 'Already exists in: ');
         const path2 = document.createElement('span');
         path2.className = 'path-highlight-target';
         path2.textContent = act.params.originalPath;
@@ -212,6 +216,11 @@ export function displayRapport(actions, explanation, mode) {
         }
         detailsDiv.appendChild(sub2);
 
+        const duplicateKind = document.createElement('span');
+        duplicateKind.className = 'action-sub';
+        duplicateKind.textContent = t(`duplicateMatch${String(act.params.matchType || 'url').replace(/^\w/, c => c.toUpperCase())}`, 'Duplicate match: normalized URL');
+        detailsDiv.appendChild(duplicateKind);
+
         const sub3 = document.createElement('span');
         sub3.className = 'action-sub';
         sub3.style.color = 'var(--error-color)';
@@ -221,7 +230,7 @@ export function displayRapport(actions, explanation, mode) {
       } else if (act.type === 'delete_dead') {
         const sub1 = document.createElement('span');
         sub1.className = 'action-sub';
-        sub1.textContent = 'Dossier source : ';
+        sub1.textContent = t('reportSourceFolder', 'Source folder: ');
         const path1 = document.createElement('span');
         path1.className = 'path-highlight';
         path1.textContent = act.params.sourcePath;
@@ -232,7 +241,7 @@ export function displayRapport(actions, explanation, mode) {
         sub2.className = 'action-sub';
         sub2.style.color = 'var(--error-color)';
         sub2.style.fontWeight = '500';
-        sub2.textContent = `${chrome.i18n.getMessage('actionDeadLink') || 'Lien mort'} (${act.description.replace('Lien mort détecté (', '').replace(')', '')})`;
+        sub2.textContent = `${t('actionDeadLink', 'Dead link detected')} (${act.params.reason || act.description})`;
         detailsDiv.appendChild(sub2);
       } else if (act.type === 'create_folder') {
         const sub1 = document.createElement('span');

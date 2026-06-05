@@ -144,7 +144,7 @@ describe('rollbackSession', () => {
       { type: 'delete', nodeId: '12', parentId: '1', title: 'Deleted Book', url: 'https://example.com' }
     ];
 
-    await rollbackSession(historyEntries);
+    const result = await rollbackSession(historyEntries);
 
     // Reversed order execution:
     // 1. delete rollback (recreates bookmark)
@@ -162,6 +162,12 @@ describe('rollbackSession', () => {
 
     // 4. create_folder rollback (removes folder)
     expect(chrome.bookmarks.remove).toHaveBeenCalledWith('new-folder-1');
+    expect(result).toEqual(expect.objectContaining({
+      successCount: 4,
+      failureCount: 0,
+      failedEntryIds: [],
+      failures: []
+    }));
   });
 
   it('should append session to existing history', async () => {
@@ -203,10 +209,13 @@ describe('rollbackSession', () => {
     chrome.bookmarks.update.mockRejectedValue(new Error('Mock update failed'));
 
     // Check that it completes successfully without rethrowing
-    await expect(rollbackSession(historyEntries)).resolves.not.toThrow();
+    const result = await rollbackSession(historyEntries);
 
     expect(chrome.bookmarks.remove).toHaveBeenCalledWith('new-folder-error');
     expect(chrome.bookmarks.update).toHaveBeenCalledWith('10', { title: 'Old Title Error' });
+    expect(result.successCount).toBe(0);
+    expect(result.failureCount).toBe(2);
+    expect(result.failures).toHaveLength(2);
   });
 
   it('should include oldUrl when renaming a bookmark with URL', async () => {
@@ -242,8 +251,10 @@ describe('rollbackSession', () => {
       { type: 'unknown_type', nodeId: '99' }
     ];
 
-    await rollbackSession(historyEntries);
+    const result = await rollbackSession(historyEntries);
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(result.successCount).toBe(0);
+    expect(result.failureCount).toBe(0);
   });
 
   it('should recreate deleted bookmark without URL if url is not provided', async () => {
@@ -257,6 +268,61 @@ describe('rollbackSession', () => {
       parentId: '1',
       title: 'No URL Bookmark'
     });
+  });
+
+  it('should recreate deleted bookmark with URL when url is provided', async () => {
+    chrome.bookmarks.create.mockResolvedValue({ id: 'recreated-1' });
+
+    const historyEntries = [
+      { type: 'delete', nodeId: '16', parentId: '1', title: 'URL Bookmark', url: 'https://example.com' }
+    ];
+
+    await rollbackSession(historyEntries);
+
+    expect(chrome.bookmarks.create).toHaveBeenCalledWith({
+      parentId: '1',
+      title: 'URL Bookmark',
+      url: 'https://example.com'
+    });
+  });
+
+  it('should record failedEntryIds when a rollback entry with id fails', async () => {
+    chrome.bookmarks.remove.mockRejectedValue(new Error('Mock delete failed'));
+
+    const historyEntries = [
+      { id: 'entry-1', type: 'create_folder', realId: 'new-folder-error' }
+    ];
+
+    const result = await rollbackSession(historyEntries);
+
+    expect(result.failureCount).toBe(1);
+    expect(result.failedEntryIds).toEqual(['entry-1']);
+    expect(result.failures).toEqual([
+      expect.objectContaining({
+        entryId: 'entry-1',
+        type: 'create_folder',
+        title: '',
+        message: 'Mock delete failed'
+      })
+    ]);
+  });
+
+  it('should fall back to String(error) when rollback rejection has no message', async () => {
+    chrome.bookmarks.update.mockRejectedValue('plain failure');
+
+    const historyEntries = [
+      { id: 'entry-2', type: 'rename', nodeId: '10', oldTitle: 'Fallback Title' }
+    ];
+
+    const result = await rollbackSession(historyEntries);
+
+    expect(result.failureCount).toBe(1);
+    expect(result.failures).toEqual([
+      expect.objectContaining({
+        entryId: 'entry-2',
+        message: 'plain failure'
+      })
+    ]);
   });
 
   it('should map old IDs to new IDs during rollback', async () => {
