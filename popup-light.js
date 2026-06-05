@@ -123,7 +123,7 @@ function checkConfig() {
     if (provider !== 'ollama' && !apiKey) {
       elConfigAlert.classList.remove('hidden');
       btnAnalyze.disabled = true;
-      btnAnalyze.title = 'Veuillez configurer votre clé API IA d\'abord';
+      btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
     } else {
       elConfigAlert.classList.add('hidden');
       btnAnalyze.title = '';
@@ -165,7 +165,7 @@ function loadActiveTab() {
           const apiKey = res.apiKey || '';
           if (provider !== 'ollama' && !apiKey) {
             btnAnalyze.disabled = true;
-            btnAnalyze.title = 'Veuillez configurer votre clé API IA d\'abord';
+            btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
           } else {
             btnAnalyze.disabled = false;
             btnAnalyze.title = '';
@@ -202,15 +202,15 @@ function runAnalysis() {
     btnAnalyze.classList.remove('loading-dots');
 
     if (chrome.runtime.lastError) {
-      showError('❌ Erreur de communication avec le service worker.');
+      showError(chrome.i18n.getMessage('lightErrorWorkerComm'));
       return;
     }
 
     if (!response || !response.success) {
-      const msg = response?.error || "Échec de l'analyse IA.";
+      const msg = response?.error || chrome.i18n.getMessage('lightAnalysisFailed');
       // Detect config issues
       if (msg.includes('API key') || msg.includes('clé') || msg.includes('401') || msg.includes('403')) {
-        showError('🔑 Clé API manquante ou invalide. Ouvrez l\'interface complète pour configurer.');
+        showError(chrome.i18n.getMessage('lightInvalidApiKey'));
       } else {
         showError(`❌ ${msg}`);
       }
@@ -233,7 +233,7 @@ function runAnalysis() {
     let suggestedFolderId = null;
     if (lastSuggestion.action === 'create_new') {
       elFolderIcon.textContent = '📁';
-      elFolderLbl.textContent = 'Nouveau dossier';
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightNewFolder');
       const parentPath = resolveFolder(lastSuggestion.newFolderParentId);
       elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
       suggestedFolderId = 'new_folder';
@@ -244,17 +244,17 @@ function runAnalysis() {
       suggestedFolderId = lastSuggestion.targetFolderId;
     }
 
-    elReason.textContent = lastSuggestion.explanation || 'Recommandation sémantique de l\'IA.';
+    elReason.textContent = lastSuggestion.explanation || chrome.i18n.getMessage('lightSemanticRecommendation');
 
     // Handle duplicate warning
     if (lastDuplicate) {
-      elDuplicateLocation.textContent = `📂 Emplacement actuel : ${lastDuplicate.folderPath}`;
+      elDuplicateLocation.textContent = chrome.i18n.getMessage('lightDuplicateLocation', [lastDuplicate.folderPath]);
       elDuplicateWarning.style.display = 'block';
 
       // Disable confirm button if same location
       if (suggestedFolderId === lastDuplicate.folderId) {
         btnConfirm.disabled = true;
-        btnConfirm.title = 'Choisissez un emplacement différent pour éviter les doublons';
+        btnConfirm.title = chrome.i18n.getMessage('lightDuplicateAvoid');
       } else {
         btnConfirm.disabled = false;
         btnConfirm.title = '';
@@ -307,7 +307,7 @@ function confirmSave() {
 function saveNewBookmark() {
   btnConfirm.disabled = true;
   const orig = btnConfirm.textContent;
-  btnConfirm.textContent = 'Enregistrement…';
+  btnConfirm.textContent = chrome.i18n.getMessage('lightSaving');
 
   chrome.runtime.sendMessage({
     action: 'save_suggested_bookmark',
@@ -318,7 +318,7 @@ function saveNewBookmark() {
     btnConfirm.textContent = orig;
 
     if (chrome.runtime.lastError) {
-      showError('❌ Erreur lors de l\'enregistrement.');
+      showError(chrome.i18n.getMessage('lightErrorSaving'));
       return;
     }
 
@@ -338,17 +338,17 @@ function saveManualBookmark() {
   const folderId = manualFolderSelect.value;
 
   if (!title) {
-    showError('❌ Veuillez entrer un titre.');
+    showError(chrome.i18n.getMessage('lightManualTitleRequired'));
     return;
   }
   if (!folderId) {
-    showError('❌ Veuillez sélectionner un dossier.');
+    showError(chrome.i18n.getMessage('lightManualFolderRequired'));
     return;
   }
 
   btnManualConfirm.disabled = true;
   const orig = btnManualConfirm.textContent;
-  btnManualConfirm.textContent = 'Enregistrement…';
+  btnManualConfirm.textContent = chrome.i18n.getMessage('lightSaving');
 
   chrome.runtime.sendMessage({
     action: 'save_manual_bookmark',
@@ -358,7 +358,7 @@ function saveManualBookmark() {
     btnManualConfirm.textContent = orig;
 
     if (chrome.runtime.lastError) {
-      showError('❌ Erreur lors de l\'enregistrement.');
+      showError(chrome.i18n.getMessage('lightErrorSaving'));
       return;
     }
 
@@ -443,4 +443,10 @@ applyI18n();
 loadActiveTab();
 loadFolders();
 checkConfig();
+
+window.addEventListener('unhandledrejection', (event) => {
+  const msg = event.reason?.message || String(event.reason) || 'Unknown error';
+  console.error('Unhandled rejection in popup-light:', event.reason);
+  sharedShowToast(chrome.i18n.getMessage('popupUnhandledError', [msg]) || msg, elToast);
+});
 
