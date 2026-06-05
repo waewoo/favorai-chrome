@@ -334,6 +334,28 @@
       font-family: var(--font-family);
       text-decoration: underline;
     }
+
+    .toast {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(30,32,48,0.97);
+      border: 1px solid rgba(99,102,241,0.35);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 11px;
+      color: var(--text-main);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 999;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -468,14 +490,8 @@
   </div>
 
   <!-- Toast notification -->
-  <div id="lightToast" style="
-    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: rgba(30,32,48,0.97); border: 1px solid rgba(99,102,241,0.35);
-    border-radius: 8px; padding: 8px 16px; font-size: 11px; color: var(--text-main);
-    white-space: nowrap; opacity: 0; transition: opacity 0.25s, transform 0.25s;
-    pointer-events: none; z-index: 999;
-  "></div>
+  <div id="lightToast" class="toast"></div>
 
-  <script src="popup-light.js"></script>
+  <script type="module" src="popup-light.js"></script>
 </body>
 </html>

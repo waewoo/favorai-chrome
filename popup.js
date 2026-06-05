@@ -12,7 +12,7 @@ import {
   startReorganization, 
   stopReorganization, 
   applyCheckedActions, 
-  applyActionFilter, 
+  scheduleActionFilter, 
   toggleAllCheckboxes,
   showRetryButton,
   setControlsDisabled,
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filterBtns.forEach(b => b.classList.remove('active'));
       e.currentTarget.classList.add('active');
       const filterVal = e.currentTarget.getAttribute('data-filter');
-      applyActionFilter(filterVal);
+      scheduleActionFilter(filterVal);
     });
   });
 

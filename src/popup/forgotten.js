@@ -6,6 +6,7 @@
  */
 
 import { showToast, showConfirm } from './utils.js';
+import { createOption } from './dom.js';
 
 const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
 
@@ -64,49 +65,49 @@ async function scanForgotten(days) {
 
 function createCard(bm, container, onDelete) {
   const card = document.createElement('div');
+  card.className = 'forgotten-card';
   card.dataset.id = bm.id;
   card.dataset.parentId = bm.parentId;
   card.dataset.title = bm.title || '';
   card.dataset.url = bm.url || '';
   card.dataset.folderPath = bm.folderPath || '';
-  card.style.cssText = 'padding: 10px 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; transition: opacity .2s;';
 
   const header = document.createElement('div');
-  header.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;';
+  header.className = 'forgotten-card-header';
 
   const titleEl = document.createElement('div');
-  titleEl.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--text-main); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+  titleEl.className = 'forgotten-card-title';
   titleEl.textContent = bm.title || bm.url;
   titleEl.title = bm.title || bm.url;
 
   const ageBadge = document.createElement('span');
-  ageBadge.style.cssText = 'font-size: 10px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0;';
+  ageBadge.className = 'forgotten-card-age';
   ageBadge.textContent = timeAgo(bm.lastVisit);
 
   header.appendChild(titleEl);
   header.appendChild(ageBadge);
 
   const urlEl = document.createElement('div');
-  urlEl.style.cssText = 'font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 3px 0;';
+  urlEl.className = 'forgotten-card-url';
   urlEl.textContent = bm.url;
   urlEl.title = bm.url;
 
   const pathEl = document.createElement('div');
-  pathEl.style.cssText = 'font-size: 10px; color: var(--text-muted); margin-bottom: 8px; opacity: 0.7;';
+  pathEl.className = 'forgotten-card-path';
   pathEl.textContent = bm.folderPath ? `📁 ${bm.folderPath}` : '';
 
   const actions = document.createElement('div');
-  actions.style.cssText = 'display: flex; gap: 6px; flex-wrap: wrap;';
+  actions.className = 'forgotten-card-actions';
 
   const visitBtn = document.createElement('button');
   visitBtn.className = 'btn btn-flat';
-  visitBtn.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto;';
+  visitBtn.classList.add('forgotten-card-button', 'forgotten-card-button--visit');
   visitBtn.textContent = t('forgottenVisit');
   visitBtn.addEventListener('click', () => chrome.tabs.create({ url: bm.url }));
 
   const keepBtn = document.createElement('button');
   keepBtn.className = 'btn btn-flat';
-  keepBtn.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; border-color: rgba(99,102,241,0.3); color: #818cf8;';
+  keepBtn.classList.add('forgotten-card-button', 'forgotten-card-button--keep');
   keepBtn.textContent = t('forgottenKeep');
   keepBtn.addEventListener('click', () => {
     card.style.opacity = '0';
@@ -115,7 +116,7 @@ function createCard(bm, container, onDelete) {
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'btn btn-flat';
-  deleteBtn.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; border-color: rgba(239,68,68,0.3); color: #ef4444;';
+  deleteBtn.classList.add('forgotten-card-button', 'forgotten-card-button--delete');
   deleteBtn.textContent = t('forgottenDelete');
   deleteBtn.addEventListener('click', async () => {
     try {
@@ -174,54 +175,50 @@ export async function renderForgotten() {
   // Note: dynamic elements are NOT processed by translatePage() (which only runs on static HTML).
   // t() calls chrome.i18n.getMessage() directly — that is the correct i18n mechanism here.
   const title = document.createElement('div');
-  title.style.cssText = 'font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 6px;';
+  title.className = 'forgotten-section-title';
   title.setAttribute('data-i18n', 'tabForgotten'); // kept for E2E selector scoping
   title.textContent = t('tabForgotten');
 
   const desc = document.createElement('p');
-  desc.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4;';
+  desc.className = 'forgotten-section-desc';
   desc.textContent = t('forgottenDesc');
 
   // ── History limitation notice ─────────────────────────────────────────────
   const notice = document.createElement('div');
-  notice.style.cssText = 'display: flex; gap: 8px; align-items: flex-start; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px;';
+  notice.className = 'forgotten-notice';
   const noticeIcon = document.createElement('span');
-  noticeIcon.style.cssText = 'font-size: 13px; flex-shrink: 0;';
+  noticeIcon.className = 'forgotten-notice-icon';
   noticeIcon.textContent = 'ℹ️';
   const noticeText = document.createElement('p');
-  noticeText.style.cssText = 'font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0;';
+  noticeText.className = 'forgotten-notice-text';
   noticeText.textContent = t('forgottenHistoryNotice');
   notice.appendChild(noticeIcon);
   notice.appendChild(noticeText);
 
   // ── Controls ─────────────────────────────────────────────────────────────
   const controls = document.createElement('div');
-  controls.style.cssText = 'display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;';
+  controls.className = 'forgotten-controls';
 
   const label = document.createElement('label');
-  label.style.cssText = 'font-size: 11px; color: var(--text-muted);';
+  label.className = 'forgotten-controls-label';
   label.textContent = t('forgottenThresholdLabel');
 
   const select = document.createElement('select');
   select.id = 'forgottenThreshold';
-  select.style.cssText = 'flex: 1; min-width: 120px; max-width: 180px;';
+  select.className = 'forgotten-controls-select';
   [
     { value: '30', label: t('forgotten30Days') },
     { value: '60', label: t('forgotten60Days') },
     { value: '90', label: t('forgotten90Days') },
     { value: '0',  label: t('forgottenNeverRecorded') },
   ].forEach(({ value, label: lbl }) => {
-    const opt = document.createElement('option');
-    opt.value = value;
-    opt.textContent = lbl;
-    if (value === '60') opt.selected = true;
-    select.appendChild(opt);
+    select.appendChild(createOption(value, lbl, value === '60'));
   });
 
   const scanBtn = document.createElement('button');
   scanBtn.id = 'btnScanForgotten';
   scanBtn.className = 'btn btn-primary';
-  scanBtn.style.cssText = 'font-size: 11px; padding: 5px 14px; height: auto;';
+  scanBtn.classList.add('forgotten-scan-button');
   scanBtn.textContent = t('forgottenScan');
 
   controls.appendChild(label);
@@ -231,25 +228,25 @@ export async function renderForgotten() {
   // ── Results container ─────────────────────────────────────────────────────
   const countEl = document.createElement('div');
   countEl.id = 'forgottenCount';
-  countEl.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 8px; min-height: 16px;';
+  countEl.className = 'forgotten-count';
 
   const listContainer = document.createElement('div');
   listContainer.id = 'forgottenList';
-  listContainer.style.cssText = 'max-height: 340px; overflow-y: auto;';
+  listContainer.className = 'forgotten-list';
 
   const bulkActions = document.createElement('div');
   bulkActions.id = 'forgottenBulk';
-  bulkActions.style.cssText = 'display: none; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);';
+  bulkActions.className = 'forgotten-bulk';
 
   const deleteAllBtn = document.createElement('button');
   deleteAllBtn.className = 'btn btn-flat';
-  deleteAllBtn.style.cssText = 'font-size: 11px; flex: 1; border-color: rgba(239,68,68,0.3); color: #ef4444;';
+  deleteAllBtn.classList.add('forgotten-card-button', 'forgotten-card-button--delete');
   deleteAllBtn.setAttribute('data-i18n', 'forgottenDeleteAll');
   deleteAllBtn.textContent = t('forgottenDeleteAll');
 
   const keepAllBtn = document.createElement('button');
   keepAllBtn.className = 'btn btn-flat';
-  keepAllBtn.style.cssText = 'font-size: 11px; flex: 1; border-color: rgba(99,102,241,0.3); color: #818cf8;';
+  keepAllBtn.classList.add('forgotten-card-button', 'forgotten-card-button--keep');
   keepAllBtn.setAttribute('data-i18n', 'forgottenKeepAll');
   keepAllBtn.textContent = t('forgottenKeepAll');
 

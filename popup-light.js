@@ -1,3 +1,4 @@
+import { translatePage, showToast as sharedShowToast } from './src/popup/utils.js';
 /**
  * popup-light.js — FavorAI Light Mode
  * Handles the compact popup (Add Bookmark only).
@@ -6,22 +7,7 @@
 
 // ── i18n helpers ──────────────────────────────────────────────────────────────
 function applyI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const attr = el.getAttribute('data-i18n-attr') || 'textContent';
-    const msg = chrome.i18n.getMessage(key);
-    if (msg) {
-      if (attr === 'textContent') {
-        el.textContent = msg;
-      } else if (attr === 'placeholder') {
-        el.placeholder = msg;
-      } else if (attr === 'title') {
-        el.title = msg;
-      } else {
-        el.setAttribute(attr, msg);
-      }
-    }
-  });
+  translatePage();
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -61,13 +47,11 @@ const manualFolderSelect  = document.getElementById('lightManualFolder');
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg, duration = 2800) {
-  elToast.textContent = msg;
-  elToast.style.opacity = '1';
-  elToast.style.transform = 'translateX(-50%) translateY(0)';
+  if (!elToast) return;
+  sharedShowToast(msg, elToast);
   clearTimeout(showToast._timer);
   showToast._timer = setTimeout(() => {
-    elToast.style.opacity = '0';
-    elToast.style.transform = 'translateX(-50%) translateY(20px)';
+    elToast.classList.remove('show');
   }, duration);
 }
 
@@ -459,3 +443,4 @@ applyI18n();
 loadActiveTab();
 loadFolders();
 checkConfig();
+

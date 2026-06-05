@@ -80,8 +80,10 @@ export function showConfirm(title, message) {
   });
 }
 
-export function showToast(message) {
-  const toast = document.getElementById('toast');
+export function showToast(message, toastOrId = 'toast') {
+  const toast = typeof toastOrId === 'string'
+    ? document.getElementById(toastOrId)
+    : toastOrId;
   if (toast) {
     toast.textContent = message;
     toast.classList.add('show');

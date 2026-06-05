@@ -713,6 +713,165 @@
       animation: toast-fade-in-out 3s forwards;
     }
 
+    .forgotten-section-title {
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #818cf8;
+      margin-bottom: 6px;
+    }
+
+    .forgotten-section-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .forgotten-notice {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      background: rgba(99,102,241,0.07);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+    }
+
+    .forgotten-notice-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .forgotten-notice-text {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .forgotten-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .forgotten-controls-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .forgotten-controls-select {
+      flex: 1;
+      min-width: 120px;
+      max-width: 180px;
+    }
+
+    .forgotten-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      min-height: 16px;
+    }
+
+    .forgotten-list {
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .forgotten-bulk {
+      display: none;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .forgotten-card {
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: opacity .2s;
+    }
+
+    .forgotten-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .forgotten-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .forgotten-card-age,
+    .forgotten-card-url,
+    .forgotten-card-path {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .forgotten-card-url {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 3px 0;
+    }
+
+    .forgotten-card-path {
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .forgotten-card-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .forgotten-card-button {
+      font-size: 10px;
+      padding: 3px 8px;
+      height: auto;
+    }
+
+    .forgotten-bulk .forgotten-card-button {
+      flex: 1;
+    }
+
+    .forgotten-card-button--keep {
+      border-color: rgba(99,102,241,0.3);
+      color: #818cf8;
+    }
+
+    .forgotten-card-button--delete {
+      border-color: rgba(239,68,68,0.3);
+      color: #ef4444;
+    }
+
+    .forgotten-card-button--visit {
+      min-width: 0;
+    }
+
+    .forgotten-scan-button {
+      font-size: 11px;
+      padding: 5px 14px;
+      height: auto;
+    }
+
     @keyframes toast-fade-in-out {
       0% {
         transform: translateX(-50%) translateY(100px);
