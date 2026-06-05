@@ -899,6 +899,41 @@ describe('applyChanges', () => {
     )).rejects.toThrow('Bookmarks changed since analysis.');
   });
 
+  it('should report failures with correct title fallbacks for rename/move/delete', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    // Line 86: rename with empty newTitle → falls back to oldTitle
+    chrome.bookmarks.get.mockResolvedValue([{ id: '10', title: 'OldName', url: 'https://x.com', parentId: '1' }]);
+    chrome.bookmarks.update.mockRejectedValue(new Error('rename fail'));
+    const r1 = await applyChanges(
+      ['a1'],
+      [{ id: 'a1', type: 'rename_bookmark', params: { nodeId: '10', newTitle: '' } }],
+      'complete'
+    );
+    expect(r1.failures[0].title).toBe('OldName');
+
+    // Line 107: move where get returns empty title → falls back to act.title
+    chrome.bookmarks.get.mockResolvedValue([{ id: '20', title: '', parentId: '1' }]);
+    chrome.bookmarks.move.mockRejectedValue(new Error('move fail'));
+    const r2 = await applyChanges(
+      ['a2'],
+      [{ id: 'a2', type: 'move_bookmark', title: 'FallbackTitle', params: { nodeId: '20', newParentId: '1' } }],
+      'complete'
+    );
+    expect(r2.failures[0].title).toBe('FallbackTitle');
+
+    // Line 134: delete where get returned empty (old=null) and remove fails → '' fallback
+    chrome.bookmarks.get.mockResolvedValue([]);
+    chrome.bookmarks.remove.mockRejectedValue(new Error('delete fail'));
+    const r3 = await applyChanges(
+      ['a3'],
+      [{ id: 'a3', type: 'delete_duplicate', targetId: '99' }],
+      'complete'
+    );
+    expect(r3.failures[0].title).toBe('');
+  });
+
   it('should use fallback consistency error when guarded tree reads fail', async () => {
     chrome.bookmarks.getTree.mockRejectedValue(new Error('tree unavailable'));
     chrome.i18n.getMessage.mockReturnValueOnce('');

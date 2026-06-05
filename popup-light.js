@@ -1,4 +1,5 @@
 import { translatePage, showToast as sharedShowToast } from './src/popup/utils.js';
+import { ROOT_FOLDER_NAMES } from './src/popup/dom.js';
 /**
  * popup-light.js — FavorAI Light Mode
  * Handles the compact popup (Add Bookmark only).
@@ -71,8 +72,7 @@ function resolveFolder(folderId) {
   const entry = lastFolders.find(f => f.id === folderId);
   if (!entry) return folderId;
   const parts = entry.path.split(' > ');
-  const roots = ['Barre de favoris', 'Favoris', 'Bookmarks bar', 'Bookmarks Bar', 'Other bookmarks', 'Autres favoris', 'Mobile bookmarks'];
-  if (parts.length > 1 && roots.includes(parts[0])) return parts.slice(1).join(' > ');
+  if (parts.length > 1 && ROOT_FOLDER_NAMES.has(parts[0])) return parts.slice(1).join(' > ');
   return parts.join(' > ');
 }
 

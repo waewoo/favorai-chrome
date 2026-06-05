@@ -350,5 +350,9 @@
   "errRetryConfigMissing": { "message": "Impossible de réessayer : la configuration précédente est introuvable." },
   "logAskingAI": { "message": "Interrogation de l'IA en cours..." },
   "logRetryStarting": { "message": "> Nouvelle tentative ({mode})..." },
-  "errApiKeyRequiredLog": { "message": "> Erreur : clé API requise." }
+  "errApiKeyRequiredLog": { "message": "> Erreur : clé API requise." },
+  "toastApplyPartial": { "message": "Appliqué avec $count$ erreur(s). Certaines modifications n'ont pas pu être effectuées.", "placeholders": { "count": { "content": "$1" } } },
+  "logApplyPartial": { "message": "> Appliqué avec erreurs : $count$ opération(s) ont échoué.", "placeholders": { "count": { "content": "$1" } } },
+  "folderStatsBookmarks": { "message": "~$count$ favoris", "placeholders": { "count": { "content": "$1" } } },
+  "folderStatsTokens": { "message": "~$count$ tokens estimés", "placeholders": { "count": { "content": "$1" } } }
 }

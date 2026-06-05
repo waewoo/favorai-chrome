@@ -48,6 +48,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
 
   const idMap = {};
   const history = [];
+  const failures = [];
 
   // A. Créer les dossiers (ordre croissant de profondeur)
   const creates = toRun.filter(a => a.type === 'create_folder')
@@ -63,8 +64,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       const created = await chrome.bookmarks.create({ parentId, title: act.params.title });
       idMap[act.params.tempId] = created.id;
       history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
-    } catch {
-      // Failed to create folder - continue
+    } catch (e) {
+      failures.push({ type: act.type, title: act.params.title, error: e.message });
     }
   }
 
@@ -81,9 +82,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     try {
       await chrome.bookmarks.update(realId, update);
       history.push({ type: 'rename', nodeId: realId, oldTitle, newTitle: act.params.newTitle, oldUrl, newUrl: update.url || null, isFolder: !oldUrl, parentPath: getPathFromMap(parentId, nodeMap) });
-    } catch {
-      // Failed to rename - continue
-      // // console.error(`Error renaming ${realId}:`);
+    } catch (e) {
+      failures.push({ type: act.type, title: act.params.newTitle || oldTitle, error: e.message });
     }
   }
 
@@ -103,8 +103,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     try {
       await chrome.bookmarks.move(realId, { parentId: realPid });
       history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
-    } catch {
-      // Failed to move - continue
+    } catch (e) {
+      failures.push({ type: act.type, title: title || act.title, error: e.message });
     }
   }
 
@@ -130,9 +130,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
         await chrome.bookmarks.remove(realId);
       }
       if (old) history.push({ type: 'delete', nodeId: realId, title: old.title, url: old.url || null, parentId: old.parentId, isFolder: !old.url, sourcePath: getPathFromMap(old.parentId, nodeMap) });
-    } catch {
-      // Failed to delete - continue
-      // // console.error(`Error deleting ${realId}:`);
+    } catch (e) {
+      failures.push({ type: act.type, title: act.title || old?.title || '', error: e.message });
     }
   }
 
@@ -146,6 +145,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     }));
     await saveSessionToHistory(historyWithIds, mode, explanation);
   }
+
+  return { failures };
 }
 
 async function readBookmarkRoot(bookmarkFolderId) {

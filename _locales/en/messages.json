@@ -350,5 +350,9 @@
   "errRetryConfigMissing": { "message": "Cannot retry: previous configuration was not found." },
   "logAskingAI": { "message": "Querying AI..." },
   "logRetryStarting": { "message": "> New attempt ({mode})..." },
-  "errApiKeyRequiredLog": { "message": "> Error: API key required." }
+  "errApiKeyRequiredLog": { "message": "> Error: API key required." },
+  "toastApplyPartial": { "message": "Applied with $count$ error(s). Some changes could not be completed.", "placeholders": { "count": { "content": "$1" } } },
+  "logApplyPartial": { "message": "> Applied with errors: $count$ operation(s) failed.", "placeholders": { "count": { "content": "$1" } } },
+  "folderStatsBookmarks": { "message": "~$count$ bookmarks", "placeholders": { "count": { "content": "$1" } } },
+  "folderStatsTokens": { "message": "~$count$ tokens estimated", "placeholders": { "count": { "content": "$1" } } }
 }

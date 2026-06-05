@@ -19,21 +19,6 @@ let pendingActions = [];
 // currentAbortController is intentionally not persisted: if the SW is killed mid-analysis
 // the get_current_status handler detects state=analyzing + no controller and resets to idle.
 let currentAbortController = null;
-// popupWindowId is persisted to chrome.storage.local so it survives SW restarts.
-let popupWindowId = null;
-
-// Restore popupWindowId from storage on SW startup and verify the window still exists.
-chrome.storage.local.get(['popupWindowId'], (res) => {
-  if (res.popupWindowId !== null && res.popupWindowId !== undefined) {
-    chrome.windows.get(res.popupWindowId, (win) => {
-      if (chrome.runtime.lastError || !win) {
-        chrome.storage.local.remove('popupWindowId');
-      } else {
-        popupWindowId = res.popupWindowId;
-      }
-    });
-  }
-});
 
 function syncInterruptedAnalysisState(status) {
   const interruptedMessage = chrome.i18n.getMessage('bgAnalysisInterrupted') || 'Analyse interrompue.';
@@ -68,51 +53,6 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 handleStartupRecovery();
-
-chrome.action.onClicked.addListener(() => {
-  const popupUrl = chrome.runtime.getURL('popup.html');
-  if (popupWindowId !== null) {
-    chrome.windows.get(popupWindowId, (win) => {
-      if (chrome.runtime.lastError || !win) {
-        popupWindowId = null;
-        chrome.storage.local.remove('popupWindowId');
-        openPopupWindow(popupUrl);
-      } else {
-        chrome.windows.update(popupWindowId, { focused: true });
-      }
-    });
-  } else {
-    openPopupWindow(popupUrl);
-  }
-});
-
-// Single named listener — registered once, never duplicated across openPopupWindow calls.
-function onPopupWindowRemoved(id) {
-  if (id === popupWindowId) {
-    popupWindowId = null;
-    chrome.storage.local.remove('popupWindowId');
-    chrome.windows.onRemoved.removeListener(onPopupWindowRemoved);
-  }
-}
-
-function openPopupWindow(url) {
-  chrome.windows.create({
-    url,
-    type: 'popup',
-    width: 1200,
-    height: 1050,
-    left: 100,
-    top: 50
-  }, (win) => {
-    if (!chrome.runtime.lastError && win) {
-      popupWindowId = win.id;
-      chrome.storage.local.set({ popupWindowId: win.id });
-      // Remove before re-adding to prevent duplicate registrations if called rapidly.
-      chrome.windows.onRemoved.removeListener(onPopupWindowRemoved);
-      chrome.windows.onRemoved.addListener(onPopupWindowRemoved);
-    }
-  });
-}
 
 /**
  * Formate les messages d'erreur pour une meilleure lisibilité
@@ -389,12 +329,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         expectedTreeFingerprint: status.analysisTreeFingerprint,
         bookmarkFolderId: status.bookmarkFolderId
       })
-        .then(() => {
+        .then((result) => {
           currentStatus.state = 'idle';
           currentStatus.logs = [];
           currentStatus.analysisTreeFingerprint = null;
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
-          sendResponse({ success: true });
+          sendResponse({ success: true, failures: result?.failures || [] });
         })
         .catch(error => {
           sendResponse({ success: false, error: error.message });

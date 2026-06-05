@@ -94,10 +94,19 @@ export async function applyCheckedActions() {
     }
 
     if (response && response.success) {
-      showToast(t('toastBookmarksUpdated', 'Bookmarks updated.'));
+      const failures = response.failures || [];
+      if (failures.length > 0) {
+        showToast(t('toastApplyPartial', `Applied with ${failures.length} error(s).`).replace('$count$', failures.length));
+        addLog(t('logApplyPartial', `> Applied with errors: ${failures.length} operation(s) failed.`).replace('$count$', failures.length), 'warning');
+        for (const f of failures) {
+          addLog(`  ✗ ${f.type} "${f.title}": ${f.error}`, 'error');
+        }
+      } else {
+        showToast(t('toastBookmarksUpdated', 'Bookmarks updated.'));
+        addLog(t('logApplySuccess', '> Selected changes were applied successfully.'), 'success');
+        addLog(t('logBookmarksUpdated', '> Your bookmarks are now up to date.'), 'success');
+      }
       showView('main');
-      addLog(t('logApplySuccess', '> Selected changes were applied successfully.'), 'success');
-      addLog(t('logBookmarksUpdated', '> Your bookmarks are now up to date.'), 'success');
     } else {
       const errorMsg = response?.error || t('errorUnknown', 'Unknown error.');
       addLog(t('logApplyFailed', 'Apply error: {error}').replace('{error}', errorMsg), 'error');

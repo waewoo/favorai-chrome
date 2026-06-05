@@ -16,10 +16,10 @@ export function switchTab(tabId) {
     const btn = document.getElementById(tabs[id].btn);
     const panel = document.getElementById(tabs[id].panel);
     if (id === tabId) {
-      if (btn) btn.classList.add('active');
+      if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
       if (panel) panel.classList.remove('hidden');
     } else {
-      if (btn) btn.classList.remove('active');
+      if (btn) { btn.classList.remove('active'); btn.setAttribute('aria-selected', 'false'); }
       if (panel) panel.classList.add('hidden');
     }
   }
