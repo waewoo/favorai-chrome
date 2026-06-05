@@ -1,5 +1,8 @@
 name: E2E Tests (manual)
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -15,15 +18,16 @@ on:
 
 jobs:
   e2e:
+    name: E2E / Playwright
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -50,7 +54,7 @@ jobs:
     - name: Upload Playwright report
       id: upload-report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: playwright-report-${{ inputs.suite }}
         path: playwright-report/
@@ -61,7 +65,7 @@ jobs:
       if: always()
       run: |
         {
-          echo "## Playwright E2E report"
+          echo "## E2E Tests"
           echo ""
           echo "- Suite: \`${{ inputs.suite }}\`"
           if [ -n "${{ steps.upload-report.outputs.artifact-url }}" ]; then
@@ -69,6 +73,5 @@ jobs:
           else
             echo "- Artifact: not available because no HTML report was produced."
           fi
-          echo ""
-          echo "Failures are also annotated directly in the GitHub Actions logs via the Playwright \`github\` reporter."
+          echo "- Details: Playwright annotations appear in the run log."
         } >> "$GITHUB_STEP_SUMMARY"

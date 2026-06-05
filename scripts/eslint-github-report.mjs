@@ -54,18 +54,5 @@ for (const result of results) {
   }
 }
 
-if (process.env.GITHUB_STEP_SUMMARY) {
-  const summaryLines = [
-    '## ESLint report',
-    '',
-    `- Files with findings: ${fileCount}`,
-    `- Errors: ${errorCount}`,
-    `- Warnings: ${warningCount}`,
-    '',
-    'GitHub annotations are emitted for each ESLint finding above.'
-  ];
-
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summaryLines.join('\n')}\n`);
-}
-
 console.log(`ESLint findings processed: ${errorCount} errors, ${warningCount} warnings.`);
+console.log(`ESLint files with findings: ${fileCount}.`);

@@ -1,5 +1,8 @@
 name: FavorAI Extension CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main]
@@ -8,7 +11,7 @@ on:
 
 jobs:
   lint:
-    name: Lint
+    name: CI / Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -16,12 +19,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -41,7 +44,7 @@ jobs:
     - name: Upload ESLint report
       id: upload-eslint-report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: eslint-report
         path: reports/eslint.json
@@ -52,19 +55,18 @@ jobs:
       if: always()
       run: |
         {
-          echo "## ESLint report"
+          echo "## Lint"
           echo ""
           if [ -n "${{ steps.upload-eslint-report.outputs.artifact-url }}" ]; then
             echo "- Artifact: [eslint-report](${{ steps.upload-eslint-report.outputs.artifact-url }})"
           else
             echo "- Artifact: not available because no JSON report was produced."
           fi
-          echo ""
-          echo "ESLint annotations are emitted directly in the GitHub Actions log."
+          echo "- Details: GitHub annotations appear in the run log."
         } >> "$GITHUB_STEP_SUMMARY"
 
   test:
-    name: Unit Tests
+    name: CI / Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -73,12 +75,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -92,7 +94,7 @@ jobs:
     - name: Upload coverage report
       id: upload-coverage-report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: coverage-report
         path: coverage/
@@ -101,7 +103,7 @@ jobs:
     - name: Upload Vitest report
       id: upload-vitest-report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: vitest-report
         path: reports/unit-tests.xml
@@ -109,7 +111,7 @@ jobs:
         retention-days: 7
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         files: ./coverage/lcov.info
         fail_ci_if_error: true
@@ -119,7 +121,7 @@ jobs:
       if: always()
       run: |
         {
-          echo "## Unit test report"
+          echo "## Unit Tests"
           echo ""
           if [ -n "${{ steps.upload-coverage-report.outputs.artifact-url }}" ]; then
             echo "- Coverage artifact: [coverage-report](${{ steps.upload-coverage-report.outputs.artifact-url }})"
@@ -131,12 +133,11 @@ jobs:
           else
             echo "- Vitest artifact: not available because no JUnit report was produced."
           fi
-          echo ""
-          echo "Vitest uses the GitHub Actions reporter in CI, so failing tests also appear as annotations in the run."
+          echo "- Details: Vitest annotations appear in the run log."
         } >> "$GITHUB_STEP_SUMMARY"
 
   security:
-    name: Security Scan
+    name: CI / Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [lint, test]
@@ -145,10 +146,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -159,8 +160,17 @@ jobs:
     - name: Run Security Scan
       run: make security
 
+    - name: Publish security summary
+      if: always()
+      run: |
+        {
+          echo "## Security Scan"
+          echo ""
+          echo "- Details: run \`make security\` for the complete output."
+        } >> "$GITHUB_STEP_SUMMARY"
+
   mutation-testing:
-    name: Mutation Testing
+    name: CI / Mutation Testing
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [lint, test]
@@ -174,10 +184,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -191,7 +201,7 @@ jobs:
     - name: Upload mutation report
       id: upload-mutation-report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: mutation-report
         path: reports/mutation/mutation.html
@@ -201,11 +211,12 @@ jobs:
       if: always()
       run: |
         {
-          echo "## Mutation test report"
+          echo "## Mutation Testing"
           echo ""
           if [ -n "${{ steps.upload-mutation-report.outputs.artifact-url }}" ]; then
             echo "- Artifact: [mutation-report](${{ steps.upload-mutation-report.outputs.artifact-url }})"
           else
             echo "- Artifact: not available because no HTML report was produced."
           fi
+          echo "- Details: inspect the HTML report for surviving mutants."
         } >> "$GITHUB_STEP_SUMMARY"
