@@ -52,6 +52,28 @@ FavorAI/
 
 ---
 
+## 🪝 Git Hooks
+
+Use Husky for client-side Git hooks. It is part of the Node workflow, so the hooks are versioned and installed via the package `prepare` step.
+
+- `make install-hooks` regenerates the Husky hooks by running `npm run prepare`.
+- `pre-commit` runs `git diff --check`, `make lint`, `make test`, and `make security`.
+- `commit-msg` runs `commitlint` with `@commitlint/config-conventional`.
+- Conventional Commits features like `feat!:` and `BREAKING CHANGE:` footers are accepted by commitlint.
+
+---
+
+## 🧭 CodeGraph Support
+
+CodeGraph is an optional local knowledge graph used by Codex and other MCP-aware agents to answer structural questions about this repository with fewer file reads. It is not part of the extension runtime.
+
+- The project index lives in `.codegraph/` and is already ignored by Git.
+- Codex reads the CodeGraph MCP server from your local Codex configuration, not from a project `.mcp.json` file.
+- To install and initialize it for this repo, run `make install-codegraph`.
+- After installation, restart Codex if needed so the MCP server is picked up.
+
+---
+
 ## 🧬 Data Schemas & LLM Contracts
 
 To maintain state integrity, AI agents must respect the exact schemas used for LLM payload exchanges:
@@ -190,6 +212,8 @@ chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: 
 | `make lint` | ESLint — validates **all** JS files (src/, popup*.js, scripts/, tests/, config). **Run first.** |
 | `make lint-fix` | ESLint auto-fix |
 | `make test` | Vitest unit tests (172 tests, 100% coverage). **Run after lint.** |
+| `make install-hooks` | Generate Husky hooks via `npm run prepare` |
+| `make install-codegraph` | Install and configure CodeGraph, then initialize the local project index |
 | `make test-watch` | Vitest in interactive watch mode |
 | `make test-coverage` | Unit tests + formatted global coverage summary |
 | `make test-e2e` | Playwright e2e tests (106 tests, UI + integration). Runs `clean-e2e` first. |

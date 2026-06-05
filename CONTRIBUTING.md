@@ -17,7 +17,26 @@ Thanks for taking the time to help improve FavorAI.
 make lint && make test
 ```
 
-3. If your change affects popup UI or extension flows, also run:
+3. Install the local Git hooks once so commits are checked automatically:
+
+```bash
+make install-hooks
+```
+
+Husky manages the tracked hooks in `.husky/` and the `prepare` script installs them automatically after `npm install`:
+
+- `pre-commit`: runs `git diff --check`, `make lint`, `make test`, and `make security`
+- `commit-msg`: runs commitlint with `@commitlint/config-conventional`
+
+Commitlint supports Conventional Commits features like `feat!:` and `BREAKING CHANGE:` footers.
+
+CodeGraph is an optional local knowledge graph for agentic code navigation. It gives Codex a pre-indexed view of the repo so structural questions can be answered with fewer file reads. To install it and build the local index, run:
+
+```bash
+make install-codegraph
+```
+
+4. If your change affects popup UI or extension flows, also run:
 
 ```bash
 make test-e2e

@@ -63,11 +63,34 @@ To run tests, check linting, or package the extension, use the provided `Makefil
 
 `make security` also runs Gitleaks for secret leak detection. Install `gitleaks` locally, or make Docker available so the fallback scanner can run.
 
+Git hooks are managed with Husky. After `npm install`, the `prepare` script installs the hooks automatically. To regenerate them manually, run:
+
+```bash
+make install-hooks
+```
+
+That creates the tracked hooks in `.husky/`:
+
+- `pre-commit`: runs `git diff --check`, `make lint`, `make test`, and `make security`
+- `commit-msg`: runs commitlint with `@commitlint/config-conventional`
+
+Commit messages can use Conventional Commits features like `feat!:` and `BREAKING CHANGE:` footers, and commitlint will validate them correctly.
+
+CodeGraph is an optional local knowledge graph for agentic code navigation. It gives Codex a pre-indexed view of this repo so structural questions can be answered with fewer file reads. To install it and build the local index, run:
+
+```bash
+make install-codegraph
+```
+
+This uses `npx` to install and configure CodeGraph for the current project, then initializes the local `.codegraph/` index directory.
+
 #### Makefile Commands
 
 | Command | Description |
 |---|---|
 | `make install` | Install Node.js dependencies |
+| `make install-hooks` | Generate Husky hooks via `npm run prepare` |
+| `make install-codegraph` | Install and configure CodeGraph, then initialize the local project index |
 | `make lint` | Run ESLint code validation |
 | `make lint-fix` | Auto-fix linter warnings |
 | `make test` | Run Vitest unit tests (172 tests, 100% coverage) |

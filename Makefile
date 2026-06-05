@@ -1,6 +1,6 @@
 # Makefile for FavorAI extension
 
-.PHONY: help install install-ci lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
+.PHONY: help install install-ci install-hooks install-codegraph lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
 
 # Default goal: show help instructions
 help:
@@ -9,6 +9,8 @@ help:
 	@echo "========================================================================"
 	@echo "  make install               Install project dependencies (npm install)"
 	@echo "  make install-ci            Install dependencies for CI (npm ci --ignore-scripts)"
+	@echo "  make install-hooks         (Re)generate Husky hooks via npm run prepare"
+	@echo "  make install-codegraph     Install and configure CodeGraph for Codex/local indexing"
 	@echo "  make lint                  Run ESLint code validation checks"
 	@echo "  make lint-fix              Auto-fix linter warnings and format violations"
 	@echo "  make test                  Execute all Vitest unit tests (95%+ coverage)"
@@ -42,6 +44,17 @@ install:
 
 install-ci:
 	npm ci --ignore-scripts
+
+install-hooks:
+	@echo "Generating Husky hooks..."
+	npm run prepare
+	@echo "Husky hooks ready."
+
+install-codegraph:
+	@echo "Installing CodeGraph and wiring it for Codex..."
+	npx --yes @colbymchenry/codegraph install --target=auto --location=local --yes
+	npx --yes @colbymchenry/codegraph init -i
+	@echo "CodeGraph installed and project index initialized."
 
 # Show all outdated devDependencies (non-zero exit if any are outdated)
 check-deps:
@@ -145,5 +158,3 @@ release: clean-e2e
 	git push origin main --tags
 	@echo "🚀 Creating/updating GitHub Release..."
 	node scripts/release.js
-
-
