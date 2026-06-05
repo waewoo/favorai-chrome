@@ -409,7 +409,7 @@ function openAdvanced() {
 
 // ── Privacy policy ────────────────────────────────────────────────────────────
 function openPrivacy() {
-  chrome.tabs.create({ url: 'https://favorai.app/privacy' });
+  chrome.tabs.create({ url: chrome.runtime.getURL('privacy_policy.html') });
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────

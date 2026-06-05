@@ -36,6 +36,7 @@ const btnCancel = document.getElementById('btnCancel');
 const btnApply = document.getElementById('btnApply');
 const btnClearHistory = document.getElementById('btnClearHistory');
 const btnPrivacyPolicy = document.getElementById('btnPrivacyPolicy');
+const btnPrivacyLink = document.getElementById('btnPrivacyLink');
 
 const selectAllSpan = document.getElementById('selectAll');
 const selectNoneSpan = document.getElementById('selectNone');
@@ -149,6 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Privacy Policy click listener
   if (btnPrivacyPolicy) {
     btnPrivacyPolicy.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open(chrome.runtime.getURL('privacy_policy.html'));
+    });
+  }
+
+  if (btnPrivacyLink) {
+    btnPrivacyLink.addEventListener('click', (e) => {
       e.preventDefault();
       window.open(chrome.runtime.getURL('privacy_policy.html'));
     });
