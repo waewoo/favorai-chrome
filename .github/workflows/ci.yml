@@ -2,12 +2,69 @@ name: FavorAI Extension CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build-and-test:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: make install-ci
+
+    - name: Run ESLint with GitHub annotations
+      run: |
+        mkdir -p reports
+        set +e
+        npm run lint -- --format json --output-file reports/eslint.json
+        lint_exit_code=$?
+        node scripts/eslint-github-report.mjs reports/eslint.json
+        exit $lint_exit_code
+
+    - name: Upload ESLint report
+      id: upload-eslint-report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: eslint-report
+        path: reports/eslint.json
+        if-no-files-found: warn
+        retention-days: 7
+
+    - name: Publish lint summary
+      if: always()
+      run: |
+        {
+          echo "## ESLint report"
+          echo ""
+          if [ -n "${{ steps.upload-eslint-report.outputs.artifact-url }}" ]; then
+            echo "- Artifact: [eslint-report](${{ steps.upload-eslint-report.outputs.artifact-url }})"
+          else
+            echo "- Artifact: not available because no JSON report was produced."
+          fi
+          echo ""
+          echo "ESLint annotations are emitted directly in the GitHub Actions log."
+        } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -29,18 +86,26 @@ jobs:
     - name: Install dependencies
       run: make install-ci
 
-    - name: Run Linter
-      run: make lint
-
     - name: Run Unit Tests with Coverage
       run: make test-coverage
 
     - name: Upload coverage report
+      id: upload-coverage-report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: coverage/
+        retention-days: 7
+
+    - name: Upload Vitest report
+      id: upload-vitest-report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: vitest-report
+        path: reports/unit-tests.xml
+        if-no-files-found: warn
         retention-days: 7
 
     - name: Upload coverage to Codecov
@@ -50,15 +115,59 @@ jobs:
         fail_ci_if_error: true
         use_oidc: true
 
+    - name: Publish test summary
+      if: always()
+      run: |
+        {
+          echo "## Unit test report"
+          echo ""
+          if [ -n "${{ steps.upload-coverage-report.outputs.artifact-url }}" ]; then
+            echo "- Coverage artifact: [coverage-report](${{ steps.upload-coverage-report.outputs.artifact-url }})"
+          else
+            echo "- Coverage artifact: not available."
+          fi
+          if [ -n "${{ steps.upload-vitest-report.outputs.artifact-url }}" ]; then
+            echo "- Vitest artifact: [vitest-report](${{ steps.upload-vitest-report.outputs.artifact-url }})"
+          else
+            echo "- Vitest artifact: not available because no JUnit report was produced."
+          fi
+          echo ""
+          echo "Vitest uses the GitHub Actions reporter in CI, so failing tests also appear as annotations in the run."
+        } >> "$GITHUB_STEP_SUMMARY"
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint, test]
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: make install-ci
+
     - name: Run Security Scan
       run: make security
 
   mutation-testing:
+    name: Mutation Testing
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: build-and-test
+    needs: [lint, test]
+    permissions:
+      contents: read
     # Run on every push to main; on PRs only if the 'run-mutation' label is set.
-    # Mutation takes ~5 min — skip it on doc/config-only PRs to save CI minutes.
+    # Mutation takes ~5 min - skip it on doc/config-only PRs to save CI minutes.
     if: |
       github.event_name == 'push' ||
       contains(github.event.pull_request.labels.*.name, 'run-mutation')
@@ -80,9 +189,23 @@ jobs:
       run: make test-mutation
 
     - name: Upload mutation report
+      id: upload-mutation-report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: mutation-report
         path: reports/mutation/mutation.html
         retention-days: 30
+
+    - name: Publish mutation summary
+      if: always()
+      run: |
+        {
+          echo "## Mutation test report"
+          echo ""
+          if [ -n "${{ steps.upload-mutation-report.outputs.artifact-url }}" ]; then
+            echo "- Artifact: [mutation-report](${{ steps.upload-mutation-report.outputs.artifact-url }})"
+          else
+            echo "- Artifact: not available because no HTML report was produced."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

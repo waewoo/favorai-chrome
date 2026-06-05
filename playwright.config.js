@@ -7,6 +7,7 @@ process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} --no-deprecation`.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const extensionPath = __dirname;
+const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -32,5 +33,10 @@ export default defineConfig({
       }
     }
   ],
-  reporter: [['html', { outputFolder: 'playwright-report' }]]
+  reporter: isGitHubActions
+    ? [
+        ['github'],
+        ['html', { outputFolder: 'playwright-report' }]
+      ]
+    : [['html', { outputFolder: 'playwright-report' }]]
 });
