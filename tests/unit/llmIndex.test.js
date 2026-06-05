@@ -269,7 +269,11 @@ describe('llm/index.js', () => {
   });
 
   it('should handle template placeholders not in substitutions during suggestBookmarkLocation', async () => {
-    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+    vi.mocked(queryOpenAI).mockResolvedValue({
+      action: 'use_existing',
+      targetFolderId: '1',
+      explanation: 'OK'
+    });
 
     const config = {
       provider: 'openai',
@@ -284,6 +288,49 @@ describe('llm/index.js', () => {
     const callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
     // The placeholder {non_existent} is ignored by regex; {url} falls back to {url} via nullish coalescing
     expect(callArgs[3]).toContain('Recommend for My Bookmark and {url} and {non_existent}');
+  });
+
+  it('should log useful debug information when debugMode is enabled', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ reorganizedTree: {}, explanation: 'OK' });
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const bigTree = {
+      id: '0',
+      title: 'root',
+      children: [
+        {
+          id: '1',
+          title: 'Barre de favoris',
+          children: Array.from({ length: 20 }, (_, index) => ({
+            id: String(index + 10),
+            title: `Very long bookmark title ${index} with repeated context to trigger preview truncation`,
+            url: `https://example.com/${index}`
+          }))
+        }
+      ]
+    };
+
+    await queryLLM({ provider: 'openai', apiKey: 'test-key', debugMode: true }, bigTree, 'complete', null);
+
+    expect(logSpy).toHaveBeenCalledWith('=== DEBUG: LLM Query ===');
+    expect(logSpy).toHaveBeenCalledWith('Provider:', 'openai');
+    expect(logSpy.mock.calls.some((call) => typeof call[0] === 'string' && call[0].length === 500)).toBe(true);
+
+    logSpy.mockRestore();
+  });
+
+  it('should reject malformed reorganized tree responses before diff processing', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({
+      reorganizedTree: {
+        id: '0',
+        title: 'root',
+        children: { invalid: true }
+      },
+      explanation: 'Broken structure'
+    });
+
+    await expect(queryLLM({ provider: 'openai', apiKey: 'test-key' }, techTree, 'complete', null))
+      .rejects.toThrow(/children doit être un tableau/i);
   });
 
   // ─── Context block content assertions ───────────────────────────────────────

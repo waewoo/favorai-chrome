@@ -115,6 +115,18 @@ describe('cleanAndParseJSON', () => {
     expect(cleanAndParseJSON('{' + json + '}')).toEqual({ key: 'value' });
   });
 
+  it('should repair unescaped double quotes inside string values and trailing commas', () => {
+    const json = '{"title": "Research "Finance" resources", "children": [],}';
+    expect(cleanAndParseJSON(json)).toEqual({
+      title: 'Research "Finance" resources',
+      children: []
+    });
+  });
+
+  it('should scan to the end when no significant char follows a closing quote', () => {
+    expect(() => cleanAndParseJSON('{"title": "unfinished"   ')).toThrow();
+  });
+
   it('should escape raw literal newlines and carriage returns inside double-quoted string literals', () => {
     const json = '{\n  "key": "line1\r\nline2\nline3"\n}';
     expect(cleanAndParseJSON(json)).toEqual({ key: 'line1\nline2\nline3' });

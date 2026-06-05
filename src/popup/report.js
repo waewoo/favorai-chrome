@@ -2,7 +2,8 @@
  * Popup reorganization report rendering.
  */
 
-import { formatExplanation, addLog } from './utils.js';
+import { formatExplanation, addLog, isSafeUrl } from './utils.js';
+import { updateApplyButtonState } from './actions.js';
 import { showView } from './navigation.js';
 
 export function displayRapport(actions, explanation, mode) {

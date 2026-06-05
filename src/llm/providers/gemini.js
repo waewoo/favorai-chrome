@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage, retryTransientRequest } from '../utils.js';
 
 export async function queryGemini(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   const base = url.replace(/\/$/, '');
@@ -12,26 +12,29 @@ export async function queryGemini(url, key, model, prompt, systemPrompt, signal,
     console.log('User Prompt Length:', prompt.length);
     console.log('============================');
   }
-  const response = await fetchWithTimeout(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.1,
-        maxOutputTokens: maxTokens
-      }
-    }),
-    signal
-  });
-  if (!response.ok) {
-    const err = await response.text();
-    const e = new Error(formatErrorMessage('Gemini', response.status, err));
-    if (response.status === 429) e.isRateLimit = true;
-    throw e;
-  }
+  const response = await retryTransientRequest(async () => {
+    const currentResponse = await fetchWithTimeout(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+          maxOutputTokens: maxTokens
+        }
+      }),
+      signal
+    });
+    if (!currentResponse.ok) {
+      const err = await currentResponse.text();
+      const e = new Error(formatErrorMessage('Gemini', currentResponse.status, err));
+      if (currentResponse.status === 429 || currentResponse.status === 503) e.isRateLimit = true;
+      throw e;
+    }
+    return currentResponse;
+  }, { signal });
   const data = await response.json();
 
   if (debugMode) {

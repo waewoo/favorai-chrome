@@ -85,6 +85,11 @@ export function cleanAndParseJSON(text) {
   // This happens when the LLM uses [...] to mean "same children as before"
   cleanText = cleanText.replace(/\[\s*\.\.\.\s*\]/g, '[]');
 
+  // Repair two common JSON syntax issues produced by LLMs:
+  // - unescaped double quotes inside string values
+  // - trailing commas before } or ]
+  cleanText = repairCommonJsonSyntax(cleanText);
+
   try {
     return JSON.parse(cleanText);
   /* v8 ignore next */
@@ -224,6 +229,216 @@ export function cleanAndParseJSON(text) {
     console.error('[FavorAI] Full response:', text);
     throw new Error(`Réponse de l'IA invalide (non JSON). Voir la console pour le détail.`);
   }
+}
+
+function repairCommonJsonSyntax(text) {
+  let repaired = '';
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escapeNext) {
+      repaired += ch;
+      escapeNext = false;
+      continue;
+    }
+
+    if (ch === '\\') {
+      repaired += ch;
+      escapeNext = true;
+      continue;
+    }
+
+    if (!inString && ch === ',') {
+      const nextSignificant = getNextSignificantChar(text, i + 1);
+      if (nextSignificant === '}' || nextSignificant === ']') {
+        continue;
+      }
+      repaired += ch;
+      continue;
+    }
+
+    if (ch !== '"') {
+      repaired += ch;
+      continue;
+    }
+
+    if (!inString) {
+      inString = true;
+      repaired += ch;
+      continue;
+    }
+
+    const nextSignificant = getNextSignificantChar(text, i + 1);
+    if (nextSignificant === '' || nextSignificant === ':' || nextSignificant === ',' || nextSignificant === '}' || nextSignificant === ']') {
+      inString = false;
+      repaired += ch;
+    } else {
+      repaired += '\\"';
+    }
+  }
+
+  return repaired;
+}
+
+function getNextSignificantChar(text, startIndex) {
+  for (let i = startIndex; i < text.length; i++) {
+    const ch = text[i];
+    if (!/\s/.test(ch)) return ch;
+  }
+  return '';
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sleepWithAbort(ms, signal) {
+  if (ms <= 0) return Promise.resolve();
+  if (signal?.aborted) {
+    return Promise.reject(new DOMException('Aborted', 'AbortError'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const tid = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+
+    const onAbort = () => {
+      cleanup();
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+
+    const cleanup = () => {
+      clearTimeout(tid);
+      if (signal) signal.removeEventListener('abort', onAbort);
+    };
+
+    if (signal) signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+/**
+ * Exécute une requête en réessayant les erreurs temporaires (429/503).
+ * @template T
+ * @param {() => Promise<T>} operation
+ * @param {{
+ *   signal?: AbortSignal,
+ *   attempts?: number,
+ *   delayMs?: number,
+ *   backoffFactor?: number,
+ *   shouldRetry?: (error: any) => boolean
+ * }} [options]
+ * @returns {Promise<T>}
+ */
+export async function retryTransientRequest(operation, options = {}) {
+  const {
+    signal,
+    attempts = 3,
+    delayMs = 500,
+    backoffFactor = 2,
+    shouldRetry = (error) => Boolean(error?.isRateLimit || error?.isRetryable)
+  } = options;
+
+  let currentDelay = delayMs;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+    try {
+      return await operation();
+    } catch (error) {
+      const isRetryable = attempt < attempts && shouldRetry(error);
+      if (!isRetryable) throw error;
+      await sleepWithAbort(currentDelay, signal);
+      currentDelay = Math.max(0, Math.round(currentDelay * backoffFactor));
+    }
+  }
+}
+
+function validateTreeNodeShape(node, path) {
+  if (Array.isArray(node)) {
+    node.forEach((child, index) => validateTreeNodeShape(child, `${path}[${index}]`));
+    return;
+  }
+
+  if (!isPlainObject(node)) {
+    throw new Error(`Réponse LLM invalide: ${path} doit être un objet ou un tableau.`);
+  }
+
+  if (node.children !== undefined) {
+    if (!Array.isArray(node.children)) {
+      throw new Error(`Réponse LLM invalide: ${path}.children doit être un tableau.`);
+    }
+
+    node.children.forEach((child, index) => validateTreeNodeShape(child, `${path}.children[${index}]`));
+  }
+}
+
+/**
+ * Valide la forme minimale de la réponse de réorganisation attendue par queryLLM.
+ * @param {any} response
+ * @returns {any}
+ */
+export function validateReorganizedResponse(response) {
+  if (!isPlainObject(response) && !Array.isArray(response)) {
+    throw new Error('Réponse LLM invalide: la réponse doit être un objet JSON ou un tableau de nœuds.');
+  }
+
+  const reorganizedTree = isPlainObject(response)
+    ? (response.reorganizedTree ?? response.tree ?? response.reorganized_tree ?? response)
+    : response;
+
+  validateTreeNodeShape(reorganizedTree, 'reorganizedTree');
+
+  if (isPlainObject(response) && 'explanation' in response && response.explanation !== undefined && response.explanation !== null && typeof response.explanation !== 'string') {
+    throw new Error('Réponse LLM invalide: "explanation" doit être une chaîne de caractères.');
+  }
+
+  return response;
+}
+
+/**
+ * Valide la forme minimale de la réponse de suggestion de dossier.
+ * @param {any} response
+ * @returns {any}
+ */
+export function validateSuggestionResponse(response) {
+  if (!isPlainObject(response)) {
+    throw new Error('Réponse LLM invalide: la suggestion doit être un objet JSON.');
+  }
+
+  if (!['use_existing', 'create_new'].includes(response.action)) {
+    throw new Error('Réponse LLM invalide: "action" doit valoir "use_existing" ou "create_new".');
+  }
+
+  if (response.action === 'use_existing') {
+    if (response.targetFolderId === undefined || response.targetFolderId === null || response.targetFolderId === '') {
+      throw new Error('Réponse LLM invalide: "targetFolderId" est requis pour "use_existing".');
+    }
+  }
+
+  if (response.action === 'create_new') {
+    if (typeof response.newFolderTitle !== 'string' || !response.newFolderTitle.trim()) {
+      throw new Error('Réponse LLM invalide: "newFolderTitle" est requis pour "create_new".');
+    }
+    if (response.newFolderParentId === undefined || response.newFolderParentId === null || response.newFolderParentId === '') {
+      throw new Error('Réponse LLM invalide: "newFolderParentId" est requis pour "create_new".');
+    }
+  }
+
+  if ('explanation' in response && response.explanation !== undefined && response.explanation !== null && typeof response.explanation !== 'string') {
+    throw new Error('Réponse LLM invalide: "explanation" doit être une chaîne de caractères.');
+  }
+
+  if ('suggestedTitle' in response && response.suggestedTitle !== undefined && response.suggestedTitle !== null && typeof response.suggestedTitle !== 'string') {
+    throw new Error('Réponse LLM invalide: "suggestedTitle" doit être une chaîne de caractères.');
+  }
+
+  return response;
 }
 
 /**

@@ -8,6 +8,7 @@ import { queryClaude }   from './providers/claude.js';
 import { queryDeepSeek } from './providers/deepseek.js';
 
 import { SYSTEM_PROMPT_COMMON, PROMPT_MINIMAL, PROMPT_COMPLETE, PROMPT_SUGGEST } from './prompts.js';
+import { validateReorganizedResponse, validateSuggestionResponse } from './utils.js';
 
 // ─── Context helpers ───────────────────────────────────────────────────────
 
@@ -97,21 +98,22 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
   const userPrompt = `${modeInstruction}\n\n${contextBlock}\n\nHere is the JSON of my current bookmarks to reorganize:\n\n${JSON.stringify(bookmarksTree)}`;
 
   if (debugMode) {
-    // console.log('=== DEBUG: LLM Query ===');
-    // console.log('Provider:', provider);
-    // console.log('Model:', modelName);
-    // console.log('Mode:', mode);
-    // console.log('Context:', contextBlock);
-    // console.log('--- System Prompt ---');
-    // console.log(systemPrompt);
-    // console.log('--- Mode Instruction ---');
-    // console.log(modeInstruction);
-    // console.log('--- User Prompt (Preview) ---');
-    // console.log(userPrompt.substring(0, 500) + '...');
-    // console.log('========================');
+    console.log('=== DEBUG: LLM Query ===');
+    console.log('Provider:', provider);
+    console.log('Model:', modelName);
+    console.log('Mode:', mode);
+    console.log('Context:', contextBlock);
+    console.log('--- System Prompt ---');
+    console.log(systemPrompt);
+    console.log('--- Mode Instruction ---');
+    console.log(modeInstruction);
+    console.log('--- User Prompt (Preview) ---');
+    console.log(userPrompt.substring(0, 500));
+    console.log('========================');
   }
 
-  return dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, userPrompt, systemPrompt, signal, resolvedMaxTokens);
+  const result = await dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, userPrompt, systemPrompt, signal, resolvedMaxTokens);
+  return validateReorganizedResponse(result);
 }
 
 /**
@@ -146,7 +148,8 @@ export async function suggestBookmarkLocation(config, bookmark, folders, ignored
   }
 
   const finalUserPrompt = userPrompt + avoidInstruction;
-  return dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, finalUserPrompt, systemPrompt, signal, 4096);
+  const result = await dispatchToProvider({ provider, apiUrl, apiKey, modelName, debugMode }, finalUserPrompt, systemPrompt, signal, 4096);
+  return validateSuggestionResponse(result);
 }
 
 /**

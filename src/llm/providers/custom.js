@@ -1,4 +1,4 @@
-import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage } from '../utils.js';
+import { cleanAndParseJSON, fetchWithTimeout, formatErrorMessage, retryTransientRequest } from '../utils.js';
 
 export async function queryCustom(url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens = 131072) {
   let endpoint = url.trim();
@@ -20,26 +20,29 @@ export async function queryCustom(url, key, model, prompt, systemPrompt, signal,
   const headers = { 'Content-Type': 'application/json' };
   if (key) headers['Authorization'] = `Bearer ${key}`;
 
-  const response = await fetchWithTimeout(endpoint, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: model || 'custom-model',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.1,
-      max_tokens: maxTokens
-    }),
-    signal
-  });
-  if (!response.ok) {
-    const err = await response.text();
-    const e = new Error(formatErrorMessage('Endpoint Custom', response.status, err));
-    if (response.status === 429) e.isRateLimit = true;
-    throw e;
-  }
+  const response = await retryTransientRequest(async () => {
+    const currentResponse = await fetchWithTimeout(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: model || 'custom-model',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1,
+        max_tokens: maxTokens
+      }),
+      signal
+    });
+    if (!currentResponse.ok) {
+      const err = await currentResponse.text();
+      const e = new Error(formatErrorMessage('Endpoint Custom', currentResponse.status, err));
+      if (currentResponse.status === 429 || currentResponse.status === 503) e.isRateLimit = true;
+      throw e;
+    }
+    return currentResponse;
+  }, { signal });
   const data = await response.json();
   if (data.choices?.[0]?.message) return cleanAndParseJSON(data.choices[0].message.content);
   if (typeof data === 'string') return cleanAndParseJSON(data);

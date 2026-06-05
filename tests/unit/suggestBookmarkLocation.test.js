@@ -71,6 +71,18 @@ describe('suggestBookmarkLocation', () => {
     expect(result.action).toBe('create_new');
     expect(result.newFolderTitle).toBe('Cooking');
   });
+  it('should reject malformed suggestion responses before the popup receives them', async () => {
+    vi.mocked(queryOpenAI).mockResolvedValue({ explanation: 'Missing action' });
+    const config = { provider: 'openai', apiKey: 'test-key' };
+    const malformedBookmark = { title: 'New Bookmark', url: 'https://example.com' };
+    const malformedFolders = [
+      { id: '1', path: 'Barre de favoris' },
+      { id: '2', path: 'Barre de favoris > Tech' }
+    ];
+
+    await expect(suggestBookmarkLocation(config, malformedBookmark, malformedFolders, null))
+      .rejects.toThrow(/action/i);
+  });
 });
 
 describe('suggestBookmarkLocation - all providers', () => {
