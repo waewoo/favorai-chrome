@@ -146,13 +146,15 @@ test.describe('End-to-End Integration Flows', () => {
       await tabRangementBtn.click();
       await page.locator('#tabRangementPanel').waitFor({ state: 'visible' });
       
-      // Ensure check dead links is unchecked
-      const checkDeadLinks = page.locator('#checkDeadLinks');
-      if (await checkDeadLinks.isChecked()) {
-        await checkDeadLinks.uncheck();
+      // Ensure network checks are unchecked for speed
+      for (const id of ['checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
+        const el = page.locator(`#${id}`);
+        if (await el.isChecked()) await el.uncheck();
       }
-      
-      await page.locator('#btnFullReorg').click();
+
+      // Select Complete mode then launch
+      await page.locator('input[name="reorgMode"][value="complete"]').check();
+      await page.locator('#btnLaunch').click();
 
       // 4. Verify transition to validation view
       const validationView = page.locator('#validationView');

@@ -275,7 +275,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentAbortController = new AbortController();
 
     currentStatus.state = 'analyzing';
-    currentStatus.mode = message.mode;
+    const effectiveMode = (message.analysisOptions && message.analysisOptions.useAI === false) ? 'cleanup' : (message.mode || 'minimal');
+    currentStatus.mode = effectiveMode;
     currentStatus.percentage = 5;
     currentStatus.logs = [];
     currentStatus.actions = [];
@@ -283,21 +284,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentStatus.lastError = null;
     currentStatus.retryable = false;
     currentStatus.lastConfig = sanitizeAnalysisConfig(message.config);
-    currentStatus.lastCheckDeadLinks = message.checkDeadLinks !== false;
+    currentStatus.lastAnalysisOptions = message.analysisOptions || { useAI: true, checkDeadLinks: message.checkDeadLinks !== false, checkRedirects: false, checkContentDuplicates: false };
+    currentStatus.lastCheckDeadLinks = currentStatus.lastAnalysisOptions.checkDeadLinks;
     currentStatus.analysisTreeFingerprint = null;
     currentStatus.bookmarkFolderId = message.bookmarkFolderId || null;
 
     chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
     startKeepAlive();
 
-    const modeLabel = message.mode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
+    const modeLabel = effectiveMode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
     logStatus(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
 
     // Récupérer la clé API depuis le stockage sync par sécurité (C2)
     chrome.storage.sync.get(['apiKey'], (res) => {
       const config = mergeAnalysisConfigWithStoredApiKey(message.config, res.apiKey);
 
-      runAnalysis(config, message.mode, message.checkDeadLinks !== false, currentAbortController.signal, currentStatus, message.bookmarkFolderId)
+      runAnalysis(config, effectiveMode, currentStatus.lastAnalysisOptions, currentAbortController.signal, currentStatus, message.bookmarkFolderId)
         .then(result => {
           currentAbortController = null;
           stopKeepAlive();
@@ -316,7 +318,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               action: 'analysis_completed',
               actions: [],
               explanation: '',
-              mode: message.mode
+              mode: effectiveMode
             }, 'analysis_completed notification');
           } else {
             currentStatus.state = 'waiting_validation';
@@ -334,7 +336,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               action: 'analysis_completed',
               actions: result.actions,
               explanation: result.explanation,
-              mode: message.mode
+              mode: effectiveMode
             }, 'analysis_completed notification');
           }
         })

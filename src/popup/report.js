@@ -22,14 +22,18 @@ export function displayRapport(actions, explanation, mode) {
   }
 
   if (reorgModeBadge) {
-    reorgModeBadge.textContent = mode === 'complete'
-      ? t('reportModeComplete', 'Complete reorganization')
-      : t('reportModeMinimal', 'Minimal reorganization');
     if (mode === 'complete') {
+      reorgModeBadge.textContent = t('reportModeComplete', 'Complete reorganization');
       reorgModeBadge.style.background = 'rgba(168, 85, 247, 0.2)';
       reorgModeBadge.style.color = '#c084fc';
       reorgModeBadge.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+    } else if (mode === 'cleanup') {
+      reorgModeBadge.textContent = t('reportModeCleanup', 'Local cleanup');
+      reorgModeBadge.style.background = 'rgba(34, 197, 94, 0.2)';
+      reorgModeBadge.style.color = '#4ade80';
+      reorgModeBadge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
     } else {
+      reorgModeBadge.textContent = t('reportModeMinimal', 'Minimal reorganization');
       reorgModeBadge.style.background = 'rgba(99, 102, 241, 0.2)';
       reorgModeBadge.style.color = '#818cf8';
       reorgModeBadge.style.borderColor = 'rgba(99, 102, 241, 0.4)';

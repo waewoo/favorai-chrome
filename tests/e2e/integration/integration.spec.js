@@ -100,14 +100,15 @@ test.describe('Integration Tests - Reorganization Flow', () => {
       await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
-      // Both buttons should be visible and enabled
-      const minBtn = page.locator('#btnMinReorg');
-      const fullBtn = page.locator('#btnFullReorg');
+      // Launch button and mode radios should be visible and enabled
+      const launchBtn = page.locator('#btnLaunch');
+      const minRadio = page.locator('input[name="reorgMode"][value="minimal"]');
+      const fullRadio = page.locator('input[name="reorgMode"][value="complete"]');
 
-      await expect(minBtn).toBeVisible();
-      await expect(fullBtn).toBeVisible();
-      await expect(minBtn).toBeEnabled();
-      await expect(fullBtn).toBeEnabled();
+      await expect(launchBtn).toBeVisible();
+      await expect(launchBtn).toBeEnabled();
+      await expect(minRadio).toBeVisible();
+      await expect(fullRadio).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }

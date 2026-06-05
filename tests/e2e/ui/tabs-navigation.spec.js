@@ -36,10 +36,8 @@ test.describe('Tabs Navigation', () => {
       await expect(tabRangementPanel).toBeVisible();
 
       // Check for Rangement content
-      const minBtn = page.locator('#btnMinReorg');
-      const fullBtn = page.locator('#btnFullReorg');
-      await expect(minBtn).toBeVisible();
-      await expect(fullBtn).toBeVisible();
+      const launchBtn = page.locator('#btnLaunch');
+      await expect(launchBtn).toBeVisible();
     } finally {
       await cleanup(context, tmpDir);
     }

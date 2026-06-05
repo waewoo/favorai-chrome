@@ -28,33 +28,33 @@ test.describe('Reorganization (Rangement) Tab', () => {
     }
   });
 
-  test('should have Minimal reorganization button', async () => {
+  test('should have launch analysis button', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
       await gotoPopup(page, extensionId);
       await page.waitForTimeout(300);
 
-      const minBtn = page.locator('#btnMinReorg');
-      await expect(minBtn).toBeVisible();
-      const text = await minBtn.textContent();
+      const launchBtn = page.locator('#btnLaunch');
+      await expect(launchBtn).toBeVisible();
+      const text = await launchBtn.textContent();
       expect(text).toBeTruthy();
-      expect(text.toUpperCase()).toContain('MINIMAL');
     } finally {
       await cleanup(context, tmpDir);
     }
   });
 
-  test('should have Complete reorganization button', async () => {
+  test('should have Minimal and Complete mode radio buttons', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
       await gotoPopup(page, extensionId);
 
-      const fullBtn = page.locator('#btnFullReorg');
-      await expect(fullBtn).toBeVisible();
-      const text = await fullBtn.textContent();
-      expect(text).toContain('Complet');
+      const minRadio = page.locator('input[name="reorgMode"][value="minimal"]');
+      const fullRadio = page.locator('input[name="reorgMode"][value="complete"]');
+      await expect(minRadio).toBeVisible();
+      await expect(fullRadio).toBeVisible();
+      await expect(minRadio).toBeChecked();
     } finally {
       await cleanup(context, tmpDir);
     }
@@ -101,15 +101,19 @@ test.describe('Reorganization (Rangement) Tab', () => {
     }
   });
 
-  test('should have Check Dead Links checkbox', async () => {
+  test('should have all analysis option checkboxes', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
       await gotoPopup(page, extensionId);
 
-      const deadLinksCheckbox = page.locator('#checkDeadLinks');
-      await expect(deadLinksCheckbox).toBeVisible();
-      await expect(deadLinksCheckbox).toHaveAttribute('type', 'checkbox');
+      for (const id of ['useAI', 'checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
+        const el = page.locator(`#${id}`);
+        await expect(el).toBeVisible();
+        await expect(el).toHaveAttribute('type', 'checkbox');
+      }
+      await expect(page.locator('#useAI')).toBeChecked();
+      await expect(page.locator('#checkDeadLinks')).not.toBeChecked();
     } finally {
       await cleanup(context, tmpDir);
     }
@@ -128,17 +132,14 @@ test.describe('Reorganization (Rangement) Tab', () => {
     }
   });
 
-  test('reorganization buttons should be enabled initially', async () => {
+  test('launch button should be enabled initially', async () => {
     const { context, page, extensionId, tmpDir } = await launchExtension();
 
     try {
       await gotoPopup(page, extensionId);
 
-      const minBtn = page.locator('#btnMinReorg');
-      const fullBtn = page.locator('#btnFullReorg');
-
-      await expect(minBtn).toBeEnabled();
-      await expect(fullBtn).toBeEnabled();
+      const launchBtn = page.locator('#btnLaunch');
+      await expect(launchBtn).toBeEnabled();
     } finally {
       await cleanup(context, tmpDir);
     }

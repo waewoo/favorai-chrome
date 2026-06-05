@@ -356,7 +356,14 @@ export async function checkUrlStatus(url, userSignal) {
 /**
  * Détecte les doublons et vérifie les liens morts.
  */
-export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks, batchSize = 24, userSignal, currentStatus) {
+export async function performLocalCleanup(rootNode, originalMap, analysisOptions, batchSize = 24, userSignal, currentStatus) {
+  // Support legacy boolean for tests
+  if (typeof analysisOptions === 'boolean') {
+    analysisOptions = { checkDeadLinks: analysisOptions, checkRedirects: analysisOptions, checkContentDuplicates: analysisOptions };
+  }
+  const { checkDeadLinks = false, checkRedirects = false, checkContentDuplicates = false } = analysisOptions;
+  const needsNetwork = checkDeadLinks || checkRedirects || checkContentDuplicates;
+
   sendProgress(chrome.i18n.getMessage('bgReadingBookmarks'), 10, currentStatus);
   const all = flattenBookmarks([rootNode]);
 
@@ -372,16 +379,16 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
   const articleFingerprints = new Map();
 
   const deadLinks = [];
-  if (checkDeadLinks) {
+  if (needsNetwork) {
     const actual = parseInt(batchSize, 10) || 24;
     for (let i = 0; i < unique.length; i += actual) {
       if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
       const batch = unique.slice(i, i + actual);
       await Promise.all(batch.map(async (bm) => {
-        const s = await inspectUrl(bm.url, userSignal, true);
-        if (s.dead) deadLinks.push({ bookmark: bm, reason: s.reason });
-        if (!s.dead && s.finalUrl) finalUrls.set(bm.id, normalizeUrlForDuplicate(s.finalUrl));
-        if (!s.dead && s.html) {
+        const s = await inspectUrl(bm.url, userSignal, checkContentDuplicates);
+        if (checkDeadLinks && s.dead) deadLinks.push({ bookmark: bm, reason: s.reason });
+        if (checkRedirects && !s.dead && s.finalUrl) finalUrls.set(bm.id, normalizeUrlForDuplicate(s.finalUrl));
+        if (checkContentDuplicates && !s.dead && s.html) {
           const fingerprint = buildArticleFingerprint(bm.title, s.html);
           if (fingerprint) articleFingerprints.set(bm.id, fingerprint);
         }
@@ -393,25 +400,31 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
       );
     }
 
-    const deadLinkIds = new Set(deadLinks.map(d => d.bookmark.id));
-    const reachableUnique = unique.filter(bm => !deadLinkIds.has(bm.id));
-    const redirectDuplicates = collectDuplicateGroups(
-      reachableUnique,
-      originalMap,
-      bm => finalUrls.get(bm.id),
-      duplicateIds,
-      'redirect'
-    );
-    duplicates = duplicates.concat(redirectDuplicates);
-    duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
+    if (checkRedirects) {
+      const deadLinkIds = new Set(deadLinks.map(d => d.bookmark.id));
+      const reachableUnique = unique.filter(bm => !deadLinkIds.has(bm.id));
+      const redirectDuplicates = collectDuplicateGroups(
+        reachableUnique,
+        originalMap,
+        bm => finalUrls.get(bm.id),
+        duplicateIds,
+        'redirect'
+      );
+      duplicates = duplicates.concat(redirectDuplicates);
+      duplicateIds = new Set(duplicates.map(d => d.duplicate.id));
+    }
 
-    const similarContentDuplicates = collectContentDuplicateGroups(
-      reachableUnique,
-      originalMap,
-      articleFingerprints,
-      duplicateIds
-    );
-    duplicates = duplicates.concat(similarContentDuplicates);
+    if (checkContentDuplicates) {
+      const deadLinkIds = new Set(deadLinks.map(d => d.bookmark.id));
+      const reachableUnique = unique.filter(bm => !deadLinkIds.has(bm.id));
+      const similarContentDuplicates = collectContentDuplicateGroups(
+        reachableUnique,
+        originalMap,
+        articleFingerprints,
+        duplicateIds
+      );
+      duplicates = duplicates.concat(similarContentDuplicates);
+    }
   } else {
     sendProgress(chrome.i18n.getMessage('bgDeadLinksDisabled'), 70, currentStatus);
   }
@@ -422,7 +435,12 @@ export async function performLocalCleanup(rootNode, originalMap, checkDeadLinks,
 /**
  * Orchestre l'analyse complète : nettoyage → LLM → diff → actions.
  */
-export async function runAnalysis(config, mode, checkDeadLinks, userSignal, currentStatus, bookmarkFolderId) {
+export async function runAnalysis(config, mode, analysisOptions, userSignal, currentStatus, bookmarkFolderId) {
+  // Support legacy boolean
+  if (typeof analysisOptions === 'boolean') {
+    analysisOptions = { useAI: true, checkDeadLinks: analysisOptions, checkRedirects: analysisOptions, checkContentDuplicates: analysisOptions };
+  }
+  const { useAI = true } = analysisOptions;
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
   // 1. Lire l'arbre de favoris
@@ -452,12 +470,44 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   }
 
   // 3. Nettoyage local
-  const cleanup = await performLocalCleanup(rootNode, originalMap, checkDeadLinks, config.linkCheckBatchSize || 24, userSignal, currentStatus);
+  const cleanup = await performLocalCleanup(rootNode, originalMap, analysisOptions, config.linkCheckBatchSize || 24, userSignal, currentStatus);
 
   const duplicateIds = new Set(cleanup.duplicates.map(d => d.duplicate.id));
   const deadLinkIds  = new Set(cleanup.deadLinks.map(d => d.bookmark.id));
 
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
+
+  // 4. Court-circuit : sans IA, on retourne uniquement les actions de nettoyage
+  if (!useAI) {
+    sendProgress(chrome.i18n.getMessage('bgComputingFolders'), 95, currentStatus);
+    const actions = [];
+    let counter = 1;
+    for (const item of cleanup.duplicates) {
+      const { duplicate: dup, original } = item;
+      actions.push({
+        id: `act_${counter++}`, type: 'delete_duplicate', targetId: dup.id,
+        title: dup.title, url: dup.url, description: chrome.i18n.getMessage('actionDeleteDuplicate'),
+        params: {
+          sourcePath: getPathFromMap(dup.parentId, originalMap),
+          originalPath: getPathFromMap(original.parentId, originalMap),
+          originalTitle: original.title,
+          matchType: item.matchType || 'url'
+        },
+        category: 'clean'
+      });
+    }
+    for (const dead of cleanup.deadLinks) {
+      const bm = dead.bookmark;
+      actions.push({
+        id: `act_${counter++}`, type: 'delete_dead', targetId: bm.id,
+        title: bm.title, url: bm.url, description: `${chrome.i18n.getMessage('actionDeadLink')} (${dead.reason})`,
+        params: { sourcePath: getPathFromMap(bm.parentId, originalMap), reason: dead.reason },
+        category: 'clean'
+      });
+    }
+    sendProgress(chrome.i18n.getMessage('bgResponseReceived'), 100, currentStatus);
+    return { actions, explanation: '', analysisTreeFingerprint };
+  }
 
   // 4. Préparer l'arbre pour le LLM
   sendProgress(chrome.i18n.getMessage('bgPreparingAI'), 75, currentStatus);

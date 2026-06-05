@@ -89,17 +89,12 @@ test.describe('Internationalization (i18n)', () => {
     try {
       await gotoPopup(page, extensionId);
 
-      const minBtn = page.locator('#btnMinReorg');
-      const fullBtn = page.locator('#btnFullReorg');
+      const launchBtn = page.locator('#btnLaunch');
+      const launchText = await launchBtn.textContent();
 
-      const minText = await minBtn.textContent();
-      const fullText = await fullBtn.textContent();
-
-      // Both should have some text content
-      expect(minText).toBeTruthy();
-      expect(fullText).toBeTruthy();
-      expect(minText.length).toBeGreaterThan(0);
-      expect(fullText.length).toBeGreaterThan(0);
+      // Button should have some text content
+      expect(launchText).toBeTruthy();
+      expect(launchText.length).toBeGreaterThan(0);
     } finally {
       await cleanup(context, tmpDir);
     }
@@ -151,10 +146,10 @@ test.describe('Internationalization (i18n)', () => {
     try {
       await gotoPopup(page, extensionId);
 
-      const minBtn = page.locator('#btnMinReorg');
-      const dataI18n = await minBtn.getAttribute('data-i18n');
+      const launchBtn = page.locator('#btnLaunch span[data-i18n]');
+      const dataI18n = await launchBtn.getAttribute('data-i18n');
 
-      // Some buttons might have data-i18n attribute
+      // Button span should have data-i18n attribute
       if (dataI18n) {
         expect(dataI18n).toBeTruthy();
       }

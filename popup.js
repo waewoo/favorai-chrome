@@ -30,8 +30,7 @@ const tabForgottenBtn = document.getElementById('tabForgottenBtn');
 const tabAboutBtn = document.getElementById('tabAboutBtn');
 const tabDocsBtn = document.getElementById('tabDocsBtn');
 
-const btnMinReorg = document.getElementById('btnMinReorg');
-const btnFullReorg = document.getElementById('btnFullReorg');
+const btnLaunch = document.getElementById('btnLaunch');
 const btnStopReorg = document.getElementById('btnStopReorg');
 
 const btnCancel = document.getElementById('btnCancel');
@@ -89,9 +88,17 @@ document.addEventListener('DOMContentLoaded', () => {
   bindConfigEvents();
 
   // Bind reorg actions
-  if (btnMinReorg) btnMinReorg.addEventListener('click', () => startReorganization('minimal'));
-  if (btnFullReorg) btnFullReorg.addEventListener('click', () => startReorganization('complete'));
+  if (btnLaunch) btnLaunch.addEventListener('click', () => startReorganization());
   if (btnStopReorg) btnStopReorg.addEventListener('click', stopReorganization);
+
+  // Toggle AI mode radio visibility
+  const useAICheckbox = document.getElementById('useAI');
+  const aiModeGroup = document.getElementById('aiModeGroup');
+  if (useAICheckbox && aiModeGroup) {
+    useAICheckbox.addEventListener('change', () => {
+      aiModeGroup.style.display = useAICheckbox.checked ? 'flex' : 'none';
+    });
+  }
 
   // Bind validation rapport actions
   if (btnCancel) {

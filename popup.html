@@ -77,17 +77,50 @@
             </select>
           </div>
 
-          <div class="form-group" style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" id="checkDeadLinks" style="width: 14px; height: 14px; margin-top: 1px; accent-color: var(--accent-color); cursor: pointer;" />
-            <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Check dead links, redirects and article duplicates (slow)</label>
+          <!-- ANALYSIS OPTIONS -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; display: block;" data-i18n="analysisOptionsTitle">Analysis options</label>
+
+            <!-- AI Reorganization + mode -->
+            <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+              <input type="checkbox" id="useAI" checked style="width: 14px; height: 14px; margin-top: 2px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
+              <div>
+                <label for="useAI" style="margin-bottom: 4px; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none; display: block;" data-i18n="useAILabel">AI Reorganization</label>
+                <div id="aiModeGroup" style="display: flex; gap: 16px;">
+                  <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 400;" data-i18n-title="btnMinimalTitle">
+                    <input type="radio" name="reorgMode" value="minimal" checked style="accent-color: var(--accent-color); cursor: pointer;" />
+                    <span data-i18n="btnMinimal">Minimal</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 400;" data-i18n-title="btnCompleteTitle">
+                    <input type="radio" name="reorgMode" value="complete" style="accent-color: var(--accent-color); cursor: pointer;" />
+                    <span data-i18n="btnComplete">Complete</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dead links -->
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+              <input type="checkbox" id="checkDeadLinks" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
+              <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Dead links (slow)</label>
+            </div>
+
+            <!-- Redirections -->
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+              <input type="checkbox" id="checkRedirects" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
+              <label for="checkRedirects" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkRedirectsLabel">Redirects (slow)</label>
+            </div>
+
+            <!-- Content duplicates -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="checkContentDuplicates" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
+              <label for="checkContentDuplicates" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkContentDuplicatesLabel">Content duplicates (very slow)</label>
+            </div>
           </div>
-          
-          <div class="btn-group" id="reorgBtnGroup">
-            <button class="btn btn-primary" id="btnMinReorg" data-i18n-title="btnMinimalTitle">
-              <span data-i18n="btnMinimal">🔍 Minimal</span>
-            </button>
-            <button class="btn btn-secondary" id="btnFullReorg" data-i18n-title="btnCompleteTitle">
-              <span data-i18n="btnComplete">✨ Complete</span>
+
+          <div id="reorgBtnGroup">
+            <button class="btn btn-primary" id="btnLaunch" style="width: 100%;">
+              <span data-i18n="btnLaunch">Run analysis</span>
             </button>
           </div>
           <button class="btn btn-danger hidden" id="btnStopReorg" style="width: 100%; margin-top: 10px;">

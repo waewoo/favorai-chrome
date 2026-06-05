@@ -19,11 +19,11 @@ test('Extension popup loads successfully', async () => {
     const tabRangementPanel = page.locator('#tabRangementPanel');
     await expect(tabRangementPanel).toBeVisible();
 
-    // Assert that minimal and complete reorganization buttons are present
-    const minBtn = page.locator('#btnMinReorg');
-    const fullBtn = page.locator('#btnFullReorg');
-    await expect(minBtn).toBeVisible();
-    await expect(fullBtn).toBeVisible();
+    // Assert launch button and mode radios are present
+    const launchBtn = page.locator('#btnLaunch');
+    await expect(launchBtn).toBeVisible();
+    await expect(page.locator('input[name="reorgMode"][value="minimal"]')).toBeVisible();
+    await expect(page.locator('input[name="reorgMode"][value="complete"]')).toBeVisible();
   } finally {
     await cleanup(context, tmpDir);
   }

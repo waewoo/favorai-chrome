@@ -26,16 +26,20 @@ export function updateProgressBar(progressBarContainer, progressBar, percentage)
 
 export function setControlsDisabled(disabled) {
   const providerSelect = document.getElementById('provider');
-  const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
-  const btnMinReorg = document.getElementById('btnMinReorg');
-  const btnFullReorg = document.getElementById('btnFullReorg');
   const bookmarkFolderSelect = document.getElementById('bookmarkFolderSelect');
+  const btnLaunch = document.getElementById('btnLaunch');
 
   if (providerSelect) providerSelect.disabled = disabled;
-  if (checkDeadLinksCheckbox) checkDeadLinksCheckbox.disabled = disabled;
-  if (btnMinReorg) btnMinReorg.disabled = disabled;
-  if (btnFullReorg) btnFullReorg.disabled = disabled;
   if (bookmarkFolderSelect) bookmarkFolderSelect.disabled = disabled;
+  if (btnLaunch) btnLaunch.disabled = disabled;
+
+  for (const id of ['useAI', 'checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  }
+  for (const el of document.querySelectorAll('input[name="reorgMode"]')) {
+    el.disabled = disabled;
+  }
 }
 
 export function loadBookmarkFolders() {
@@ -108,7 +112,7 @@ export function retryReorganization() {
   });
 }
 
-export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
+export function startReorganizationWithConfig(config, mode, analysisOptions) {
   const btnStopReorg = document.getElementById('btnStopReorg');
   const reorgBtnGroup = document.getElementById('reorgBtnGroup');
   const logContainer = document.getElementById('logContainer');
@@ -121,14 +125,14 @@ export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
 
   if (logContainer) logContainer.textContent = '';
   addLog(`> Nouvelle tentative (${mode === 'complete' ? 'Complète' : 'Minimale'})...`, 'info');
-  addLoadingLog('Interrogation de l\'IA en cours...');
+  addLoadingLog(analysisOptions?.useAI !== false ? 'Interrogation de l\'IA en cours...' : 'Analyse en cours...');
   updateProgressBar(progressBarContainer, progressBar, 5);
 
   chrome.runtime.sendMessage({
     action: 'start_analysis',
     config: config,
     mode: mode,
-    checkDeadLinks: checkDeadLinks
+    analysisOptions
   }, (response) => {
     if (chrome.runtime.lastError || !response || !response.success) {
       const errorMsg = chrome.runtime.lastError?.message || (response?.error) || 'Impossible de lancer l\'analyse.';
@@ -146,14 +150,24 @@ export function startReorganizationWithConfig(config, mode, checkDeadLinks) {
   });
 }
 
-export async function startReorganization(mode) {
+export async function startReorganization() {
   if (startRequestInFlight) {
     showToast(t('errAnalysisAlreadyRunning', 'An analysis is already running.'));
     return;
   }
   startRequestInFlight = true;
 
-  const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
+  const useAICheckbox = document.getElementById('useAI');
+  const modeRadio = document.querySelector('input[name="reorgMode"]:checked');
+  const mode = modeRadio ? modeRadio.value : 'minimal';
+
+  const analysisOptions = {
+    useAI: useAICheckbox ? useAICheckbox.checked : true,
+    checkDeadLinks: !!(document.getElementById('checkDeadLinks')?.checked),
+    checkRedirects: !!(document.getElementById('checkRedirects')?.checked),
+    checkContentDuplicates: !!(document.getElementById('checkContentDuplicates')?.checked),
+  };
+
   const providerSelect = document.getElementById('provider');
   const apiUrlInput = document.getElementById('apiUrl');
   const apiKeyInput = document.getElementById('apiKey');
@@ -171,13 +185,19 @@ export async function startReorganization(mode) {
   const progressBarContainer = document.getElementById('progressBarContainer');
   const progressBar = document.getElementById('progressBar');
 
-  if (checkDeadLinksCheckbox && checkDeadLinksCheckbox.checked) {
+  const needsNetwork = analysisOptions.checkDeadLinks || analysisOptions.checkRedirects || analysisOptions.checkContentDuplicates;
+  if (needsNetwork) {
     const granted = await chrome.permissions.contains({ origins: ['<all_urls>'] });
     if (!granted) {
       const approved = await chrome.permissions.request({ origins: ['<all_urls>'] });
       if (!approved) {
-        checkDeadLinksCheckbox.checked = false;
-        chrome.storage.sync.set({ checkDeadLinks: false });
+        analysisOptions.checkDeadLinks = false;
+        analysisOptions.checkRedirects = false;
+        analysisOptions.checkContentDuplicates = false;
+        for (const id of ['checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
+          const el = document.getElementById(id);
+          if (el) el.checked = false;
+        }
         addLog(chrome.i18n.getMessage('deadLinksPermissionDenied') || 'Permission refusée — vérification des liens désactivée. L\'analyse continue.', 'warning');
       }
     }
@@ -200,7 +220,7 @@ export async function startReorganization(mode) {
     promptSuggest: (promptSuggestInput && promptSuggestInput.value.trim()) || syncRes.promptSuggest || ''
   };
 
-  if (config.provider !== 'ollama' && !config.apiKey) {
+  if (analysisOptions.useAI && config.provider !== 'ollama' && !config.apiKey) {
     markReorganizationIdle();
     showToast(chrome.i18n.getMessage('errApiKeyRequired') || 'Clé API requise');
     addLog(chrome.i18n.getMessage('errApiKeyRequired') || '> Erreur : Clé API requise.', 'error');
@@ -214,17 +234,16 @@ export async function startReorganization(mode) {
   if (logContainer) logContainer.textContent = '';
   const modeLabel = mode === 'complete' ? chrome.i18n.getMessage('bgModeComplete') : chrome.i18n.getMessage('bgModeMinimal');
   addLog(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
-  addLoadingLog('Interrogation de l\'IA en cours...');
+  addLoadingLog(analysisOptions.useAI ? 'Interrogation de l\'IA en cours...' : 'Analyse en cours...');
   updateProgressBar(progressBarContainer, progressBar, 5);
 
-  const checkDeadLinks = checkDeadLinksCheckbox ? checkDeadLinksCheckbox.checked : false;
   const bookmarkFolderId = bookmarkFolderSelect ? bookmarkFolderSelect.value : '1';
 
   chrome.runtime.sendMessage({
     action: 'start_analysis',
     mode,
     config,
-    checkDeadLinks,
+    analysisOptions,
     bookmarkFolderId
   }, (response) => {
     if (chrome.runtime.lastError || !response || !response.success) {
@@ -252,11 +271,28 @@ export function restoreStatus() {
     const logContainer = document.getElementById('logContainer');
     const progressBarContainer = document.getElementById('progressBarContainer');
     const progressBar = document.getElementById('progressBar');
-    const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
     const bookmarkFolderSelect = document.getElementById('bookmarkFolderSelect');
 
-    if (checkDeadLinksCheckbox && status.lastCheckDeadLinks !== undefined) {
-      checkDeadLinksCheckbox.checked = status.lastCheckDeadLinks === true;
+    if (status.lastAnalysisOptions) {
+      const opts = status.lastAnalysisOptions;
+      const useAIEl = document.getElementById('useAI');
+      if (useAIEl && opts.useAI !== undefined) {
+        useAIEl.checked = opts.useAI;
+        const aiModeGroup = document.getElementById('aiModeGroup');
+        if (aiModeGroup) aiModeGroup.style.display = opts.useAI ? 'flex' : 'none';
+      }
+      for (const key of ['checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
+        const el = document.getElementById(key);
+        if (el && opts[key] !== undefined) el.checked = opts[key];
+      }
+      if (status.mode) {
+        const radio = document.querySelector(`input[name="reorgMode"][value="${status.mode}"]`);
+        if (radio) radio.checked = true;
+      }
+    } else if (status.lastCheckDeadLinks !== undefined) {
+      // backward compat with old status format
+      const el = document.getElementById('checkDeadLinks');
+      if (el) el.checked = status.lastCheckDeadLinks === true;
     }
     if (bookmarkFolderSelect && status.lastConfig?.bookmarkFolderId) {
       bookmarkFolderSelect.value = status.lastConfig.bookmarkFolderId;
@@ -271,7 +307,7 @@ export function restoreStatus() {
         logContainer.textContent = '';
         status.logs.forEach(log => addLog(log.text, log.type));
       }
-      addLoadingLog('Interrogation de l\'IA en cours...');
+      addLoadingLog(status.lastAnalysisOptions?.useAI !== false ? 'Interrogation de l\'IA en cours...' : 'Analyse en cours...');
       updateProgressBar(progressBarContainer, progressBar, status.percentage || 5);
     } else if (status.state === 'waiting_validation') {
       setControlsDisabled(false);
