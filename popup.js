@@ -246,3 +246,10 @@ chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
     }
   }
 });
+
+window.addEventListener('unhandledrejection', (event) => {
+  const msg = event.reason?.message || String(event.reason) || 'Unknown error';
+  console.error('Unhandled rejection in popup:', event.reason);
+  showToast(chrome.i18n.getMessage('popupUnhandledError', [msg]) || msg);
+  addLog(`${chrome.i18n.getMessage('popupUnhandledError', [msg]) || msg}`, 'error');
+});
