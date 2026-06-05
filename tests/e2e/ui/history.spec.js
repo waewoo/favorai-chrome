@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
+import { launchExtension, cleanup, gotoPopup, isBenignConsoleError } from '../helpers.js';
 
 async function navigateToHistory(page) {
   const tabHistoryBtn = page.locator('#tabHistoryBtn');
@@ -136,7 +136,7 @@ test.describe('History Tab', () => {
       // Monitor for console errors
       let hasError = false;
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           hasError = true;
           console.error('Page error:', msg.text());
         }

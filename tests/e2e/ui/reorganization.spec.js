@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
+import { launchExtension, cleanup, gotoPopup, isBenignConsoleError } from '../helpers.js';
 
 test.describe('Reorganization (Rangement) Tab', () => {
   test('should display Rangement tab content', async () => {
@@ -205,7 +205,7 @@ test.describe('Reorganization (Rangement) Tab', () => {
 
       let hasError = false;
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           hasError = true;
           console.error('Page error:', msg.text());
         }

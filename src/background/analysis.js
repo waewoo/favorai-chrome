@@ -5,6 +5,7 @@ import {
   alignReorganizedIds, sanitizeReorganizedTree,
   getPathFromMap, cleanTreeForLLM
 } from './diff.js';
+import { sendRuntimeMessage } from './runtime-messaging.js';
 
 /** Compte tous les nœuds (favoris + dossiers) d'un arbre pour estimer les tokens de sortie. */
 function countNodes(node) {
@@ -342,7 +343,7 @@ function enforceNewTopLevel(reorganizedTree, originalMap, currentStatus) {
 export function sendProgress(message, percentage, currentStatus) {
   currentStatus.percentage = percentage;
   currentStatus.logs.push({ text: message, type: 'info' });
-  chrome.runtime.sendMessage({ action: 'progress_update', message, percentage }).catch(() => {});
+  void sendRuntimeMessage({ action: 'progress_update', message, percentage }, 'progress update');
 }
 
 /**
@@ -441,7 +442,11 @@ export async function runAnalysis(config, mode, checkDeadLinks, userSignal, curr
   const bookmarkCount = allBms.length;
   if (bookmarkCount > 2000) {
     currentStatus.logs.push({ text: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(bookmarkCount)]), type: 'warning' });
-    chrome.runtime.sendMessage({ action: 'progress_update', message: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(bookmarkCount)]), percentage: 8 }).catch(() => {});
+    void sendRuntimeMessage({
+      action: 'progress_update',
+      message: chrome.i18n.getMessage('bgLargeLibraryWarning', [String(bookmarkCount)]),
+      percentage: 8
+    }, 'progress update');
   }
 
   // 3. Nettoyage local

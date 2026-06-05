@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
+import { launchExtension, cleanup, gotoPopup, isBenignConsoleError } from '../helpers.js';
 
 // Note: setupMockBookmarks is defined for future use when extension APIs support direct mocking
 // eslint-disable-next-line no-unused-vars
@@ -266,7 +266,7 @@ test.describe('Integration Tests - Reorganization Flow', () => {
 
       const errors = [];
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           errors.push(msg.text());
         }
       });

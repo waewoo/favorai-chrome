@@ -9,6 +9,9 @@ import { rollbackSession } from './history.js';
 import { suggestBookmarkLocation } from '../llm/index.js';
 import { cleanAndParseJSON } from '../llm/utils.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
+import { mergeAnalysisConfigWithStoredApiKey, sanitizeAnalysisConfig, sanitizeLlmConfig } from './config.js';
+import { normalizeInterruptedAnalysisStatus } from './status.js';
+import { sendRuntimeMessage } from './runtime-messaging.js';
 
 let pendingActions = [];
 // currentAbortController is intentionally not persisted: if the SW is killed mid-analysis
@@ -29,6 +32,40 @@ chrome.storage.local.get(['popupWindowId'], (res) => {
     });
   }
 });
+
+function syncInterruptedAnalysisState(status) {
+  const interruptedMessage = chrome.i18n.getMessage('bgAnalysisInterrupted') || 'Analyse interrompue.';
+  const { status: normalizedStatus, normalized } = normalizeInterruptedAnalysisStatus(
+    status,
+    interruptedMessage,
+    Boolean(currentAbortController)
+  );
+
+  if (!normalized) {
+    return { status, normalized: false };
+  }
+
+  Object.assign(currentStatus, normalizedStatus);
+  saveStatusToStorage();
+
+  pendingActions = [];
+  chrome.storage.local.set({ pendingActions: [] });
+
+  return { status: normalizedStatus, normalized: true };
+}
+
+function handleStartupRecovery() {
+  chrome.alarms.clear('keepAliveAlarm');
+  chrome.storage.local.get(['extensionStatus'], (res) => {
+    syncInterruptedAnalysisState(res.extensionStatus || currentStatus);
+  });
+}
+
+chrome.runtime.onStartup.addListener(() => {
+  handleStartupRecovery();
+});
+
+handleStartupRecovery();
 
 chrome.action.onClicked.addListener(() => {
   const popupUrl = chrome.runtime.getURL('popup.html');
@@ -185,12 +222,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'get_current_status') {
     chrome.storage.local.get(['extensionStatus'], (res) => {
       const status = res.extensionStatus || currentStatus;
-      if (status.state === 'analyzing' && !currentAbortController) {
-        status.state = 'idle';
-        status.logs.push({ text: chrome.i18n.getMessage('bgAnalysisInterrupted') || 'Analyse interrompue.', type: 'warning' });
-        chrome.storage.local.set({ extensionStatus: status });
-      }
-      sendResponse(status);
+      const { status: normalizedStatus } = syncInterruptedAnalysisState(status);
+      sendResponse(normalizedStatus || status);
     });
     return true; // Réponse asynchrone
   }
@@ -209,7 +242,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     currentStatus.explanation = '';
     currentStatus.lastError = null;
     currentStatus.retryable = false;
-    currentStatus.lastConfig = message.config;
+    currentStatus.lastConfig = sanitizeAnalysisConfig(message.config);
     currentStatus.lastCheckDeadLinks = message.checkDeadLinks !== false;
 
     chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
@@ -220,7 +253,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Récupérer la clé API depuis le stockage sync par sécurité (C2)
     chrome.storage.sync.get(['apiKey'], (res) => {
-      const config = { ...message.config, apiKey: res.apiKey || '' };
+      const config = mergeAnalysisConfigWithStoredApiKey(message.config, res.apiKey);
 
       runAnalysis(config, message.mode, message.checkDeadLinks !== false, currentAbortController.signal, currentStatus, message.bookmarkFolderId)
         .then(result => {
@@ -236,12 +269,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             pendingActions = [];
             chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
 
-            chrome.runtime.sendMessage({
+            void sendRuntimeMessage({
               action: 'analysis_completed',
               actions: [],
               explanation: '',
               mode: message.mode
-            }).catch(() => {});
+            }, 'analysis_completed notification');
           } else {
             currentStatus.state = 'waiting_validation';
             currentStatus.actions = result.actions;
@@ -252,12 +285,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             pendingActions = result.actions;
             chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: result.actions });
 
-            chrome.runtime.sendMessage({
+            void sendRuntimeMessage({
               action: 'analysis_completed',
               actions: result.actions,
               explanation: result.explanation,
               mode: message.mode
-            }).catch(() => {});
+            }, 'analysis_completed notification');
           }
         })
         .catch(error => {
@@ -276,12 +309,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           logStatus(chrome.i18n.getMessage('bgReorgFailed', [errorMsg]), 'error');
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
 
-          chrome.runtime.sendMessage({
+          void sendRuntimeMessage({
             action: 'analysis_failed',
             error: errorMsg,
             retryable: isRateLimit,
             mode: currentStatus.mode
-          }).catch(() => {});
+          }, 'analysis_failed notification');
         });
     });
 
@@ -439,15 +472,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
-        const fullConfig = {
-          provider: syncRes.provider || 'google',
-          apiUrl: syncRes.apiUrl || '',
-          apiKey: syncRes.apiKey || '',
-          modelName: syncRes.modelName || '',
-          debugMode: syncRes.debugMode === true,
-          maxTokens: syncRes.maxTokens || 4096,
-          promptSuggest: syncRes.promptSuggest || ''
-        };
+        const fullConfig = sanitizeLlmConfig(syncRes, {
+          defaultProvider: 'google',
+          defaultMaxTokens: 4096,
+          defaultLinkCheckBatchSize: 24
+        });
 
         suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
           .then(aiResponse => {

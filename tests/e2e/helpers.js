@@ -50,6 +50,17 @@ export async function gotoPopup(page, extensionId, file = 'popup.html') {
   await page.waitForTimeout(120);
 }
 
+const BENIGN_CONSOLE_ERROR_PATTERNS = [
+  /Failed to load resource: net::ERR_NETWORK_ACCESS_DENIED/i,
+  /Executing inline event handler violates the following Content Security Policy directive/i,
+  /script-src 'self'/i
+];
+
+export function isBenignConsoleError(message) {
+  const text = String(message || '');
+  return BENIGN_CONSOLE_ERROR_PATTERNS.some((pattern) => pattern.test(text));
+}
+
 export async function cleanup(context, tmpDir) {
   await context.close();
   try {

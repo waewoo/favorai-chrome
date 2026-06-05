@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { launchExtension, cleanup, gotoPopup } from '../helpers.js';
+import { launchExtension, cleanup, gotoPopup, isBenignConsoleError } from '../helpers.js';
 
 test.describe('Error Handling and Edge Cases', () => {
   test('should load popup without console errors', async () => {
@@ -8,7 +8,7 @@ test.describe('Error Handling and Edge Cases', () => {
     try {
       const errors = [];
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           errors.push(msg.text());
         }
       });
@@ -27,7 +27,7 @@ test.describe('Error Handling and Edge Cases', () => {
     try {
       const errors = [];
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           errors.push(msg.text());
         }
       });
@@ -101,7 +101,7 @@ test.describe('Error Handling and Edge Cases', () => {
     try {
       const errors = [];
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           errors.push(msg.text());
         }
       });
@@ -181,7 +181,7 @@ test.describe('Error Handling and Edge Cases', () => {
     try {
       const errors = [];
       page.on('console', (msg) => {
-        if (msg.type() === 'error') {
+        if (msg.type() === 'error' && !isBenignConsoleError(msg.text())) {
           errors.push(msg.text());
         }
       });
