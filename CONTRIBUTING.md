@@ -25,7 +25,8 @@ make install-hooks
 
 Husky manages the tracked hooks in `.husky/` and the `prepare` script installs them automatically after `npm install`:
 
-- `pre-commit`: runs `git diff --check`, `make lint`, `make test`, and `make security`
+- `pre-commit`: runs `make lint`
+- `pre-push`: runs `make test-coverage` (unit tests + coverage) and `make security`
 - `commit-msg`: runs commitlint with `@commitlint/config-conventional`
 
 Commitlint supports Conventional Commits features like `feat!:` and `BREAKING CHANGE:` footers.

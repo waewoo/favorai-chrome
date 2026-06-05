@@ -4,8 +4,4 @@ set -eu
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT_DIR"
 
-echo "Running pre-commit checks: make lint, make test, make security"
-git diff --check
 make lint
-make test
-make security

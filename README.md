@@ -118,7 +118,8 @@ make install-hooks
 
 The hooks currently enforce:
 
-- `pre-commit`: `git diff --check`, `make lint`, `make test`, and `make security`
+- `pre-commit`: `make lint`
+- `pre-push`: `make test-coverage` (unit tests + coverage) and `make security`
 - `commit-msg`: Conventional Commits validation through commitlint
 
 CodeGraph is optional local indexing support for Codex and other MCP-aware agents:
