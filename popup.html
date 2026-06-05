@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,10 +16,10 @@
         </div>
         <div>
           <h1>FavorAI</h1>
-          <p style="font-size: 10px; color: var(--text-muted);" data-i18n="appTagline">Intelligent bookmark management</p>
+          <p class="header-tagline" data-i18n="appTagline">Intelligent bookmark management</p>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="header-right">
         <div class="badge" id="appVersion"></div>
       </div>
     </header>
@@ -28,13 +28,13 @@
     <div id="toast" class="toast" data-i18n="toastConfigSaved" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <!-- TAB NAVIGATION -->
-    <div class="tab-nav">
-      <button class="tab-btn active" id="tabRangementBtn" data-i18n="tabOrganize">⚡ Organization</button>
-      <button class="tab-btn" id="tabForgottenBtn" data-i18n="tabForgotten">🕰️ Forgotten</button>
-      <button class="tab-btn" id="tabHistoryBtn" data-i18n="tabHistory">📜 History</button>
-      <button class="tab-btn" id="tabConfigBtn" data-i18n="tabConfig">⚙️ Configuration</button>
-      <button class="tab-btn" id="tabDocsBtn" data-i18n="tabDocumentation">📖 Docs</button>
-      <button class="tab-btn" id="tabAboutBtn" data-i18n="tabAbout">ℹ️ About</button>
+    <div class="tab-nav" role="tablist" aria-label="Navigation">
+      <button class="tab-btn active" id="tabRangementBtn" role="tab" aria-selected="true" aria-controls="tabRangementPanel" data-i18n="tabOrganize">⚡ Organization</button>
+      <button class="tab-btn" id="tabForgottenBtn" role="tab" aria-selected="false" aria-controls="tabForgottenPanel" data-i18n="tabForgotten">🕰️ Forgotten</button>
+      <button class="tab-btn" id="tabHistoryBtn" role="tab" aria-selected="false" aria-controls="tabHistoryPanel" data-i18n="tabHistory">📜 History</button>
+      <button class="tab-btn" id="tabConfigBtn" role="tab" aria-selected="false" aria-controls="tabConfigPanel" data-i18n="tabConfig">⚙️ Configuration</button>
+      <button class="tab-btn" id="tabDocsBtn" role="tab" aria-selected="false" aria-controls="tabDocumentationPanel" data-i18n="tabDocumentation">📖 Docs</button>
+      <button class="tab-btn" id="tabAboutBtn" role="tab" aria-selected="false" aria-controls="tabAboutPanel" data-i18n="tabAbout">ℹ️ About</button>
     </div>
 
     <!-- TAB PANELS -->
@@ -43,56 +43,57 @@
       <div id="mainView" class="view">
         <!-- EXECUTION SECTION -->
         <section class="section">
-          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px;" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
-          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;" data-i18n="sectionLaunchDesc">
+          <div class="section-title" data-i18n="sectionLaunchTitle">⚡ Launch Reorganization</div>
+          <p class="section-desc" data-i18n="sectionLaunchDesc">
             The extension will analyze smart duplicates, dead links, and query AI to organize your bookmarks.
           </p>
 
           <!-- Privacy/Transmission warning -->
-          <div style="display: flex; align-items: flex-start; gap: 8px; background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px;" role="note" aria-label="Privacy Information">
-            <span style="font-size: 13px; flex-shrink: 0;">ℹ️</span>
-            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0;" data-i18n="privacyNote">
+          <div class="notice-box" role="note" aria-label="Privacy Information">
+            <span class="notice-box__icon">ℹ️</span>
+            <p class="notice-box__text" data-i18n="privacyNote">
               To reorganize your bookmarks, their titles and structure (without URLs) are transmitted to the AI service you configured. No data is collected by FavorAI.
             </p>
           </div>
 
           <!-- Config Missing Warning -->
-          <div id="configMissingAlert" style="display: none; flex-direction: column; gap: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 13px; flex-shrink: 0;">⚠️</span>
-              <p style="font-size: 11px; font-weight: 600; color: #ef4444; margin: 0;" data-i18n="configMissingWarning">⚠️ LLM not configured</p>
+          <div id="configMissingAlert">
+            <div class="alert__header">
+              <span class="notice-box__icon">⚠️</span>
+              <p class="alert__title" data-i18n="configMissingWarning">⚠️ LLM not configured</p>
             </div>
-            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 0; margin-left: 21px;" data-i18n="configMissingDesc">
+            <p class="alert__desc" data-i18n="configMissingDesc">
               No API key or provider found. Go to Configuration tab to set up your AI provider (OpenAI, Gemini, Mistral, etc.)
             </p>
           </div>
 
           <div class="form-group">
-            <label for="bookmarkFolderSelect" style="font-size: 11px; color: var(--text-muted);" data-i18n="bookmarkFolderLabel">Bookmark Folder</label>
-            <p style="font-size: 10px; color: var(--text-muted); line-height: 1.4; margin: 2px 0 6px 0;" data-i18n="bookmarkFolderHelp">
+            <label for="bookmarkFolderSelect" data-i18n="bookmarkFolderLabel">Bookmark Folder</label>
+            <p class="field-help" data-i18n="bookmarkFolderHelp">
               The AI will only reorganize bookmarks and subfolders inside this selected folder (allows you to target a specific folder).
             </p>
             <select id="bookmarkFolderSelect">
               <option value="root" data-i18n="allBookmarks"></option>
             </select>
+            <div id="folderStats"></div>
           </div>
 
           <!-- ANALYSIS OPTIONS -->
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px; display: block;" data-i18n="analysisOptionsTitle">Analysis options</label>
+          <div class="form-group analysis-options">
+            <label class="options-label" data-i18n="analysisOptionsTitle">Analysis options</label>
 
             <!-- AI Reorganization + mode -->
-            <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
-              <input type="checkbox" id="useAI" checked style="width: 14px; height: 14px; margin-top: 2px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
+            <div class="option-row option-row--top option-row--mb">
+              <input type="checkbox" id="useAI" class="option-checkbox option-checkbox--mt" checked />
               <div>
-                <label for="useAI" style="margin-bottom: 4px; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none; display: block;" data-i18n="useAILabel">AI Reorganization</label>
-                <div id="aiModeGroup" style="display: flex; gap: 16px;">
-                  <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 400;" data-i18n-title="btnMinimalTitle">
-                    <input type="radio" name="reorgMode" value="minimal" checked style="accent-color: var(--accent-color); cursor: pointer;" />
+                <label for="useAI" class="option-label option-label--block" data-i18n="useAILabel">AI Reorganization</label>
+                <div id="aiModeGroup">
+                  <label class="mode-label" data-i18n-title="btnMinimalTitle">
+                    <input type="radio" name="reorgMode" value="minimal" class="option-radio" checked />
                     <span data-i18n="btnMinimal">Minimal</span>
                   </label>
-                  <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; font-weight: 400;" data-i18n-title="btnCompleteTitle">
-                    <input type="radio" name="reorgMode" value="complete" style="accent-color: var(--accent-color); cursor: pointer;" />
+                  <label class="mode-label" data-i18n-title="btnCompleteTitle">
+                    <input type="radio" name="reorgMode" value="complete" class="option-radio" />
                     <span data-i18n="btnComplete">Complete</span>
                   </label>
                 </div>
@@ -100,39 +101,39 @@
             </div>
 
             <!-- Dead links -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-              <input type="checkbox" id="checkDeadLinks" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
-              <label for="checkDeadLinks" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkDeadLinksLabel">Dead links (slow)</label>
+            <div class="option-row option-row--center option-row--mb-sm">
+              <input type="checkbox" id="checkDeadLinks" class="option-checkbox" />
+              <label for="checkDeadLinks" class="option-label option-label--flat" data-i18n="checkDeadLinksLabel">Dead links (slow)</label>
             </div>
 
             <!-- Redirections -->
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-              <input type="checkbox" id="checkRedirects" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
-              <label for="checkRedirects" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkRedirectsLabel">Redirects (slow)</label>
+            <div class="option-row option-row--center option-row--mb-sm">
+              <input type="checkbox" id="checkRedirects" class="option-checkbox" />
+              <label for="checkRedirects" class="option-label option-label--flat" data-i18n="checkRedirectsLabel">Redirects (slow)</label>
             </div>
 
             <!-- Content duplicates -->
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" id="checkContentDuplicates" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer; flex-shrink: 0;" />
-              <label for="checkContentDuplicates" style="margin-bottom: 0; font-size: 12px; font-weight: 400; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="checkContentDuplicatesLabel">Content duplicates (very slow)</label>
+            <div class="option-row option-row--center">
+              <input type="checkbox" id="checkContentDuplicates" class="option-checkbox" />
+              <label for="checkContentDuplicates" class="option-label option-label--flat" data-i18n="checkContentDuplicatesLabel">Content duplicates (very slow)</label>
             </div>
           </div>
 
           <div id="reorgBtnGroup">
-            <button class="btn btn-primary" id="btnLaunch" style="width: 100%;">
+            <button class="btn btn-primary btn-full" id="btnLaunch">
               <span data-i18n="btnLaunch">Run analysis</span>
             </button>
           </div>
-          <button class="btn btn-danger hidden" id="btnStopReorg" style="width: 100%; margin-top: 10px;">
+          <button class="btn btn-danger btn-full btn-mt hidden" id="btnStopReorg">
             <span data-i18n="btnStop">🛑 Stop Reorganization</span>
           </button>
         </section>
 
         <!-- STATUS & LOGS PANEL -->
         <section class="section status-panel">
-          <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div class="section-title section-title--flex">
             <span data-i18n="sectionStatus">💻 Status Console</span>
-            <button id="btnCopyLogs" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 4px; padding: 3px 8px; font-size: 9px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: var(--font-family); font-weight: 500;" data-i18n="btnCopyLogs">Copier les logs</button>
+            <button id="btnCopyLogs" data-i18n="btnCopyLogs">Copier les logs</button>
           </div>
           <div class="log-container" id="logContainer" role="log" aria-live="polite" aria-label="Analysis Status Console">
             <div class="log-entry info" data-i18n="logReady">&gt; Ready to analyze your bookmarks. Save your API key then launch a reorganization.</div>
@@ -145,15 +146,15 @@
 
       <!-- VALIDATION VIEW (CHECKLIST) -->
       <div id="validationView" class="view validation-panel hidden">
-        <section class="section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+        <section class="section validation-section">
           <div class="section-title">
             <span data-i18n="validationTitle">📋 Proposed Changes</span>
-            <span class="badge" id="reorgModeBadge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border-color: rgba(99,102,241,0.4);">Minimal</span>
+            <span class="badge" id="reorgModeBadge">Minimal</span>
           </div>
 
-          <div class="explanation-block" id="explanationBlock" style="display: none;">
-            <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #818cf8; letter-spacing: 0.5px;" data-i18n="explanationAITitle">AI EXPLANATION</p>
-            <div id="iaExplanationText" style="font-size: 11px; line-height: 1.5; color: var(--text-muted);"></div>
+          <div class="explanation-block" id="explanationBlock">
+            <p class="explanation-title" data-i18n="explanationAITitle">AI EXPLANATION</p>
+            <div id="iaExplanationText"></div>
           </div>
 
           <!-- ACTION FILTERS -->
@@ -165,7 +166,7 @@
           </div>
 
           <div class="action-header-bar">
-            <span style="font-size: 11px; color: var(--text-muted);" id="actionCount">0 proposed changes</span>
+            <span id="actionCount">0 proposed changes</span>
             <div class="selection-controls">
               <span id="selectAll" data-i18n="selectAll">Select All</span>
               <span>|</span>
@@ -177,9 +178,9 @@
             <!-- Action items will be generated here -->
           </div>
 
-          <div style="display: flex; gap: 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color);">
-            <button class="btn btn-flat btn-danger" id="btnCancel" style="flex: 1;" title="Cancel the analysis and start over">🔄 Restart</button>
-            <button class="btn btn-success" id="btnApply" style="flex: 2;" data-i18n="btnApply">Apply selected changes</button>
+          <div class="validation-actions">
+            <button class="btn btn-flat btn-danger" id="btnCancel" title="Cancel the analysis and start over">🔄 Restart</button>
+            <button class="btn btn-success" id="btnApply" data-i18n="btnApply">Apply selected changes</button>
           </div>
         </section>
       </div>
@@ -189,24 +190,24 @@
     <div id="tabConfigPanel" class="tab-panel hidden">
       <!-- CONFIGURATION SECTION -->
       <section class="section" id="configSection">
-        <div class="section-title" id="configHeader" style="user-select: none; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid rgba(99, 102, 241, 0.3); padding-bottom: 12px; margin-bottom: 16px;">
-          <span style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="sectionConfigTitle">⚙️ LLM Configuration</span>
-          <div style="display: flex; gap: 8px; font-size: 9px; align-items: center;" id="configHeaderActions">
-            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnExportConfig" data-i18n="btnExport">Export</span>
-            <span style="color: var(--border-color);">|</span>
-            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnImportConfig" data-i18n="btnImport">Import</span>
-            <span style="color: var(--border-color);">|</span>
-            <span style="cursor: pointer; color: var(--accent-color); font-weight: 500; transition: all 0.2s;" id="btnResetConfig" data-i18n="btnReset">Reset</span>
+        <div class="config-header" id="configHeader">
+          <span class="config-header__title" data-i18n="sectionConfigTitle">⚙️ LLM Configuration</span>
+          <div class="config-header-actions" id="configHeaderActions">
+            <span class="config-action-link" id="btnExportConfig" data-i18n="btnExport">Export</span>
+            <span class="config-action-sep">|</span>
+            <span class="config-action-link" id="btnImportConfig" data-i18n="btnImport">Import</span>
+            <span class="config-action-sep">|</span>
+            <span class="config-action-link" id="btnResetConfig" data-i18n="btnReset">Reset</span>
           </div>
         </div>
         <!-- Hidden input for JSON config import -->
-        <input type="file" id="importConfigFile" accept=".json" style="display: none;" />
+        <input type="file" id="importConfigFile" accept=".json" />
 
         <div id="configBody" class="config-body">
 
           <!-- Fournisseur + Modèle côte à côte -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="form-group" style="margin-bottom: 0;">
+          <div class="grid-2">
+            <div class="form-group form-group--0">
               <label for="provider" data-i18n="labelProvider">Fournisseur</label>
               <select id="provider">
                 <option value="openai">OpenAI</option>
@@ -219,35 +220,35 @@
                 <option value="custom">Custom</option>
               </select>
             </div>
-            <div class="form-group" style="margin-bottom: 0;">
+            <div class="form-group form-group--0">
               <label for="modelSelect" data-i18n="labelModelName">Modèle</label>
-              <div style="display: flex; gap: 6px;">
-                <select id="modelSelect" style="flex: 1; min-width: 0;"></select>
-                <button type="button" id="btnFetchModels" style="padding: 0 10px; min-width: auto; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 0; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-color); cursor: pointer; border-radius: 6px;" data-i18n-title="titleFetchModels" title="Charger les modèles disponibles depuis l'API">🔄</button>
+              <div class="model-select-row">
+                <select id="modelSelect"></select>
+                <button type="button" id="btnFetchModels" data-i18n-title="titleFetchModels" title="Charger les modèles disponibles depuis l'API">🔄</button>
               </div>
-              <input type="text" id="modelName" class="hidden" style="margin-top: 6px;" placeholder="Nom du modèle personnalisé" />
+              <input type="text" id="modelName" class="hidden" placeholder="Nom du modèle personnalisé" />
             </div>
           </div>
 
           <!-- Clé API -->
-          <div class="form-group" style="margin-top: 10px;">
+          <div class="form-group form-group--mt">
             <label for="apiKey" data-i18n="labelApiKey">Clé API</label>
             <input type="password" id="apiKey" data-i18n-placeholder="placeholderApiKey" placeholder="sk-..." />
           </div>
 
           <!-- Paramètres avancés -->
-          <details style="margin-top: 10px; margin-bottom: 10px; padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
-            <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);" data-i18n="summaryAdvanced">⚙️ Paramètres avancés</summary>
-            <div style="margin-top: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; border-top: 1px solid rgba(99, 102, 241, 0.2);">
+          <details class="details-panel details-panel--indigo">
+            <summary data-i18n="summaryAdvanced">⚙️ Paramètres avancés</summary>
+            <div class="details-panel__body">
 
-              <div class="form-group" style="margin-bottom: 0;">
+              <div class="form-group form-group--0">
                 <label for="apiUrl" data-i18n="labelApiUrl">URL de l'API</label>
                 <input type="text" id="apiUrl" placeholder="https://api.openai.com/v1" />
               </div>
 
               <!-- Max tokens + Batch size côte à côte -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group" style="margin-bottom: 0;">
+              <div class="grid-2">
+                <div class="form-group form-group--0">
                   <label for="maxTokens" data-i18n="maxTokens"></label>
                   <select id="maxTokens">
                     <option value="8192">8 192</option>
@@ -260,7 +261,7 @@
                     <option value="1048576">1 048 576</option>
                   </select>
                 </div>
-                <div class="form-group" style="margin-bottom: 0;">
+                <div class="form-group form-group--0">
                   <label for="linkCheckBatchSize" data-i18n="labelBatchSize">Vitesse vérif. liens</label>
                   <select id="linkCheckBatchSize">
                     <option value="4"><span data-i18n="slowSpeed">4 — Lent</span></option>
@@ -272,48 +273,46 @@
                 </div>
               </div>
 
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                <input type="checkbox" id="debugMode" style="width: 14px; height: 14px; accent-color: var(--accent-color); cursor: pointer;" />
-                <label for="debugMode" style="margin-bottom: 0; font-size: 12px; font-weight: 500; color: var(--text-main); cursor: pointer; user-select: none;" data-i18n="debugMode"></label>
+              <div class="option-row option-row--center option-row--mt-sm">
+                <input type="checkbox" id="debugMode" class="option-checkbox" />
+                <label for="debugMode" class="option-label option-label--flat" data-i18n="debugMode"></label>
               </div>
             </div>
           </details>
 
           <!-- Personnalisation des prompts -->
-          <details style="margin-bottom: 10px; padding: 0; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05); border-radius: 6px; overflow: hidden;">
-            <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);" data-i18n="summaryPrompts"></summary>
-            <div style="margin-top: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; border-top: 1px solid rgba(168, 85, 247, 0.2);">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptMinimal" style="font-size: 11px; font-weight: 600;" data-i18n="promptMinimal"></label>
-                <textarea id="promptMinimal" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
+          <details class="details-panel details-panel--purple">
+            <summary data-i18n="summaryPrompts"></summary>
+            <div class="details-panel__body">
+              <div class="form-group form-group--0">
+                <label for="promptMinimal" class="prompt-label" data-i18n="promptMinimal"></label>
+                <textarea id="promptMinimal" class="prompt-textarea" rows="4"></textarea>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptComplete" style="font-size: 11px; font-weight: 600;" data-i18n="promptComplete"></label>
-                <textarea id="promptComplete" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
+              <div class="form-group form-group--0">
+                <label for="promptComplete" class="prompt-label" data-i18n="promptComplete"></label>
+                <textarea id="promptComplete" class="prompt-textarea" rows="4"></textarea>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label for="promptSuggest" style="font-size: 11px; font-weight: 600;" data-i18n="promptSuggest"></label>
-                <textarea id="promptSuggest" rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; color: var(--text-main); font-family: var(--font-family); font-size: 11px; outline: none; resize: vertical;"></textarea>
+              <div class="form-group form-group--0">
+                <label for="promptSuggest" class="prompt-label" data-i18n="promptSuggest"></label>
+                <textarea id="promptSuggest" class="prompt-textarea" rows="4"></textarea>
               </div>
-              <button class="btn btn-flat" id="btnResetPrompts" style="font-size: 10px; padding: 4px 8px; height: auto; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); color: #c084fc;" data-i18n="btnReset">Réinitialiser les prompts</button>
+              <button class="btn btn-flat" id="btnResetPrompts" data-i18n="btnReset">Réinitialiser les prompts</button>
             </div>
           </details>
 
-          <button class="btn btn-flat" id="btnSaveConfig" style="width: 100%; font-size: 11px; padding: 8px 12px; margin-top: 8px; border-color: var(--border-color); color: var(--accent-color);" data-i18n="btnSaveConfig">💾 Sauvegarder</button>
+          <button class="btn btn-flat" id="btnSaveConfig" data-i18n="btnSaveConfig">💾 Sauvegarder</button>
         </div>
       </section>
     </div>
 
     <!-- HISTORIQUE PANEL (TAB HISTORIQUE) -->
     <div id="tabHistoryPanel" class="tab-panel hidden">
-      <!-- HISTORIQUE SECTION -->
-      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; max-height: 480px;">
-        <div class="section-title" style="font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid rgba(99, 102, 241, 0.3); padding-bottom: 12px; margin-bottom: 16px;">
+      <section class="section history-section">
+        <div class="section-title section-title--bordered">
           <span data-i18n="historyTitle">📜 Session History</span>
-          <button class="btn btn-flat btn-danger" id="btnClearHistory" style="font-size: 9px; padding: 3px 8px; height: auto; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);" data-i18n="btnClearHistory">Clear</button>
+          <button class="btn btn-flat btn-danger" id="btnClearHistory" data-i18n="btnClearHistory">Clear</button>
         </div>
-
-        <div class="action-list-container" id="historyListContainer" style="max-height: 400px; margin-bottom: 0;">
+        <div class="action-list-container" id="historyListContainer">
           <!-- History sessions will be rendered here -->
         </div>
       </section>
@@ -321,96 +320,96 @@
 
     <!-- FORGOTTEN PANEL (TAB FORGOTTEN) -->
     <div id="tabForgottenPanel" class="tab-panel hidden">
-      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto; padding: 14px;">
+      <section class="section panel-section--scroll panel-section--padded">
         <!-- Content injected by forgotten.js -->
       </section>
     </div>
 
     <!-- ABOUT PANEL (TAB ABOUT) -->
     <div id="tabAboutPanel" class="tab-panel hidden">
-      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto;">
+      <section class="section panel-section--scroll">
         <div class="section-title" data-i18n="aboutTitle">ℹ️ About FavorAI</div>
 
-        <div style="font-size: 11px; line-height: 1.6; color: var(--text-main); padding: 4px;">
+        <div class="tab-content">
           <!-- Header with Icon -->
-          <div style="margin-bottom: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; text-align: center;">
-            <img src="icons/icon48.png" alt="FavorAI" style="width: 48px; height: 48px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);" />
-            <p style="margin: 0 0 4px 0; font-weight: 700; font-size: 13px; color: #818cf8;" id="aboutVersion">FavorAI</p>
-            <p style="margin: 0; font-size: 10px; color: var(--text-muted);" data-i18n="appTagline">Intelligent bookmark management</p>
+          <div class="about-header">
+            <img src="icons/icon48.png" alt="FavorAI" class="about-icon" />
+            <p id="aboutVersion">FavorAI</p>
+            <p class="about-tagline" data-i18n="appTagline">Intelligent bookmark management</p>
           </div>
 
           <!-- Description Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutTitle">✨ What is FavorAI?</p>
-            <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; line-height: 1.5; color: var(--text-main);" data-i18n="aboutDescription">
+          <div class="content-block">
+            <p class="content-heading" data-i18n="aboutTitle">✨ What is FavorAI?</p>
+            <div class="desc-block" data-i18n="aboutDescription">
               FavorAI is a Chrome extension that uses artificial intelligence to intelligently organize your bookmarks. It analyzes your bookmark structure, detects smart duplicates and dead links, then proposes or applies semantic reorganization.
             </div>
           </div>
 
           <!-- Features Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutFeatures">🎯 Core Features</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDuplicates">🔍 Smart duplicate detection</p>
+          <div class="content-block">
+            <p class="content-heading" data-i18n="aboutFeatures">🎯 Core Features</p>
+            <div class="feature-list">
+              <div class="feature-item feature-item--green">
+                <p data-i18n="featureDuplicates">🔍 Smart duplicate detection</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureDeadLinks">🔗 Dead link detection</p>
+              <div class="feature-item feature-item--blue">
+                <p data-i18n="featureDeadLinks">🔗 Dead link detection</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(168, 85, 247, 0.08); border-left: 3px solid #a855f7; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureAIOrganization">🤖 AI-powered organization</p>
+              <div class="feature-item feature-item--purple">
+                <p data-i18n="featureAIOrganization">🤖 AI-powered organization</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(249, 115, 22, 0.08); border-left: 3px solid #f97316; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureHistory">📜 Organization history & rollback</p>
+              <div class="feature-item feature-item--orange">
+                <p data-i18n="featureHistory">📜 Organization history &amp; rollback</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(79, 70, 229, 0.08); border-left: 3px solid #4f46e5; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="featureMultiProvider">🔌 Support for multiple AI providers</p>
+              <div class="feature-item feature-item--indigo">
+                <p data-i18n="featureMultiProvider">🔌 Support for multiple AI providers</p>
               </div>
             </div>
           </div>
 
           <!-- Supported Providers Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutProviders">🔗 Supported Providers</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-              <div style="padding: 8px; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟠 OpenAI</div>
-              <div style="padding: 8px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🔵 Google Gemini</div>
-              <div style="padding: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟣 Mistral</div>
-              <div style="padding: 8px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">⚡ Claude</div>
-              <div style="padding: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🟢 DeepSeek</div>
-              <div style="padding: 8px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🤖 Grok</div>
-              <div style="padding: 8px; background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 6px; font-size: 10px; color: var(--text-main); text-align: center; font-weight: 500;">🏠 Ollama</div>
+          <div class="content-block">
+            <p class="content-heading" data-i18n="aboutProviders">🔗 Supported Providers</p>
+            <div class="provider-grid">
+              <div class="provider-chip provider-chip--orange">🟠 OpenAI</div>
+              <div class="provider-chip provider-chip--blue">🔵 Google Gemini</div>
+              <div class="provider-chip provider-chip--purple">🟣 Mistral</div>
+              <div class="provider-chip provider-chip--indigo">⚡ Claude</div>
+              <div class="provider-chip provider-chip--green">🟢 DeepSeek</div>
+              <div class="provider-chip provider-chip--violet">🤖 Grok</div>
+              <div class="provider-chip provider-chip--pink">🏠 Ollama</div>
             </div>
           </div>
 
           <!-- Privacy & Security Section -->
-          <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;">🔒 Privacy & Security</p>
-            <ul style="margin: 0; padding-left: 16px; font-size: 10px; line-height: 1.7; color: var(--text-muted);">
-              <li style="margin-bottom: 4px;">✓ Only titles and folder structure (no URLs) are sent to AI providers</li>
-              <li style="margin-bottom: 4px;">✓ Your API key is stored locally in your browser</li>
-              <li style="margin-bottom: 4px;">✓ No data is sent to FavorAI servers</li>
-              <li style="margin-bottom: 4px;">✓ Analysis happens in your browser</li>
+          <div class="privacy-block">
+            <p class="privacy-heading">🔒 Privacy &amp; Security</p>
+            <ul class="privacy-list">
+              <li>✓ Only titles and folder structure (no URLs) are sent to AI providers</li>
+              <li>✓ Your API key is stored locally in your browser</li>
+              <li>✓ No data is sent to FavorAI servers</li>
+              <li>✓ Analysis happens in your browser</li>
               <li>✓ You maintain full control over your bookmarks</li>
             </ul>
           </div>
 
           <!-- Quick Tips Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;">💡 Quick Tips</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <details style="padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
-                <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">👉 Getting Started</summary>
-                <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
+          <div class="content-block">
+            <p class="content-heading">💡 Quick Tips</p>
+            <div class="tips-list">
+              <details class="details-tip">
+                <summary>👉 Getting Started</summary>
+                <div class="details-tip__body">
                   1. Go to Configuration tab and select your LLM provider<br/>
                   2. Enter your API key (get one free from any provider)<br/>
                   3. Click "Minimal" to start your first reorganization<br/>
                   4. Review changes in the checklist before applying
                 </div>
               </details>
-              <details style="padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
-                <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚙️ Configuration Tips</summary>
-                <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2);">
+              <details class="details-tip">
+                <summary>⚙️ Configuration Tips</summary>
+                <div class="details-tip__body">
                   • Try different providers — they suggest different organizations<br/>
                   • Enable "Check dead links" for thorough analysis<br/>
                   • Use "Minimal" mode to review changes first<br/>
@@ -421,32 +420,32 @@
           </div>
 
           <!-- Support Section -->
-          <div style="margin-bottom: 16px; padding: 14px; background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(251,191,36,0.04)); border: 1px solid rgba(251,191,36,0.25); border-radius: 10px; text-align: center;">
-            <p style="margin: 0 0 6px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #fbbf24;">☕ Support FavorAI</p>
-            <p style="margin: 0 0 12px 0; font-size: 10px; color: var(--text-muted); line-height: 1.5;">FavorAI is free and open-source. If it saves you time, consider buying me a coffee — it helps a lot! 💜</p>
-            <a href="https://buymeacoffee.com/waewoo" target="_blank" id="bmcLink" style="display: inline-block; text-decoration: none;">
+          <div class="support-block">
+            <p class="support-heading">☕ Support FavorAI</p>
+            <p class="support-desc">FavorAI is free and open-source. If it saves you time, consider buying me a coffee — it helps a lot! 💜</p>
+            <a href="https://buymeacoffee.com/waewoo" target="_blank" id="bmcLink" class="support-link">
               <img
                 src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
                 alt="Buy Me A Coffee"
                 width="160"
                 height="45"
-                style="border-radius: 8px; display: block; margin: 0 auto;"
+                class="support-img"
                 onerror="this.style.display='none'; document.getElementById('bmcFallback').style.display='inline-flex';"
               />
-              <span id="bmcFallback" style="display:none; align-items:center; gap:6px; background:#fbbf24; color:#000; font-size:12px; font-weight:700; padding:9px 18px; border-radius:8px; cursor:pointer;">☕ Buy me a coffee</span>
+              <span id="bmcFallback">☕ Buy me a coffee</span>
             </a>
           </div>
 
           <!-- Links Section -->
-          <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-bottom: 0;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="aboutLinks">🔗 Resources</p>
-            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
-              <a href="https://github.com/waewoo/favorai-chrome" target="_blank" style="color: var(--accent-color); text-decoration: none; font-weight: 500;">📱 GitHub Project</a>
-              <span style="color: var(--border-color);">•</span>
-              <a href="privacy_policy.html" id="btnPrivacyLink" target="_blank" rel="noopener noreferrer" style="color: var(--accent-color); text-decoration: none; font-weight: 500;" data-i18n="btnPrivacyPolicy">📄 Privacy Policy</a>
+          <div class="links-section">
+            <p class="content-heading" data-i18n="aboutLinks">🔗 Resources</p>
+            <div class="links-row">
+              <a href="https://github.com/waewoo/favorai-chrome" target="_blank">📱 GitHub Project</a>
+              <span class="links-sep">•</span>
+              <a href="privacy_policy.html" id="btnPrivacyLink" target="_blank" rel="noopener noreferrer" data-i18n="btnPrivacyPolicy">📄 Privacy Policy</a>
             </div>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); text-align: center; font-size: 10px; color: var(--text-muted);">
-              <p style="margin: 0;" data-i18n="aboutThankYou">Thank you for using FavorAI! 💜</p>
+            <div class="links-footer">
+              <p data-i18n="aboutThankYou">Thank you for using FavorAI! 💜</p>
             </div>
           </div>
         </div>
@@ -455,41 +454,41 @@
 
     <!-- DOCUMENTATION PANEL (TAB DOCS) -->
     <div id="tabDocumentationPanel" class="tab-panel hidden">
-      <section class="section" style="flex-grow: 1; display: flex; flex-direction: column; overflow: auto;">
+      <section class="section panel-section--scroll">
         <div class="section-title" data-i18n="docsTitle">📖 Documentation</div>
 
-        <div style="font-size: 11px; line-height: 1.6; color: var(--text-main); padding: 4px;">
+        <div class="tab-content">
           <!-- Overview Section -->
-          <div style="margin-bottom: 16px; padding: 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px;">
-            <p style="margin: 0 0 8px 0; font-weight: 700; font-size: 12px; color: #818cf8;" data-i18n="docsOverviewTitle">✨ What is FavorAI?</p>
-            <p style="margin: 0; font-size: 11px; color: var(--text-muted); line-height: 1.5;" data-i18n="docsOverviewText">
+          <div class="docs-overview">
+            <p class="docs-overview__title" data-i18n="docsOverviewTitle">✨ What is FavorAI?</p>
+            <p class="docs-overview__text" data-i18n="docsOverviewText">
               FavorAI is an intelligent bookmark manager that uses artificial intelligence to organize your Chrome bookmarks automatically. It analyzes your bookmark structure, detects smart duplicates and dead links, and proposes semantic reorganization.
             </p>
           </div>
 
           <!-- Features Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsFeatures">🎯 Core Features</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature1">📊 Smart Duplicate Detection</p>
+          <div class="content-block">
+            <p class="content-heading" data-i18n="docsFeatures">🎯 Core Features</p>
+            <div class="feature-list">
+              <div class="feature-item feature-item--green">
+                <p data-i18n="docsFeature1">📊 Smart Duplicate Detection</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature2">🔗 Dead Link Detection</p>
+              <div class="feature-item feature-item--blue">
+                <p data-i18n="docsFeature2">🔗 Dead Link Detection</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(168, 85, 247, 0.08); border-left: 3px solid #a855f7; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature3">🤖 AI Organization</p>
+              <div class="feature-item feature-item--purple">
+                <p data-i18n="docsFeature3">🤖 AI Organization</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(249, 115, 22, 0.08); border-left: 3px solid #f97316; border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsFeature4">📜 History & Rollback</p>
+              <div class="feature-item feature-item--orange">
+                <p data-i18n="docsFeature4">📜 History &amp; Rollback</p>
               </div>
             </div>
           </div>
 
           <!-- How It Works Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsHowItWorks">⚙️ How It Works</p>
-            <div style="padding: 12px; background: rgba(99,102,241,0.07); border-left: 4px solid #6366f1; border-radius: 6px; font-size: 11px; white-space: pre-wrap; line-height: 1.7; color: var(--text-main);" data-i18n="docsWorkflow">
+          <div class="content-block">
+            <p class="content-heading" data-i18n="docsHowItWorks">⚙️ How It Works</p>
+            <div class="docs-workflow" data-i18n="docsWorkflow">
               1. Configure an LLM provider (OpenAI, Gemini, etc.) in the Configuration tab
               2. Click "Minimal" or "Complete" to start analysis
               3. Review proposed changes in the checklist
@@ -499,83 +498,69 @@
           </div>
 
           <!-- Getting API Tokens Section -->
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 12px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsGettingTokens">🔑 Getting API Tokens</p>
+          <div class="content-block">
+            <p class="content-heading" data-i18n="docsGettingTokens">🔑 Getting API Tokens</p>
 
-            <!-- OpenAI -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(249, 115, 22, 0.08);">🟠 <span data-i18n="docsOpenAITitle">OpenAI</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(249, 115, 22, 0.2); white-space: pre-wrap;" data-i18n="docsOpenAIText">
-              </div>
+            <details class="details-provider details-provider--orange">
+              <summary>🟠 <span data-i18n="docsOpenAITitle">OpenAI</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsOpenAIText"></div>
             </details>
 
-            <!-- Gemini -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(59, 130, 246, 0.08);">🔵 <span data-i18n="docsGeminiTitle">Google Gemini</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(59, 130, 246, 0.2); white-space: pre-wrap;" data-i18n="docsGeminiText">
-              </div>
+            <details class="details-provider details-provider--blue">
+              <summary>🔵 <span data-i18n="docsGeminiTitle">Google Gemini</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsGeminiText"></div>
             </details>
 
-            <!-- Mistral -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(168, 85, 247, 0.08);">🟣 <span data-i18n="docsMistralTitle">Mistral AI</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(168, 85, 247, 0.2); white-space: pre-wrap;" data-i18n="docsMistralText">
-              </div>
+            <details class="details-provider details-provider--purple">
+              <summary>🟣 <span data-i18n="docsMistralTitle">Mistral AI</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsMistralText"></div>
             </details>
 
-            <!-- Claude -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(99, 102, 241, 0.08);">⚡ <span data-i18n="docsClaudeTitle">Anthropic Claude</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(99, 102, 241, 0.2); white-space: pre-wrap;" data-i18n="docsClaudeText">
-              </div>
+            <details class="details-provider details-provider--indigo">
+              <summary>⚡ <span data-i18n="docsClaudeTitle">Anthropic Claude</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsClaudeText"></div>
             </details>
 
-            <!-- DeepSeek -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(16, 185, 129, 0.08);">🟢 <span data-i18n="docsDeepSeekTitle">DeepSeek</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(16, 185, 129, 0.2); white-space: pre-wrap;" data-i18n="docsDeepSeekText">
-              </div>
+            <details class="details-provider details-provider--green">
+              <summary>🟢 <span data-i18n="docsDeepSeekTitle">DeepSeek</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsDeepSeekText"></div>
             </details>
 
-            <!-- Grok -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(139, 92, 246, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(139, 92, 246, 0.08);">🤖 <span data-i18n="docsGrokTitle">Grok (xAI)</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(139, 92, 246, 0.2); white-space: pre-wrap;" data-i18n="docsGrokText">
-              </div>
+            <details class="details-provider details-provider--violet">
+              <summary>🤖 <span data-i18n="docsGrokTitle">Grok (xAI)</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsGrokText"></div>
             </details>
 
-            <!-- Ollama -->
-            <details style="margin-bottom: 12px; padding: 0; border: 1px solid rgba(236, 72, 153, 0.3); background: rgba(236, 72, 153, 0.05); border-radius: 6px; overflow: hidden;">
-              <summary style="padding: 10px 12px; font-weight: 600; font-size: 11px; color: var(--text-main); cursor: pointer; user-select: none; background: rgba(236, 72, 153, 0.08);">🏠 <span data-i18n="docsOllamaTitle">Ollama (Local)</span> <span style="font-size: 9px; color: var(--text-muted); float: right; margin-top: 2px;" data-i18n="docsClickExpand">Click to expand</span></summary>
-              <div style="padding: 10px 12px; font-size: 10px; line-height: 1.6; color: var(--text-muted); border-top: 1px solid rgba(236, 72, 153, 0.2); white-space: pre-wrap;" data-i18n="docsOllamaText">
-              </div>
+            <details class="details-provider details-provider--pink">
+              <summary>🏠 <span data-i18n="docsOllamaTitle">Ollama (Local)</span> <span class="details-provider__expand" data-i18n="docsClickExpand">Click to expand</span></summary>
+              <div class="details-provider__body" data-i18n="docsOllamaText"></div>
             </details>
           </div>
 
           <!-- Privacy & Security Section -->
-          <div style="margin-bottom: 16px; padding: 12px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #22c55e;" data-i18n="docsPrivacy">🔒 Privacy & Security</p>
-            <p style="margin: 0; font-size: 10px; line-height: 1.7; color: var(--text-muted); white-space: pre-wrap;" data-i18n="docsPrivacyText"></p>
+          <div class="docs-privacy">
+            <p class="docs-privacy__heading" data-i18n="docsPrivacy">🔒 Privacy &amp; Security</p>
+            <p class="docs-privacy__text" data-i18n="docsPrivacyText"></p>
           </div>
 
           <!-- Tips & Best Practices Section -->
-          <div style="margin-bottom: 0;">
-            <p style="margin: 0 0 10px 0; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #818cf8;" data-i18n="docsTips">💡 Tips & Best Practices</p>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip1">🔍 Start with "Minimal" mode to review changes first</p>
+          <div>
+            <p class="content-heading" data-i18n="docsTips">💡 Tips &amp; Best Practices</p>
+            <div class="feature-list">
+              <div class="feature-item feature-item--indigo-light">
+                <p data-i18n="docsTip1">🔍 Start with "Minimal" mode to review changes first</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip2">⚙️ Enable advanced link checks for redirects and cross-domain article duplicates</p>
+              <div class="feature-item feature-item--indigo-light">
+                <p data-i18n="docsTip2">⚙️ Enable advanced link checks for redirects and cross-domain article duplicates</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip3">💾 History keeps your last 50 sessions</p>
+              <div class="feature-item feature-item--indigo-light">
+                <p data-i18n="docsTip3">💾 History keeps your last 50 sessions</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip4">🔌 Try different providers — they suggest different organizations</p>
+              <div class="feature-item feature-item--indigo-light">
+                <p data-i18n="docsTip4">🔌 Try different providers — they suggest different organizations</p>
               </div>
-              <div style="padding: 8px 10px; background: rgba(99, 102, 241, 0.08); border-radius: 4px;">
-                <p style="margin: 0; font-size: 11px; color: var(--text-main);" data-i18n="docsTip5">✏️ You can customize the default prompts in the Configuration tab</p>
+              <div class="feature-item feature-item--indigo-light">
+                <p data-i18n="docsTip5">✏️ You can customize the default prompts in the Configuration tab</p>
               </div>
             </div>
           </div>
@@ -585,8 +570,8 @@
   </div>
 
   <!-- FOOTER -->
-  <footer style="text-align: center; padding: 6px 20px 10px; border-top: 1px solid var(--border-color); margin-top: -8px;">
-    <button id="btnPrivacyPolicy" style="background: none; border: none; color: var(--text-muted); font-size: 10px; cursor: pointer; font-family: var(--font-family); text-decoration: underline; padding: 0;" data-i18n="btnPrivacyPolicy"></button>
+  <footer>
+    <button id="btnPrivacyPolicy" data-i18n="btnPrivacyPolicy"></button>
   </footer>
 
   <!-- CUSTOM CONFIRMATION MODAL -->
@@ -595,8 +580,8 @@
       <h3 id="modalTitle">Confirmation</h3>
       <p id="modalMessage">Are you sure?</p>
       <div class="modal-buttons-custom">
-        <button id="modalBtnCancel" class="btn btn-flat" style="font-size: 11px; padding: 6px 12px;" data-i18n="btnCancel">Cancel</button>
-        <button id="modalBtnConfirm" class="btn btn-primary" style="font-size: 11px; padding: 6px 12px; margin-top: 0; box-shadow: none;">Confirm</button>
+        <button id="modalBtnCancel" class="btn btn-flat">Cancel</button>
+        <button id="modalBtnConfirm" class="btn btn-primary">Confirm</button>
       </div>
     </div>
   </div>
