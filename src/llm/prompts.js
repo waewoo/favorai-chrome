@@ -17,7 +17,7 @@ Chrome truncates bookmarks bar folder names after ~18 characters. Long names lik
 - ALWAYS prefix top-level folder names with a single expressive emoji (e.g. 💰 Finance, 🤖 AI, 🏠 Home, 🛠️ DevOps)
 - After the emoji and space, the text part must be ≤ 15 characters
 - Prefer short, punchy names: "🤖 AI & LLMs" over "Intelligence Artificielle & Machine Learning"
-- Examples of GOOD top-level names: "💰 Finance", "🤖 AI & LLMs", "🛠️ DevOps", "🏠 Personal", "📚 Learning", "⚡ Quick Access"
+- Examples of GOOD top-level names: "💰 Finance", "🤖 AI & LLMs", "🛠️ DevOps", "🏠 Personal", "📚 Learning"
 - Examples of BAD top-level names (too long): "Finance & Investissements", "Intelligence Artificielle", "Développement Web & Mobile"
 - Sub-folder names (depth ≥ 2) may be longer — they appear in dropdown menus, not the toolbar
 
@@ -56,7 +56,7 @@ CRITICAL RULES FOR OUTPUT:
    - New folders use IDs starting with "new_" (e.g., "new_folder_devops", "new_folder_ai")
    - NEVER include empty folders in reorganizedTree — every folder must contain at least one child
    - NEVER keep fully-replaced or emptied original folders in the reorganizedTree
-   - Direct bookmarks placed directly on the bookmarks bar (not inside any folder) must be grouped into "★ Quick Access"
+   - Direct bookmarks placed directly on the bookmarks bar (not inside any folder) must be grouped into their most semantically appropriate folder (e.g. "🤖 AI & LLMs" or "🏠 Personal" or "💰 Finance"). Do NOT leave bookmarks at the root level.
 
 5. DUPLICATE BOOKMARKS:
    - If two bookmarks have identical or near-identical titles suggesting the same resource, keep only the one in the most semantically appropriate folder
@@ -142,7 +142,7 @@ ABSOLUTE CONSTRAINTS:
 - NEVER mass-move or "optimize" the structure
 - NEVER act on ambiguous or unclear titles
 - TOP-LEVEL FOLDER NAMES: MUST start with an emoji + be ≤ 18 characters total (Chrome truncates longer names in the toolbar). Sub-folder names may be longer.
-- QUICK ACCESS: any bookmark placed directly on the bookmarks bar (not inside any folder) must be moved into a "★ Quick Access" folder — create it if it doesn't exist
+- ROOT BOOKMARKS: any bookmark placed directly on the bookmarks bar (not inside any folder) must be moved into their most semantically appropriate folder.
 
 EXPLANATION FORMAT (put in the "explanation" field):
 Structure your explanation as follows (CRITICAL: use bookmark TITLES only, NO IDs):
@@ -172,7 +172,7 @@ Specific rules:
 COMPLETE MODE — MANDATORY WORKFLOW:
 
 Step 1 — PLAN your 6 to 8 new top-level categories (all with new_ IDs):
-  Example: new_dev, new_devops, new_ai, new_finance, new_personal, new_reference, new_quickaccess
+  Example: new_dev, new_devops, new_ai, new_finance, new_personal, new_reference
   → Write these down mentally before generating the JSON
 
 Step 2 — ASSIGN every bookmark to one of these new_ categories (or a sub-folder within)
@@ -192,7 +192,7 @@ Step 4 — GENERATE the JSON with:
 - TOP-LEVEL FOLDER NAMES: MUST start with an emoji + be ≤ 18 characters total (Chrome truncates longer names in the toolbar). Sub-folder names may be longer.
 - MERGE thin folders (< 3 bookmarks) into broader categories where appropriate.
 - NO ORPHAN FOLDERS: any original folder not included in reorganizedTree is automatically deleted.
-- QUICK ACCESS: bookmarks placed directly on the bar (not in a folder) → "★ Quick Access" (new_ ID).
+- ROOT BOOKMARKS: bookmarks placed directly on the bar (not in a folder) must be grouped into the most semantically appropriate category.
 
 EXPLANATION FORMAT (CRITICAL: use bookmark TITLES only, NO IDs):
 Structure your explanation with these sections:

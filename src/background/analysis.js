@@ -354,6 +354,73 @@ export async function checkUrlStatus(url, userSignal) {
 }
 
 /**
+ * Scans a list of bookmarks to find the top 10 most visited ones.
+ * Uses chrome.history.getVisits to get visit counts.
+ */
+export async function getTopVisitedBookmarks(bookmarks, batchSize = 50) {
+  if (typeof chrome === 'undefined' || !chrome.history || !chrome.history.getVisits) {
+    return [];
+  }
+  const bookmarksWithVisits = [];
+  let failedHistoryReads = 0;
+
+  for (let i = 0; i < bookmarks.length; i += batchSize) {
+    const batch = bookmarks.slice(i, i + batchSize);
+    const results = await Promise.all(batch.map(async (bm) => {
+      try {
+        const visits = await chrome.history.getVisits({ url: bm.url });
+        return { bookmark: bm, visitCount: visits ? visits.length : 0 };
+      } catch {
+        failedHistoryReads++;
+        return { bookmark: bm, visitCount: 0 };
+      }
+    }));
+
+    for (const res of results) {
+      if (res.visitCount > 0) {
+        bookmarksWithVisits.push(res);
+      }
+    }
+  }
+
+  if (failedHistoryReads > 0) {
+    console.warn(`[FavorAI] Top visited scan skipped ${failedHistoryReads} bookmark history reads.`);
+  }
+
+  // Sort by visit count descending
+  bookmarksWithVisits.sort((a, b) => b.visitCount - a.visitCount);
+
+  // Return the top 10 bookmarks
+  return bookmarksWithVisits.slice(0, 10).map(x => x.bookmark);
+}
+
+/**
+ * Traverses the reorganized tree, removes the bookmarks in targetIds, and adds them to folderNode.
+ */
+function moveBookmarksToFolder(node, targetIds, folderNode) {
+  if (!node.children) return;
+
+  const removedChildren = [];
+  node.children = node.children.filter(child => {
+    if (child.url && targetIds.has(String(child.id))) {
+      removedChildren.push(child);
+      return false;
+    }
+    return true;
+  });
+
+  for (const child of node.children) {
+    if (!child.url) {
+      moveBookmarksToFolder(child, targetIds, folderNode);
+    }
+  }
+
+  if (removedChildren.length > 0) {
+    folderNode.children.push(...removedChildren);
+  }
+}
+
+/**
  * Détecte les doublons et vérifie les liens morts.
  */
 export async function performLocalCleanup(rootNode, originalMap, analysisOptions, batchSize = 24, userSignal, currentStatus) {
@@ -474,6 +541,11 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
 
   const duplicateIds = new Set(cleanup.duplicates.map(d => d.duplicate.id));
   const deadLinkIds  = new Set(cleanup.deadLinks.map(d => d.bookmark.id));
+
+  // Find the top 10 most visited bookmarks (only active ones, i.e., not duplicate or dead links)
+  const activeBookmarks = allBms.filter(bm => !duplicateIds.has(bm.id) && !deadLinkIds.has(bm.id));
+  const topVisitedBookmarks = useAI ? await getTopVisitedBookmarks(activeBookmarks) : [];
+  const topVisitedIds = new Set(topVisitedBookmarks.map(bm => String(bm.id)));
 
   if (userSignal?.aborted) throw new DOMException('Aborted', 'AbortError');
 
@@ -633,6 +705,45 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
 
   // Restauration des métadonnées (titres/URLs originaux) pour les favoris/dossiers existants
   restoreOriginalMetadata(reorganizedTree, originalMap);
+
+  // Injecter le dossier des pages les plus visitées si applicable
+  if (topVisitedBookmarks.length > 0) {
+    const folderTitle = (typeof chrome !== 'undefined' && chrome.i18n)
+      ? (chrome.i18n.getMessage('folderMostVisited') || '★ Most Visited')
+      : '★ Most Visited';
+
+    const mostVisitedFolder = {
+      id: 'new_most_visited',
+      title: folderTitle,
+      children: []
+    };
+
+    // Retirer les favoris les plus visités de leurs emplacements actuels et les placer dans le dossier
+    moveBookmarksToFolder(reorganizedTree, topVisitedIds, mostVisitedFolder);
+
+    // Trier les favoris dans le dossier pour respecter l'ordre décroissant des visites
+    const orderMap = {};
+    topVisitedBookmarks.forEach((bm, idx) => {
+      orderMap[String(bm.id)] = idx;
+    });
+    mostVisitedFolder.children.sort((a, b) => {
+      return (orderMap[String(a.id)] ?? 0) - (orderMap[String(b.id)] ?? 0);
+    });
+
+    // Trouver le nœud "Barre de favoris" (id "1") ou racine pour insérer le dossier au début
+    let barNode;
+    if (String(reorganizedTree.id) === '1') {
+      barNode = reorganizedTree;
+    } else if (String(reorganizedTree.id) === '0') {
+      barNode = reorganizedTree.children.find(c => String(c.id) === '1') || reorganizedTree;
+    } else {
+      barNode = reorganizedTree;
+    }
+
+    if (barNode.children) {
+      barNode.children.unshift(mostVisitedFolder);
+    }
+  }
 
   // 7. Aligner les IDs
   const origFoldersByTitle = {};

@@ -320,6 +320,8 @@ export function restoreStatus() {
         useAIEl.checked = opts.useAI;
         const aiModeGroup = document.getElementById('aiModeGroup');
         if (aiModeGroup) aiModeGroup.style.display = opts.useAI ? 'flex' : 'none';
+        const aiModeHelp = document.getElementById('aiModeHelp');
+        if (aiModeHelp) aiModeHelp.style.display = opts.useAI ? 'block' : 'none';
       }
       for (const key of ['checkDeadLinks', 'checkRedirects', 'checkContentDuplicates']) {
         const el = document.getElementById(key);
@@ -337,6 +339,8 @@ export function restoreStatus() {
     if (bookmarkFolderSelect && status.lastConfig?.bookmarkFolderId) {
       bookmarkFolderSelect.value = status.lastConfig.bookmarkFolderId;
     }
+
+    updateAiModeHelp();
 
     if (status.state === 'analyzing') {
       setControlsDisabled(true);
@@ -370,4 +374,15 @@ export function restoreStatus() {
       }
     }
   });
+}
+
+export function updateAiModeHelp() {
+  const aiModeHelp = document.getElementById('aiModeHelp');
+  if (!aiModeHelp) return;
+  const activeRadio = document.querySelector('input[name="reorgMode"]:checked');
+  if (activeRadio) {
+    const mode = activeRadio.value;
+    const msgKey = mode === 'complete' ? 'btnCompleteTitle' : 'btnMinimalTitle';
+    aiModeHelp.textContent = chrome.i18n.getMessage(msgKey);
+  }
 }

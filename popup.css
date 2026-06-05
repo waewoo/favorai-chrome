@@ -1460,7 +1460,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 480px;
 }
 
 #btnClearHistory {
@@ -1472,7 +1471,8 @@
 }
 
 #historyListContainer {
-  max-height: 400px;
+  flex-grow: 1;
+  overflow-y: auto;
   margin-bottom: 0;
 }
 

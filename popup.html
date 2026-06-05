@@ -97,25 +97,35 @@
                     <span data-i18n="btnComplete">Complete</span>
                   </label>
                 </div>
+                <p class="field-help" id="aiModeHelp" style="margin-top: 4px; margin-bottom: 0; min-height: 28px;"></p>
               </div>
             </div>
 
             <!-- Dead links -->
-            <div class="option-row option-row--center option-row--mb-sm">
-              <input type="checkbox" id="checkDeadLinks" class="option-checkbox" />
-              <label for="checkDeadLinks" class="option-label option-label--flat" data-i18n="checkDeadLinksLabel">Dead links (slow)</label>
+            <div class="option-row option-row--top option-row--mb">
+              <input type="checkbox" id="checkDeadLinks" class="option-checkbox option-checkbox--mt" />
+              <div>
+                <label for="checkDeadLinks" class="option-label option-label--block" data-i18n="checkDeadLinksLabel">Dead links (slow)</label>
+                <p class="field-help" style="margin-top: 2px; margin-bottom: 0;" data-i18n="checkDeadLinksHelp">Checks if pages still exist (HTTP errors, 404) and suggests removing dead links.</p>
+              </div>
             </div>
 
             <!-- Redirections -->
-            <div class="option-row option-row--center option-row--mb-sm">
-              <input type="checkbox" id="checkRedirects" class="option-checkbox" />
-              <label for="checkRedirects" class="option-label option-label--flat" data-i18n="checkRedirectsLabel">Redirects (slow)</label>
+            <div class="option-row option-row--top option-row--mb">
+              <input type="checkbox" id="checkRedirects" class="option-checkbox option-checkbox--mt" />
+              <div>
+                <label for="checkRedirects" class="option-label option-label--block" data-i18n="checkRedirectsLabel">Redirects (slow)</label>
+                <p class="field-help" style="margin-top: 2px; margin-bottom: 0;" data-i18n="checkRedirectsHelp">Detects pages that have moved to automatically update your bookmark URLs.</p>
+              </div>
             </div>
 
             <!-- Content duplicates -->
-            <div class="option-row option-row--center">
-              <input type="checkbox" id="checkContentDuplicates" class="option-checkbox" />
-              <label for="checkContentDuplicates" class="option-label option-label--flat" data-i18n="checkContentDuplicatesLabel">Content duplicates (very slow)</label>
+            <div class="option-row option-row--top option-row--mb">
+              <input type="checkbox" id="checkContentDuplicates" class="option-checkbox option-checkbox--mt" />
+              <div>
+                <label for="checkContentDuplicates" class="option-label option-label--block" data-i18n="checkContentDuplicatesLabel">Content duplicates (very slow)</label>
+                <p class="field-help" style="margin-top: 2px; margin-bottom: 0;" data-i18n="checkContentDuplicatesHelp">Compares the textual content of pages to find identical sites with different URLs.</p>
+              </div>
             </div>
           </div>
 

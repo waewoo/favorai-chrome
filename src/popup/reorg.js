@@ -17,7 +17,8 @@ export {
   restoreStatus,
   markReorganizationIdle,
   updateProgressBar,
-  updateFolderStats
+  updateFolderStats,
+  updateAiModeHelp
 } from './progress.js';
 
 export {

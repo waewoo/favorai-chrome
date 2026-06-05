@@ -20,7 +20,8 @@ import {
   restoreStatus,
   markReorganizationIdle,
   updateProgressBar,
-  updateFolderStats
+  updateFolderStats,
+  updateAiModeHelp
 } from './src/popup/reorg.js';
 
 // DOM Elements
@@ -103,9 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const aiModeGroup = document.getElementById('aiModeGroup');
   if (useAICheckbox && aiModeGroup) {
     useAICheckbox.addEventListener('change', () => {
-      aiModeGroup.style.display = useAICheckbox.checked ? 'flex' : 'none';
+      const display = useAICheckbox.checked ? 'flex' : 'none';
+      aiModeGroup.style.display = display;
+      const aiModeHelp = document.getElementById('aiModeHelp');
+      if (aiModeHelp) aiModeHelp.style.display = useAICheckbox.checked ? 'block' : 'none';
     });
   }
+
+  // Update AI mode description on radio change
+  document.querySelectorAll('input[name="reorgMode"]').forEach(radio => {
+    radio.addEventListener('change', updateAiModeHelp);
+  });
+
+  // Initialize help text
+  updateAiModeHelp();
 
   // Bind validation rapport actions
   if (btnCancel) {

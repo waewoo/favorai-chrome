@@ -90,7 +90,7 @@ export function renderHistory() {
       }
 
       const listDiv = document.createElement('div');
-      listDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; padding-right: 4px;';
+      listDiv.style.cssText = 'display: flex; flex-direction: column; gap: 4px; padding-right: 4px;';
       
       session.entries.forEach(entry => {
         const entryItem = document.createElement('div');
