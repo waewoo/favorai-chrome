@@ -33,16 +33,16 @@ const sections = [
   {
     title: 'Release',
     items: [
-      ['bump', 'Auto-detect the SemVer bump type and update the changelog'],
+      ['bump', 'Auto-detect the SemVer bump type, update the changelog, commit/tag, package, and create the GitHub release when gh is authenticated'],
       ['bump-patch', 'Increment the patch version manually'],
       ['bump-minor', 'Increment the minor version manually'],
       ['bump-major', 'Increment the major version manually'],
-      ['release', 'Package, push tags, and create or update the GitHub release'],
+      ['release', 'Recreate or update the GitHub release for the current version/tag'],
       ['package', 'Package the extension into a ZIP file'],
       ['screenshots', 'Generate store asset PNGs from HTML sources'],
-      ['upload', 'Build the ZIP and upload to the Chrome Web Store'],
-      ['publish', 'Build the ZIP, upload, and publish to all users'],
-      ['publish-testers', 'Build the ZIP, upload, and publish to trusted testers'],
+      ['upload', 'Upload the ZIP to the Chrome Web Store as a draft update'],
+      ['publish', 'Upload and publish to all users on the Chrome Web Store'],
+      ['publish-testers', 'Upload and publish to trusted testers on the Chrome Web Store'],
     ],
   },
   {

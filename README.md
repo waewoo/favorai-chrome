@@ -22,7 +22,7 @@ If FavorAI saves you time, you can support the project here:
 - [Makefile Commands](#makefile-commands)
 - [Testing](#testing)
 - [Security and Privacy](#security-and-privacy)
-- [Release and Publishing](#release-and-publishing)
+- [Release Workflow](#release-workflow)
 - [Architecture Notes](#architecture-notes)
 - [Contributing](#contributing)
 
@@ -112,6 +112,14 @@ For UI, browser, or integration changes:
 make lint && make test && make test-e2e
 ```
 
+Recommended order for a feature branch:
+
+1. Make the change.
+2. Run `make lint && make test`.
+3. If the UI changed, run `make test-e2e`.
+4. If the change touches release-sensitive areas, run `make security`.
+5. When everything is green, bump the version, create the GitHub release, then upload/publish to the Chrome Web Store.
+
 Git hooks are managed with Husky. The `prepare` npm script installs them after `npm install`; to regenerate hooks manually:
 
 ```bash
@@ -171,16 +179,16 @@ Run `make` to print the command list.
 
 | Command | Description |
 |---|---|
-| `make bump` | Auto-detect the SemVer bump type and update the changelog |
+| `make bump` | Auto-detect the SemVer bump, update the changelog, commit/tag, package, and create the GitHub release when `gh` is authenticated |
 | `make bump-patch` | Increment the patch version manually |
 | `make bump-minor` | Increment the minor version manually |
 | `make bump-major` | Increment the major version manually |
-| `make release` | Package, push tags, and create or update the GitHub release |
+| `make release` | Recreate or update the GitHub release for the current version/tag |
 | `make package` | Package the extension into a ZIP file |
 | `make screenshots` | Generate Chrome Web Store asset PNGs |
-| `make upload` | Build the ZIP and upload it to the Chrome Web Store |
-| `make publish` | Build, upload, and publish to all users |
-| `make publish-testers` | Build, upload, and publish to trusted testers |
+| `make upload` | Upload the ZIP to the Chrome Web Store as a draft update |
+| `make publish` | Upload and publish to all users on the Chrome Web Store |
+| `make publish-testers` | Upload and publish to trusted testers on the Chrome Web Store |
 
 ### Cleanup
 
@@ -227,36 +235,84 @@ make security
 
 The security workflow includes npm audit, ESLint security checks, web-ext lint, and Gitleaks. Install `gitleaks` locally or make Docker available for the fallback scanner.
 
-## Release and Publishing
+## Release Workflow
 
-Create a local environment file:
+The release process is split into two parts:
+
+1. GitHub release and version bump.
+2. Chrome Web Store upload and publish.
+
+If the UI changed, regenerate the store assets before publishing:
+
+```bash
+make screenshots
+```
+
+Before publishing to the Chrome Web Store, create a local `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the Chrome Web Store credentials:
+Then fill in:
 
 - `WEBSTORE_CLIENT_ID`
 - `WEBSTORE_CLIENT_SECRET`
 - `WEBSTORE_EXTENSION_ID`
 - `WEBSTORE_REFRESH_TOKEN`
 
-To obtain a refresh token:
+To obtain the refresh token once:
 
 ```bash
 node scripts/get-refresh-token.mjs
 ```
 
-Recommended release flow:
+Suggested end-to-end flow:
 
-```bash
-make lint && make test && make test-e2e && make security
-make bump
-make publish
-```
+1. Run the local checks:
 
-Use `make upload` for a draft upload, or `make publish-testers` for trusted testers.
+   ```bash
+   make lint && make test && make test-e2e && make security
+   ```
+
+2. Bump the version:
+
+   ```bash
+   make bump
+   ```
+
+   Or use `make bump-patch`, `make bump-minor`, or `make bump-major` if you want to choose the SemVer step manually.
+
+3. Handle the GitHub release:
+
+   - `make bump` already commits, tags, packages, pushes, and creates the GitHub release when `gh` is authenticated.
+   - If you already bumped the version manually and only need the GitHub side, run:
+
+     ```bash
+     make release
+     ```
+
+4. Upload to the Chrome Web Store:
+
+   - Draft upload only:
+
+     ```bash
+     make upload
+     ```
+
+   - Publish to trusted testers:
+
+     ```bash
+     make publish-testers
+     ```
+
+   - Publish to all users:
+
+     ```bash
+     make publish
+     ```
+
+Use `make publish` only after the ZIP is ready and the store credentials are configured. `make upload` is the safer draft step when you want to check the package before publishing.
 
 ## Architecture Notes
 

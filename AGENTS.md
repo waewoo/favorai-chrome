@@ -266,16 +266,16 @@ Run `make` for the formatted command list.
 
 | Command | Use |
 |---|---|
-| `make bump` | Auto-detect version bump and update changelog |
+| `make bump` | Auto-detect the SemVer bump, update the changelog, commit/tag, package, and create the GitHub release when `gh` is authenticated |
 | `make bump-patch` | Manual patch release |
 | `make bump-minor` | Manual minor release |
 | `make bump-major` | Manual major release |
-| `make release` | Package, push tags, and create or update GitHub release |
+| `make release` | Recreate or update the GitHub release for the current version/tag |
 | `make package` | Build the extension ZIP |
 | `make screenshots` | Generate Chrome Web Store PNG assets |
-| `make upload` | Upload ZIP as a Chrome Web Store draft |
-| `make publish` | Upload and publish to all users |
-| `make publish-testers` | Upload and publish to trusted testers |
+| `make upload` | Upload the ZIP to the Chrome Web Store as a draft update |
+| `make publish` | Upload and publish to all users on the Chrome Web Store |
+| `make publish-testers` | Upload and publish to trusted testers on the Chrome Web Store |
 
 ### Cleanup
 
@@ -326,14 +326,16 @@ Before finishing security-relevant work, check:
 
 - Use Conventional Commits, for example `feat: add provider preset`, `fix(ui): align history actions`, or `docs: update agent guide`.
 - Do not commit secrets, `.env`, generated reports, coverage output, ZIPs, or local indexes.
-- The release flow expects:
-
-```bash
-make lint && make test && make test-e2e && make security
-make bump
-make publish
-```
-
+- Release work should follow this order:
+  1. Run the local checks: `make lint && make test`.
+  2. If the UI or browser flow changed, run `make test-e2e`.
+  3. If the change touches release-sensitive areas, run `make security`.
+  4. If the UI changed, regenerate store assets with `make screenshots`.
+  5. For a version bump, use `make bump` for the full automated path or `make bump-patch`, `make bump-minor`, or `make bump-major` if you want the SemVer step manually.
+  6. `make bump` already commits, tags, packages, pushes, and creates the GitHub release when `gh` is authenticated.
+  7. If the version is already bumped and you only need the GitHub release side, use `make release`.
+  8. Before Chrome Web Store upload, create `.env` from `.env.example`, fill in the store credentials, and obtain the refresh token once with `node scripts/get-refresh-token.mjs`.
+  9. Use `make upload` for a draft upload, `make publish-testers` for trusted testers, and `make publish` for all users.
 - Chrome Web Store credentials live in `.env`, which is gitignored. Use `.env.example` as the template.
 - `make screenshots` regenerates `store-assets/output/`; those PNG outputs are generated artifacts.
 
