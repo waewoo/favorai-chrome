@@ -44,7 +44,8 @@ export async function launchExtension() {
  * Navigates to the extension popup and waits for the page to be interactive.
  */
 export async function gotoPopup(page, extensionId, file = 'popup.html') {
-  await page.goto(`chrome-extension://${extensionId}/${file}`);
+  const runtimePath = file.includes('/') ? file : `extension/${file}`;
+  await page.goto(`chrome-extension://${extensionId}/${runtimePath}`);
   await page.waitForLoadState('domcontentloaded');
   // 120ms stabilization wait is a stable compromise for fast local runs
   await page.waitForTimeout(120);

@@ -24,6 +24,7 @@ const args = process.argv.slice(2);
 const version = args[0] || manifest.version;
 const tag = `v${version}`;
 const zipName = `favorai-extension-${tag}.zip`;
+const zipPath = path.join(rootDir, 'dist', zipName);
 
 console.log(`🚀 Preparing GitHub Release for ${tag}...`);
 
@@ -89,7 +90,7 @@ try {
 }
 
 // Check or build ZIP if needed
-const zipExists = fs.existsSync(zipName);
+const zipExists = fs.existsSync(zipPath);
 if (!zipExists) {
   if (!releaseExists) {
     console.error(`❌ Zip file ${zipName} not found. Running packaging script first...`);
@@ -104,7 +105,7 @@ if (!zipExists) {
       process.exit(1);
     }
   } else {
-    console.log(`⚠️ Local ZIP file ${zipName} not found, but release exists on GitHub. Skipping asset upload.`);
+    console.log(`⚠️ Local ZIP file ${zipName} not found in dist/, but release exists on GitHub. Skipping asset upload.`);
   }
 }
 
@@ -115,14 +116,14 @@ if (releaseExists) {
     input: finalNotes,
     stdio: ['pipe', 'inherit', 'inherit']
   });
-  if (fs.existsSync(zipName)) {
+  if (fs.existsSync(zipPath)) {
     console.log(`📤 Uploading/replacing asset ${zipName}...`);
-    execSync(`gh release upload ${tag} "${zipName}" --clobber`, { stdio: 'inherit' });
+    execSync(`gh release upload ${tag} "${zipPath}" --clobber`, { stdio: 'inherit' });
   }
   console.log(`✅ GitHub Release ${tag} updated successfully!`);
 } else {
   console.log(`🚀 Creating brand new GitHub Release ${tag}...`);
-  execSync(`gh release create ${tag} "${zipName}" --title "${tag}" --notes-file=-`, {
+  execSync(`gh release create ${tag} "${zipPath}" --title "${tag}" --notes-file=-`, {
     input: finalNotes,
     stdio: ['pipe', 'inherit', 'inherit']
   });

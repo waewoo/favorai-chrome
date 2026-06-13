@@ -60,8 +60,8 @@ run(
 // 2. ESLint with security plugin (static code analysis)
 // ─────────────────────────────────────────────────────────────────────────────
 run(
-  'ESLint security scan  (src/ + background.js + popup*.js)',
-  'npx eslint src/ background.js popup.js popup-light.js --ext .js'
+  'ESLint security scan  (src/ + extension/*.js)',
+  'npx eslint src/ extension --ext .js'
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

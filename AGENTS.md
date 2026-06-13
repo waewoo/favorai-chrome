@@ -76,7 +76,7 @@ FavorAI is a Manifest V3 Chrome and Chromium extension for AI-assisted bookmark 
 Key entrypoints:
 
 - `manifest.json`: extension permissions, CSP, service worker declaration, popup entrypoint
-- `background.js`: service worker entrypoint
+- `extension/background.js`: service worker entrypoint
 - `src/background/orchestrator.js`: message routing, status persistence, analysis/apply orchestration
 - `src/background/analysis.js`: duplicate checks, dead link checks, LLM preparation, response alignment, diff generation
 - `src/background/apply.js`: safe bookmark mutations and temporary folder ID resolution
@@ -93,12 +93,6 @@ Key entrypoints:
 ```text
 favorai-chrome/
 |-- manifest.json
-|-- background.js
-|-- popup.html
-|-- popup-light.html
-|-- popup.css
-|-- popup.js
-|-- popup-light.js
 |-- Makefile
 |-- scripts/
 |   |-- make-help.mjs
@@ -116,14 +110,16 @@ favorai-chrome/
 |   |-- llm/
 |   |-- popup/
 |   `-- utils/
+|-- extension/
 |-- tests/
 |   |-- unit/
 |   |-- e2e/
 |   `-- mocks/
 |-- store-assets/
-|-- _locales/
-|-- icons/
-`-- fonts/
+|-- assets/
+|   |-- icons/
+|   `-- fonts/
+`-- _locales/
 ```
 
 ## Agent Operating Rules
@@ -271,7 +267,7 @@ Run `make` for the formatted command list.
 | `make bump-minor` | Manual minor release |
 | `make bump-major` | Manual major release |
 | `make release` | Recreate or update the GitHub release for the current version/tag |
-| `make package` | Build the extension ZIP |
+| `make package` | Build the extension ZIP in `dist/` |
 | `make screenshots` | Generate Chrome Web Store PNG assets |
 | `make upload` | Upload the ZIP to the Chrome Web Store as a draft update |
 | `make publish` | Upload and publish to all users on the Chrome Web Store |
@@ -370,7 +366,7 @@ CodeGraph is optional local indexing for Codex and MCP-aware agents. It is not p
 
 ### Change Popup UI
 
-- Edit `popup.html`, `popup-light.html`, `popup.css`, `popup.js`, `popup-light.js`, or modules in `src/popup/`.
+- Edit `extension/popup.html`, `extension/popup-light.html`, `extension/popup.css`, `extension/popup.js`, `extension/popup-light.js`, or modules in `src/popup/`.
 - Keep user-facing text localizable through `_locales/`.
 - Use safe DOM rendering patterns.
 - Update E2E tests when behavior or layout changes.

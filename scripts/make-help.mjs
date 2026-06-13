@@ -38,7 +38,7 @@ const sections = [
       ['bump-minor', 'Increment the minor version manually'],
       ['bump-major', 'Increment the major version manually'],
       ['release', 'Recreate or update the GitHub release for the current version/tag'],
-      ['package', 'Package the extension into a ZIP file'],
+      ['package', 'Package the extension into dist/favorai-extension-v<version>.zip'],
       ['screenshots', 'Generate store asset PNGs from HTML sources'],
       ['upload', 'Upload the ZIP to the Chrome Web Store as a draft update'],
       ['publish', 'Upload and publish to all users on the Chrome Web Store'],

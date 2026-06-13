@@ -1,5 +1,5 @@
-import { translatePage, showToast as sharedShowToast } from './src/popup/utils.js';
-import { ROOT_FOLDER_NAMES } from './src/popup/dom.js';
+import { translatePage, showToast as sharedShowToast } from '../src/popup/utils.js';
+import { ROOT_FOLDER_NAMES } from '../src/popup/dom.js';
 /**
  * popup-light.js — FavorAI Light Mode
  * Handles the compact popup (Add Bookmark only).
@@ -378,7 +378,7 @@ function saveManualBookmark() {
 // ── Open advanced window ──────────────────────────────────────────────────────
 function openAdvanced() {
   chrome.windows.create({
-    url: chrome.runtime.getURL('popup.html'),
+    url: chrome.runtime.getURL('extension/popup.html'),
     type: 'popup',
     width: 1200,
     height: 1050,
@@ -393,7 +393,7 @@ function openAdvanced() {
 
 // ── Privacy policy ────────────────────────────────────────────────────────────
 function openPrivacy() {
-  chrome.tabs.create({ url: chrome.runtime.getURL('privacy_policy.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('extension/privacy_policy.html') });
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────
@@ -449,4 +449,3 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled rejection in popup-light:', event.reason);
   sharedShowToast(chrome.i18n.getMessage('popupUnhandledError', [msg]) || msg, elToast);
 });
-

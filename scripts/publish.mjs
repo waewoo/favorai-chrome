@@ -43,10 +43,10 @@ if (!WEBSTORE_CLIENT_ID || !WEBSTORE_CLIENT_SECRET || !WEBSTORE_REFRESH_TOKEN ||
 const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
 const version = manifest.version;
 const zipName = `favorai-extension-v${version}.zip`;
-const zipPath = path.join(rootDir, zipName);
+const zipPath = path.join(rootDir, 'dist', zipName);
 
 if (!fs.existsSync(zipPath)) {
-  console.error(`❌ ZIP not found: ${zipName} — run "make package" first.`);
+  console.error(`❌ ZIP not found: dist/${zipName} — run "make package" first.`);
   process.exit(1);
 }
 

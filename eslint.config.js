@@ -4,7 +4,7 @@ import globals from 'globals';
 export default [
   // ─── Base: browser extension source ────────────────────────────────────────
   {
-    files: ['src/**/*.js', 'background.js', 'popup.js', 'popup-light.js'],
+    files: ['src/**/*.js', 'extension/**/*.js'],
     plugins: { security },
     languageOptions: {
       ecmaVersion: 2022,

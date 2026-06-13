@@ -2,11 +2,11 @@
  * Popup Interface Orchestrator
  */
 
-import { translatePage, showToast, showConfirm, addLog, removeLoadingLog } from './src/popup/utils.js';
-import { switchTab, showView } from './src/popup/navigation.js';
-import { loadConfig, checkConfigStatus, bindConfigEvents } from './src/popup/config.js';
-import { renderHistory } from './src/popup/history.js';
-import { renderForgotten } from './src/popup/forgotten.js';
+import { translatePage, showToast, showConfirm, addLog, removeLoadingLog } from '../src/popup/utils.js';
+import { switchTab, showView } from '../src/popup/navigation.js';
+import { loadConfig, checkConfigStatus, bindConfigEvents } from '../src/popup/config.js';
+import { renderHistory } from '../src/popup/history.js';
+import { renderForgotten } from '../src/popup/forgotten.js';
 import {
   loadBookmarkFolders,
   startReorganization,
@@ -22,7 +22,7 @@ import {
   updateProgressBar,
   updateFolderStats,
   updateAiModeHelp
-} from './src/popup/reorg.js';
+} from '../src/popup/reorg.js';
 
 // DOM Elements
 const tabRangementBtn = document.getElementById('tabRangementBtn');
@@ -179,14 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnPrivacyPolicy) {
     btnPrivacyPolicy.addEventListener('click', (e) => {
       e.preventDefault();
-      window.open(chrome.runtime.getURL('privacy_policy.html'));
+      window.open(chrome.runtime.getURL('extension/privacy_policy.html'));
     });
   }
 
   if (btnPrivacyLink) {
     btnPrivacyLink.addEventListener('click', (e) => {
       e.preventDefault();
-      window.open(chrome.runtime.getURL('privacy_policy.html'));
+      window.open(chrome.runtime.getURL('extension/privacy_policy.html'));
     });
   }
 

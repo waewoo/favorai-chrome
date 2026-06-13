@@ -69,12 +69,6 @@ make test-e2e
 ```text
 favorai-chrome/
 |-- manifest.json                 # Extension metadata, permissions, and MV3 service worker
-|-- background.js                 # Service worker entrypoint
-|-- popup.html                    # Full popup UI
-|-- popup-light.html              # Lightweight popup variant
-|-- popup.css                     # Shared popup styling
-|-- popup.js                      # Full popup entrypoint
-|-- popup-light.js                # Lightweight popup entrypoint
 |-- Makefile                      # Project task runner
 |-- scripts/                      # Tooling, release, packaging, and cleanup scripts
 |-- src/
@@ -82,13 +76,15 @@ favorai-chrome/
 |   |-- llm/                      # Prompt templates, response parsing, provider dispatch
 |   |-- popup/                    # Modular popup UI logic
 |   `-- utils/                    # Shared utility helpers
+|-- extension/                    # Extension runtime entrypoints (background, popup, policy)
 |-- tests/
 |   |-- unit/                     # Vitest unit tests
 |   |-- e2e/                      # Playwright UI and integration tests
 |   `-- mocks/                    # Chrome API mocks
 |-- store-assets/                 # Chrome Web Store listing assets and generators
-|-- icons/                        # Extension icons
-|-- fonts/                        # Bundled local fonts
+|-- assets/
+|   |-- icons/                    # Extension icons
+|   `-- fonts/                    # Bundled local fonts
 `-- _locales/                     # English and French translations
 ```
 
@@ -184,7 +180,7 @@ Run `make` to print the command list.
 | `make bump-minor` | Increment the minor version manually |
 | `make bump-major` | Increment the major version manually |
 | `make release` | Recreate or update the GitHub release for the current version/tag |
-| `make package` | Package the extension into a ZIP file |
+| `make package` | Package the extension into `dist/favorai-extension-v<version>.zip` |
 | `make screenshots` | Generate Chrome Web Store asset PNGs |
 | `make upload` | Upload the ZIP to the Chrome Web Store as a draft update |
 | `make publish` | Upload and publish to all users on the Chrome Web Store |
@@ -312,11 +308,11 @@ Suggested end-to-end flow:
      make publish
      ```
 
-Use `make publish` only after the ZIP is ready and the store credentials are configured. `make upload` is the safer draft step when you want to check the package before publishing.
+Use `make publish` only after the ZIP in `dist/` is ready and the store credentials are configured. `make upload` is the safer draft step when you want to check the package before publishing.
 
 ## Architecture Notes
 
-- **Background orchestration**: `background.js` loads `src/background/orchestrator.js`, which coordinates browser events, state, analysis, and applying changes.
+- **Background orchestration**: `extension/background.js` loads `src/background/orchestrator.js`, which coordinates browser events, state, analysis, and applying changes.
 - **Analysis pipeline**: `src/background/analysis.js` handles local duplicate checks, dead link validation, LLM preparation, response alignment, and action checklist generation.
 - **LLM dispatch**: `src/llm/index.js` routes requests to provider modules in `src/llm/providers/`.
 - **Safe apply flow**: `src/background/apply.js` performs bookmark mutations sequentially, resolves newly created folder IDs before moving children, and returns `{ failures }` — an array of per-operation errors surfaced in the popup instead of silently swallowed.
