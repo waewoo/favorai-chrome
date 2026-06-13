@@ -2,6 +2,72 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-06-13
+
+### Added
+- Replace quick access with top visited bookmarks and clarify UI analysis options (`eaf6bf9`)
+- Show bookmark count and token estimate for selected folder (`e692593`)
+- Granular analysis options with separate checkboxes and single launch button (`4cc7bfc`)
+- **release**: add `make get-refresh-token` helper for Chrome Web Store authentication (`d665f3f`)
+- **ci**: refresh github actions runtime and job names (`9d3e21d`)
+- **ci**: split lint and test jobs (`98fb9b6`)
+- Improve duplicate bookmark detection (`9a18917`)
+- **forgotten**: days-based filters, Chrome history notice, and deletion rollback (`a46480b`)
+- **forgotten**: finalize tab order, E2E tests, and store assets (`78d1db0`)
+- **forgotten**: add Forgotten Bookmarks tab (`6252feb`)
+- **testing**: integrate Stryker mutation testing (`14d7673`)
+- **ui**: remove redundant window detach button and update translations and tests (`8d7f329`)
+
+### Changed
+- **release** (docs): clarify the end-to-end release workflow across README, AGENTS, and Makefile help (`a5fb2da`)
+- **extension** (refactor): regroup runtime entrypoints under `extension/` and move icons/fonts under `assets/` (`005731c`)
+- **store-assets** (docs): refresh Chrome Web Store listing copy and asset set (`da0851a`)
+- (docs) update agent guidelines (`01dee44`)
+- (docs) update AGENTS.md and README.md (`de2929a`)
+- (refactor) extract all inline styles from popup.html into popup.css (`74b1f68`)
+- (test) add unit tests for all six LLM providers (`2397c2a`)
+- (test) strengthen security and llm coverage (`532906b`)
+- **popup** (refactor): split reorg popup modules (`30a8e7f`)
+- **hooks** (chore): move tests and security to push (`4f6869e`)
+- (docs) clarify permission usage (`bc76b4c`)
+- (chore) improve make tooling and project docs (`c8d1259`)
+- **tooling** (chore): add husky commitlint and codegraph setup (`a9331b7`)
+- (docs) place support badge on separate line (`4baf75b`)
+- (docs) require conventional commit messages (`9b688d0`)
+- **security** (chore): add Gitleaks secret scanning (`4a4bcbb`)
+- (docs) document prompt customization (`8f484a2`)
+- **ui** (chore): refine support links and footer layout (`6e4df74`)
+- **store** (docs): refine metadata and promo assets (`f308e22`)
+- (ci) upload coverage to codecov (`51fcccb`)
+- (docs) standardize repo metadata and release workflow (`15bea5d`)
+- (ci) add install-ci Makefile target and use it in workflows (`330cf57`)
+- (ci) add manual E2E workflow (workflow_dispatch) (`fb5e8ce`)
+- (ci) apply 7 improvements to GitHub Actions workflow (`bf71f01`)
+- **deps** (chore): upgrade all devDependencies to latest + add check/update-deps targets (`9ab07be`)
+- **deps** (chore): upgrade @playwright/test 1.44 → 1.60 (`f32813e`)
+- **quality-gates** (ci): enforce 100% coverage and 80% mutation score as hard failures (`b5a7711`)
+- **mutation** (test): complete surviving mutants — raise score to 84.49% (`f445e86`)
+- **mutation** (test): kill surviving mutants — raise score 63% → 80%, restore 100% branch coverage (`2ed732d`)
+- **coverage** (test): restore 100% unit test coverage, add cyclic path unit test, and add E2E integration flow tests (`e22a414`)
+- **ui** (refactor): modularize popup.js and background.js into ES submodules, update documentation (`d4ef5f8`)
+- (chore) update copyright holder and contact format in license file (`871564a`)
+
+### Fixed
+- **deps**: resolve audit vulnerabilities (`17a0d6f`)
+- Add global unhandledrejection error boundary to popup (`f1c2ea5`)
+- **i18n**: replace hardcoded strings with locale keys in popup-light and popup.html (`21e6f8f`)
+- Surface apply failures, remove dead code, add ARIA tab roles (`048a64f`)
+- Harden dead link checker to eliminate false positives (`63b4f3a`)
+- Clarify cleanup and rollback UX (`fdab174`)
+- Harden bookmark analysis flow and tests (`c9a6f3c`)
+- **llm**: harden provider responses (`645df4e`)
+- **background**: harden worker recovery and e2e stability (`999f84f`)
+- **ui**: open privacy policy locally (`616594e`)
+- **lint**: remove unused catch bindings across codebase (`9bf06af`)
+- **forgotten**: render panel content on tab restore from storage (`a94b545`)
+- **e2e**: use data-i18n selectors instead of locale-dependent text (`30f617c`)
+- **e2e**: force French locale in Playwright to fix CI failures (`a6baa99`)
+
 ## [1.4.0] - 2026-05-31
 
 ### Added
