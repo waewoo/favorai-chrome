@@ -162,7 +162,7 @@ body::before{
             <div class="fav-icon">🔖</div>
             <div class="fav-name">FavorAI</div>
           </div>
-          <div class="fav-badge-ready">v1.3.0</div>
+          <div class="fav-badge-ready">v1.5.0</div>
         </div>
         <div class="fav-tabs">
           <div class="fav-tab active">⚡ Organization</div>
@@ -172,10 +172,13 @@ body::before{
         <div class="fav-content">
           <div class="fav-section">
             <div class="fav-stitle">🚀 Launch Reorganization</div>
-            <div class="fav-desc">Analyzes duplicates, dead links, then queries your AI to organize bookmarks semantically.</div>
+            <div class="fav-desc">Analyzes duplicates, dead links, redirects, and content duplicates before querying your AI.</div>
             <div class="fav-privacy">ℹ️ Titles &amp; URLs sent to your configured AI provider. No data collected by FavorAI.</div>
             <select class="fav-select" style="pointer-events:none;"><option>📁 All bookmarks (Root)</option></select>
+            <div class="fav-privacy">143 bookmarks in selected folder · ~2.8K token estimate</div>
             <div class="fav-cb-row"><div class="fav-cb">✓</div><span>Check dead links (slower — recommended)</span></div>
+            <div class="fav-cb-row"><div class="fav-cb">✓</div><span>Check redirects</span></div>
+            <div class="fav-cb-row"><div class="fav-cb">✓</div><span>Check content duplicates</span></div>
             <div class="fav-btns">
               <div class="fav-btn min">⚡ Minimal<br><span style="font-size:9px;font-weight:400;opacity:0.7">Fix misplacements only</span></div>
               <div class="fav-btn full">✨ Complete<br><span style="font-size:9px;font-weight:400;opacity:0.85">Full redesign</span></div>
@@ -238,6 +241,7 @@ body::before{
           <div class="step-row"><div class="step-dot done"></div><div class="step-text done">✓ Duplicates found: 7</div></div>
           <div class="step-row"><div class="step-dot active"></div><div class="step-text active">Checking dead links: 58 / 136…</div></div>
           <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Querying AI (OpenAI gpt-4o)</div></div>
+          <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Checking redirects and content duplicates</div></div>
           <div class="step-row"><div class="step-dot pending"></div><div class="step-text">Computing changes</div></div>
         </div>
         <div class="console-wrap">
@@ -249,11 +253,14 @@ body::before{
             <div class="log info">&gt; Starting reorganization (Complete)…</div>
             <div class="log success">✓ Reading bookmarks… 143 found</div>
             <div class="log success">✓ Duplicates found: 7 detected</div>
+            <div class="log info">Selected folder: 143 bookmarks (~2.8K tokens)</div>
+            <div class="log info">Analysis options: dead links, redirects, content duplicates</div>
             <div class="log info">Checking dead links: 24/136…</div>
             <div class="log info">Checking dead links: 48/136…</div>
             <div class="log warn">⚠ Dead link: oldsite.blogspot.com (404)</div>
             <div class="log warn">⚠ Dead link: deprecated-api.io (Timeout)</div>
             <div class="log info">Checking dead links: 58/136…</div>
+            <div class="log info">Checking redirects: 31/136…</div>
             <div class="log ai">Preparing bookmarks for AI… ✓</div>
             <div class="log ai">Sending to OpenAI (~4K tokens)…</div>
             <div class="log ai" style="opacity:0.6;">Semantic analysis in progress…</div>
