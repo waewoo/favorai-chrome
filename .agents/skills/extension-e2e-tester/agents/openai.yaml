@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extension E2E Tester"
+  short_description: "Test Chrome extension flows end to end"
+  default_prompt: "Use $extension-e2e-tester to design or run an end-to-end test for a Chrome extension flow."

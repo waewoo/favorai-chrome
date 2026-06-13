@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bookmark Reorg Debugger"
+  short_description: "Debug bookmark reorganization flows"
+  default_prompt: "Use $bookmark-reorg-debugger to trace a bookmark reorganization bug across analysis, diff, apply, and history handling."

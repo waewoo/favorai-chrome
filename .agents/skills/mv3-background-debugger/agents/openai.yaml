@@ -1,0 +1,4 @@
+interface:
+  display_name: "MV3 Background Debugger"
+  short_description: "Debug MV3 background and storage flow"
+  default_prompt: "Use $mv3-background-debugger to trace a Manifest V3 background, storage, or popup-to-service-worker issue."

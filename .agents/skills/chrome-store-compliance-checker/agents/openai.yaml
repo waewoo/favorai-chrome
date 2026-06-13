@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chrome Store Compliance Checker"
+  short_description: "Check Chrome Web Store readiness"
+  default_prompt: "Use $chrome-store-compliance-checker to review a Chrome extension for store readiness, MV3 constraints, and publication risks."

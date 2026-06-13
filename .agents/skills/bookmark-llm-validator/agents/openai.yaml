@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bookmark LLM Validator"
+  short_description: "Validate bookmark LLM outputs"
+  default_prompt: "Use $bookmark-llm-validator to validate a bookmark reorganization response against the contract and flag any violations."

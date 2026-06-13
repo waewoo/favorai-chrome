@@ -1,0 +1,4 @@
+interface:
+  display_name: "FavorAI Core Guidelines"
+  short_description: "Shared FavorAI repo guidance"
+  default_prompt: "Use $favorai-core-guidelines to read the shared FavorAI repository rules before editing extension, LLM, or release-related code."

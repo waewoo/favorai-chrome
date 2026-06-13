@@ -1,0 +1,4 @@
+interface:
+  display_name: "MV3 Background Troubleshooter"
+  short_description: "Troubleshoot MV3 background issues"
+  default_prompt: "Use $mv3-background-troubleshooter to diagnose a Manifest V3 popup, background, storage, or messaging issue."
