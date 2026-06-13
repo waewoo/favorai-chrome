@@ -21,6 +21,7 @@
     "@playwright/test": "^1.60.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@vcian/project-inspector": "^0.3.3",
     "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.4.1",
     "eslint-plugin-security": "^4.0.0",

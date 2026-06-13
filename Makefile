@@ -4,7 +4,7 @@ NODE ?= node
 NPX ?= npx
 SCRIPTS_DIR := scripts
 
-.PHONY: help install install-ci install-hooks install-codegraph lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots get-refresh-token bump bump-patch bump-minor bump-major security release check-deps update-deps
+.PHONY: help install install-ci install-hooks install-mcp install-codegraph lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots get-refresh-token bump bump-patch bump-minor bump-major security release check-deps update-deps quality static-scan
 
 help:
 	@$(NODE) $(SCRIPTS_DIR)/make-help.mjs
@@ -19,6 +19,9 @@ install-hooks:
 	@echo Generating Husky hooks...
 	@npm run prepare
 	@echo Husky hooks ready.
+
+install-mcp:
+	@$(MAKE) install-codegraph
 
 install-codegraph:
 	@echo Installing CodeGraph and wiring it for Codex...
@@ -41,6 +44,11 @@ lint:
 
 lint-fix:
 	@npm run lint:fix
+
+static-scan:
+	@npm exec -- project-inspector check --project .
+
+quality: lint test static-scan
 
 security:
 	@$(NODE) $(SCRIPTS_DIR)/security-check.js

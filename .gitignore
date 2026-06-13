@@ -17,6 +17,7 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+project-report/
 tests/e2e/tmp-user-data-*/
 .stryker-tmp/
 reports/
