@@ -73,6 +73,8 @@ These guidelines are working if there are fewer unnecessary changes in diffs, fe
 
 FavorAI is a Manifest V3 Chrome and Chromium extension for AI-assisted bookmark cleanup and reorganization.
 
+Shared agent skills live in `.agents/skills/`. Start with `favorai-core-guidelines` for project-wide rules, then use the specialized skills for bookmark reorg, MV3 debugging, E2E testing, and Chrome Store checks.
+
 Key entrypoints:
 
 - `manifest.json`: extension permissions, CSP, service worker declaration, popup entrypoint
@@ -119,7 +121,11 @@ favorai-chrome/
 |-- assets/
 |   |-- icons/
 |   `-- fonts/
-`-- _locales/
+|-- _locales/
+|-- .agents/
+|   `-- skills/
+|-- mcp.json
+`-- .mcp.json
 ```
 
 ## Agent Operating Rules
@@ -235,6 +241,7 @@ Run `make` for the formatted command list.
 | `make install-ci` | Install CI dependencies without lifecycle scripts |
 | `make install-hooks` | Regenerate Husky hooks |
 | `make install-codegraph` | Install and initialize local CodeGraph indexing |
+| `make install-mcp` | Install and initialize the repo-local MCP tooling |
 
 ### Quality
 
@@ -246,6 +253,7 @@ Run `make` for the formatted command list.
 | `make test-watch` | Run Vitest in watch mode |
 | `make test-coverage` | Run coverage and print summary |
 | `make test-mutation` | Run Stryker mutation testing |
+| `make quality` | Run lint, unit tests, and the local static scan |
 | `make security` | Run npm audit, ESLint security, web-ext lint, and Gitleaks |
 | `make check-deps` | Show outdated devDependencies |
 | `make update-deps` | Upgrade devDependencies |
@@ -342,6 +350,13 @@ CodeGraph is optional local indexing for Codex and MCP-aware agents. It is not p
 - Install and initialize it with `make install-codegraph`.
 - The index lives in `.codegraph/` and is ignored by Git.
 - If a structural code question is asked and CodeGraph is available, prefer it over broad manual file reads.
+
+## Local Tooling
+
+- `mcp.json` is the repo-local MCP manifest for clients that support workspace discovery.
+- `.mcp.json` is kept for compatibility with clients that still expect that filename.
+- `make install-mcp` installs and initializes the repo-local MCP support.
+- `make quality` runs lint, tests, and the local static scan in one step.
 
 ## Common Change Recipes
 

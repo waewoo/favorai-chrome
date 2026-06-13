@@ -70,6 +70,9 @@ make test-e2e
 favorai-chrome/
 |-- manifest.json                 # Extension metadata, permissions, and MV3 service worker
 |-- Makefile                      # Project task runner
+|-- mcp.json                      # Repo-local MCP manifest
+|-- .mcp.json                     # Legacy MCP manifest for compatible clients
+|-- .agents/                      # Shared agent skills
 |-- scripts/                      # Tooling, release, packaging, and cleanup scripts
 |-- src/
 |   |-- background/               # Analysis, diffing, applying changes, history, orchestration
@@ -102,6 +105,12 @@ Run the standard local check before committing:
 make lint && make test
 ```
 
+For the full local quality gate, use:
+
+```bash
+make quality
+```
+
 For UI, browser, or integration changes:
 
 ```bash
@@ -122,6 +131,12 @@ Git hooks are managed with Husky. The `prepare` npm script installs them after `
 make install-hooks
 ```
 
+Local MCP support is initialized with:
+
+```bash
+make install-mcp
+```
+
 The hooks currently enforce:
 
 - `pre-commit`: `make lint`
@@ -136,6 +151,8 @@ make install-codegraph
 
 This creates a local `.codegraph/` index, which is ignored by Git.
 
+The repository also keeps a workspace-level MCP manifest in `mcp.json` for clients that discover tools from the project root.
+
 ## Makefile Commands
 
 Run `make` to print the command list.
@@ -148,6 +165,7 @@ Run `make` to print the command list.
 | `make install-ci` | Install dependencies for CI with `npm ci --ignore-scripts` |
 | `make install-hooks` | Regenerate Husky hooks through `npm run prepare` |
 | `make install-codegraph` | Install and initialize CodeGraph for local indexing |
+| `make install-mcp` | Install and initialize the repo-local MCP tooling |
 
 ### Quality
 
@@ -159,6 +177,7 @@ Run `make` to print the command list.
 | `make test-watch` | Run Vitest in interactive watch mode |
 | `make test-coverage` | Run unit tests and print a coverage summary |
 | `make test-mutation` | Run Stryker mutation testing |
+| `make quality` | Run lint, unit tests, and the local static scan |
 | `make security` | Run dependency, static analysis, extension, and secret scans |
 | `make check-deps` | Show outdated devDependencies |
 | `make update-deps` | Upgrade devDependencies to latest published versions |
