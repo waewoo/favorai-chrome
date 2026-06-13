@@ -330,7 +330,7 @@ Before finishing security-relevant work, check:
   5. For a version bump, use `make bump` for the full automated path or `make bump-patch`, `make bump-minor`, or `make bump-major` if you want the SemVer step manually.
   6. `make bump` already commits, tags, packages, pushes, and creates the GitHub release when `gh` is authenticated.
   7. If the version is already bumped and you only need the GitHub release side, use `make release`.
-  8. Before Chrome Web Store upload, create `.env` from `.env.example`, fill in the store credentials, and obtain the refresh token once with `node scripts/get-refresh-token.mjs`.
+  8. Before Chrome Web Store upload, create `.env` from `.env.example`, fill in the store credentials, and obtain the refresh token once with `make get-refresh-token`.
   9. Use `make upload` for a draft upload, `make publish-testers` for trusted testers, and `make publish` for all users.
 - Chrome Web Store credentials live in `.env`, which is gitignored. Use `.env.example` as the template.
 - `make screenshots` regenerates `store-assets/output/`; those PNG outputs are generated artifacts.

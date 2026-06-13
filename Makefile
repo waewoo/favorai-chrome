@@ -4,7 +4,7 @@ NODE ?= node
 NPX ?= npx
 SCRIPTS_DIR := scripts
 
-.PHONY: help install install-ci install-hooks install-codegraph lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots bump bump-patch bump-minor bump-major security release check-deps update-deps
+.PHONY: help install install-ci install-hooks install-codegraph lint lint-fix test test-watch test-coverage test-mutation test-e2e test-e2e-ui test-e2e-integration package clean clean-e2e kill-e2e upload publish publish-testers screenshots get-refresh-token bump bump-patch bump-minor bump-major security release check-deps update-deps
 
 help:
 	@$(NODE) $(SCRIPTS_DIR)/make-help.mjs
@@ -74,6 +74,9 @@ package:
 
 screenshots:
 	@$(NODE) store-assets/generate.mjs
+
+get-refresh-token:
+	@$(NODE) $(SCRIPTS_DIR)/get-refresh-token.mjs
 
 upload: package
 	@$(NODE) scripts/publish.mjs

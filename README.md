@@ -260,7 +260,7 @@ Then fill in:
 To obtain the refresh token once:
 
 ```bash
-node scripts/get-refresh-token.mjs
+make get-refresh-token
 ```
 
 Suggested end-to-end flow:
