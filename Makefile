@@ -48,7 +48,7 @@ lint-fix:
 static-scan:
 	@npm exec -- project-inspector check --project .
 
-quality: lint test static-scan
+quality: lint test-coverage static-scan
 
 security:
 	@$(NODE) $(SCRIPTS_DIR)/security-check.js

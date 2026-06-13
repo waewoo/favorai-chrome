@@ -253,7 +253,7 @@ Run `make` for the formatted command list.
 | `make test-watch` | Run Vitest in watch mode |
 | `make test-coverage` | Run coverage and print summary |
 | `make test-mutation` | Run Stryker mutation testing |
-| `make quality` | Run lint, unit tests, and the local static scan |
+| `make quality` | Run lint, unit tests with coverage, and the local static scan |
 | `make security` | Run npm audit, ESLint security, web-ext lint, and Gitleaks |
 | `make check-deps` | Show outdated devDependencies |
 | `make update-deps` | Upgrade devDependencies |
@@ -356,7 +356,7 @@ CodeGraph is optional local indexing for Codex and MCP-aware agents. It is not p
 - `mcp.json` is the repo-local MCP manifest for clients that support workspace discovery.
 - `.mcp.json` is kept for compatibility with clients that still expect that filename.
 - `make install-mcp` installs and initializes the repo-local MCP support.
-- `make quality` runs lint, tests, and the local static scan in one step.
+- `make quality` runs lint, unit tests with coverage, and the local static scan in one step.
 
 ## Common Change Recipes
 

@@ -4,6 +4,6 @@ set -eu
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT_DIR"
 
-echo "Running pre-push checks: make test-coverage, make security"
-make test-coverage
+echo "Running pre-push checks: make quality, make security"
+make quality
 make security

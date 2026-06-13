@@ -23,17 +23,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: make install-ci
+    - uses: ./.github/actions/bootstrap-node
 
     - name: Install Playwright browsers
       run: npx playwright install chromium --with-deps

@@ -10,27 +10,17 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: CI / Lint
+  quality-lint:
+    name: Quality / Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v6
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: make install-ci
+    - uses: ./.github/actions/bootstrap-node
 
     - name: Run ESLint with GitHub annotations
       run: |
@@ -65,8 +55,8 @@ jobs:
           echo "- Details: GitHub annotations appear in the run log."
         } >> "$GITHUB_STEP_SUMMARY"
 
-  test:
-    name: CI / Unit Tests
+  quality-unit-tests:
+    name: Quality / Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -74,21 +64,11 @@ jobs:
       id-token: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v6
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
+    - uses: ./.github/actions/bootstrap-node
 
-    - name: Install dependencies
-      run: make install-ci
-
-    - name: Run Unit Tests with Coverage
+    - name: Run unit tests with coverage
       run: make test-coverage
 
     - name: Upload coverage report
@@ -136,28 +116,45 @@ jobs:
           echo "- Details: Vitest annotations appear in the run log."
         } >> "$GITHUB_STEP_SUMMARY"
 
-  security:
-    name: CI / Security Scan
+  quality-static-analysis:
+    name: Quality / Static Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint, test]
+    needs: [quality-lint, quality-unit-tests]
     permissions:
       contents: read
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
+    - uses: ./.github/actions/bootstrap-node
 
-    - name: Install dependencies
-      run: make install-ci
+    - name: Run static scan
+      run: make static-scan
 
-    - name: Run Security Scan
+    - name: Publish static scan summary
+      if: always()
+      run: |
+        {
+          echo "## Static Scan"
+          echo ""
+          echo "- Details: run \`make static-scan\` or \`make quality\` locally for the same scan."
+        } >> "$GITHUB_STEP_SUMMARY"
+
+  security-audit:
+    name: Security / Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [quality-lint, quality-unit-tests, quality-static-analysis]
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: ./.github/actions/bootstrap-node
+
+    - name: Run security scan
       run: make security
 
     - name: Publish security summary
@@ -169,11 +166,11 @@ jobs:
           echo "- Details: run \`make security\` for the complete output."
         } >> "$GITHUB_STEP_SUMMARY"
 
-  mutation-testing:
-    name: CI / Mutation Testing
+  security-mutation:
+    name: Security / Mutation
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, test]
+    needs: [quality-lint, quality-unit-tests]
     permissions:
       contents: read
     # Run on every push to main; on PRs only if the 'run-mutation' label is set.
@@ -183,19 +180,11 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'run-mutation')
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v6
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
+    - uses: ./.github/actions/bootstrap-node
 
-    - name: Install dependencies
-      run: make install-ci
-
-    - name: Run Mutation Tests
+    - name: Run mutation tests
       run: make test-mutation
 
     - name: Upload mutation report

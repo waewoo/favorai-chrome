@@ -140,7 +140,7 @@ make install-mcp
 The hooks currently enforce:
 
 - `pre-commit`: `make lint`
-- `pre-push`: `make test-coverage` (unit tests + coverage) and `make security`
+- `pre-push`: `make quality` and `make security`
 - `commit-msg`: Conventional Commits validation through commitlint
 
 CodeGraph is optional local indexing support for Codex and other MCP-aware agents:
@@ -177,7 +177,7 @@ Run `make` to print the command list.
 | `make test-watch` | Run Vitest in interactive watch mode |
 | `make test-coverage` | Run unit tests and print a coverage summary |
 | `make test-mutation` | Run Stryker mutation testing |
-| `make quality` | Run lint, unit tests, and the local static scan |
+| `make quality` | Run lint, unit tests with coverage, and the local static scan |
 | `make security` | Run dependency, static analysis, extension, and secret scans |
 | `make check-deps` | Show outdated devDependencies |
 | `make update-deps` | Upgrade devDependencies to latest published versions |

@@ -1,0 +1,15 @@
+name: Bootstrap Node
+description: Set up Node.js and install CI dependencies after checkout.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    - name: Install dependencies
+      shell: bash
+      run: make install-ci
