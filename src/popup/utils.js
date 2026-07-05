@@ -3,8 +3,9 @@
  */
 
 import { sanitizeText } from '../utils/sanitizeText.js';
+import { isSafeUrl } from '../utils/isSafeUrl.js';
 
-export { sanitizeText };
+export { sanitizeText, isSafeUrl };
 
 export const PROVIDER_DEFAULTS = {
   openai:   { url: 'https://api.openai.com/v1',                   model: 'gpt-5.5',             maxTokens: '131072' },
@@ -92,12 +93,6 @@ export function showToast(message, toastOrId = 'toast') {
     toast.textContent = sanitizeText(message);
     toast.classList.add('show');
   }
-}
-
-export function isSafeUrl(url) {
-  if (!url) return false;
-  const lower = String(url).toLowerCase().trim();
-  return lower.startsWith('http://') || lower.startsWith('https://');
 }
 
 export function formatExplanation(text) {
