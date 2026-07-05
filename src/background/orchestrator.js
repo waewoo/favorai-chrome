@@ -236,7 +236,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     logStatus(chrome.i18n.getMessage('bgStartingReorg', [modeLabel]), 'info');
 
     // Récupérer la clé API depuis le stockage sync par sécurité (C2)
-    chrome.storage.sync.get(['apiKey'], (res) => {
+    chrome.storage.local.get(['apiKey'], (res) => {
       const config = mergeAnalysisConfigWithStoredApiKey(message.config, res.apiKey);
 
       runAnalysis(config, effectiveMode, currentStatus.lastAnalysisOptions, currentAbortController.signal, currentStatus, message.bookmarkFolderId)
@@ -479,21 +479,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       }
 
-      chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
-        const fullConfig = sanitizeLlmConfig(syncRes, {
-          defaultProvider: 'google',
-          defaultMaxTokens: 4096,
-          defaultLinkCheckBatchSize: 24
-        });
-
-        suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
-          .then(aiResponse => {
-            const parsed = cleanAndParseJSON(aiResponse);
-            sendResponse({ success: true, suggestion: parsed, folders, existingDuplicate });
-          })
-          .catch(err => {
-            sendResponse({ success: false, error: formatErrorMessage(err.message) });
+      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
+        chrome.storage.local.get(['apiKey'], (localRes) => {
+          const fullConfig = sanitizeLlmConfig({ ...syncRes, apiKey: localRes.apiKey }, {
+            defaultProvider: 'google',
+            defaultMaxTokens: 4096,
+            defaultLinkCheckBatchSize: 24
           });
+
+          suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
+            .then(aiResponse => {
+              const parsed = cleanAndParseJSON(aiResponse);
+              sendResponse({ success: true, suggestion: parsed, folders, existingDuplicate });
+            })
+            .catch(err => {
+              sendResponse({ success: false, error: formatErrorMessage(err.message) });
+            });
+        });
       });
     });
     return true; // async

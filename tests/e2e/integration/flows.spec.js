@@ -324,13 +324,15 @@ test.describe('End-to-End Integration Flows', () => {
       await gotoPopup(page, extensionId, 'popup-light.html');
       await page.waitForTimeout(300);
 
-      // 3. Clear any existing bookmarks & save Gemini credentials in storage sync
+      // 3. Clear any existing bookmarks & save Gemini credentials in local storage
       await clearBookmarksBar(page);
       await page.evaluate(async () => {
         await chrome.storage.sync.set({
           provider: 'google',
-          apiKey: 'mock-gemini-key',
           modelName: 'gemini-1.5-flash'
+        });
+        await chrome.storage.local.set({
+          apiKey: 'mock-gemini-key'
         });
       });
 

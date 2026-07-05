@@ -111,10 +111,17 @@ export function loadConfig() {
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
 
-  chrome.storage.sync.get(['provider', 'apiUrl', 'apiKey', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], (res) => {
+  return Promise.all([
+    new Promise(resolve => {
+      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], resolve);
+    }),
+    new Promise(resolve => {
+      chrome.storage.local.get(['apiKey'], resolve);
+    })
+  ]).then(([res, localRes]) => {
     if (res.provider) providerSelect.value = res.provider;
     apiUrlInput.value = res.apiUrl || '';
-    apiKeyInput.value = res.apiKey || '';
+    apiKeyInput.value = localRes.apiKey || '';
     modelNameInput.value = res.modelName || '';
     checkDeadLinksCheckbox.checked = res.checkDeadLinks === true;
     if (res.linkCheckBatchSize) linkCheckBatchSizeSelect.value = res.linkCheckBatchSize;
@@ -124,17 +131,14 @@ export function loadConfig() {
     promptCompleteInput.value = res.promptComplete || PROMPT_DEFAULTS.complete;
     promptSuggestInput.value = res.promptSuggest || PROMPT_DEFAULTS.suggest;
 
-    // Dynamically update model options based on loaded value
     const provider = res.provider || 'google';
     const defModel = PROVIDER_DEFAULTS[provider]?.model || '';
     updateModelOptions(res.modelName || defModel);
-
-    // Check config status AFTER loading data into inputs
     checkConfigStatus();
   });
 }
 
-export function saveConfig() {
+export async function saveConfig() {
   const providerSelect = document.getElementById('provider');
   const apiUrlInput = document.getElementById('apiUrl');
   const apiKeyInput = document.getElementById('apiKey');
@@ -146,10 +150,9 @@ export function saveConfig() {
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
 
-  const config = {
+  const syncConfig = {
     provider: providerSelect.value,
     apiUrl: apiUrlInput.value.trim(),
-    apiKey: apiKeyInput.value.trim(),
     modelName: modelNameInput.value.trim(),
     linkCheckBatchSize: parseInt(linkCheckBatchSizeSelect.value, 10) || 24,
     maxTokens: parseInt(maxTokensSelect.value, 10) || 32768,
@@ -159,11 +162,14 @@ export function saveConfig() {
     promptSuggest: promptSuggestInput.value.trim() || PROMPT_DEFAULTS.suggest
   };
 
-  chrome.storage.sync.set(config, () => {
-    showToast(chrome.i18n.getMessage('toastConfigSaved'));
-    addLog('> Configuration sauvegardée avec succès.', 'success');
-    checkConfigStatus();
-  });
+  await Promise.all([
+    new Promise(resolve => chrome.storage.sync.set(syncConfig, resolve)),
+    new Promise(resolve => chrome.storage.local.set({ apiKey: apiKeyInput.value.trim() }, resolve))
+  ]);
+
+  showToast(chrome.i18n.getMessage('toastConfigSaved'));
+  addLog('> Configuration sauvegardée avec succès.', 'success');
+  checkConfigStatus();
 }
 
 export function resetConfig() {
@@ -210,11 +216,14 @@ export function resetPromptsToDefaults() {
 }
 
 export function exportConfig() {
-  chrome.storage.sync.get(null, (config) => {
+  Promise.all([
+    new Promise(resolve => chrome.storage.sync.get(null, resolve)),
+    new Promise(resolve => chrome.storage.local.get(['apiKey'], resolve))
+  ]).then(([config, localConfig]) => {
     const data = {
       provider: config.provider || 'google',
       apiUrl: config.apiUrl || '',
-      apiKey: config.apiKey || '',
+      apiKey: localConfig.apiKey || '',
       modelName: config.modelName || '',
       checkDeadLinks: config.checkDeadLinks === true,
       linkCheckBatchSize: config.linkCheckBatchSize || 24,
@@ -260,10 +269,22 @@ export function importConfig(e) {
         promptComplete: config.promptComplete || ''
       };
 
-      chrome.storage.sync.set(configToSave, () => {
-        loadConfig();
-        showToast('Configuration importée');
-        addLog('> Configuration importée et mise à jour avec succès.', 'success');
+      chrome.storage.sync.set({
+        provider: configToSave.provider,
+        apiUrl: configToSave.apiUrl,
+        modelName: configToSave.modelName,
+        checkDeadLinks: configToSave.checkDeadLinks,
+        linkCheckBatchSize: configToSave.linkCheckBatchSize,
+        maxTokens: configToSave.maxTokens,
+        debugMode: configToSave.debugMode,
+        promptMinimal: configToSave.promptMinimal,
+        promptComplete: configToSave.promptComplete
+      }, () => {
+        chrome.storage.local.set({ apiKey: configToSave.apiKey }, () => {
+          loadConfig();
+          showToast('Configuration importée');
+          addLog('> Configuration importée et mise à jour avec succès.', 'success');
+        });
       });
     } catch (err) {
       addLog(`Erreur lors de l'importation : ${err.message}`, 'error');

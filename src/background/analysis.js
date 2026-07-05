@@ -620,8 +620,8 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
     console.log('Mode:', mode);
     console.log('Bookmark Count:', bookmarkCount);
     console.log(`Token estimation: ${nodeCount} nodes × 30 + 2000 = ${estimatedOutputTokens} → effectiveMax: ${effectiveMaxTokens}`);
-    console.log('Cleaned Tree Structure:', JSON.stringify(cleanedTree, null, 2));
-    console.log('User Prompt:', mode === 'complete' ? config.promptComplete : config.promptMinimal);
+    console.log('Cleaned Tree Nodes:', nodeCount);
+    console.log('User Prompt Length:', (mode === 'complete' ? config.promptComplete : config.promptMinimal || '').length);
     console.log('===========================');
   }
 
@@ -634,7 +634,7 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
     llmResult = await queryLLM({ ...config, maxTokens: effectiveMaxTokens }, cleanedTree, mode, userSignal);
     if (config.debugMode) {
       console.log('=== DEBUG: Raw LLM Response ===');
-      console.log('Raw Result:', JSON.stringify(llmResult, null, 2));
+      console.log('Raw Result Keys:', llmResult && typeof llmResult === 'object' ? Object.keys(llmResult) : typeof llmResult);
       console.log('================================');
     }
   } catch (err) {
@@ -762,8 +762,8 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
 
   if (config.debugMode) {
     console.log('=== DEBUG: Tree Comparison ===');
-    console.log('Original Tree:', JSON.stringify(originalMap, null, 2).substring(0, 1000));
-    console.log('Reorganized Tree:', JSON.stringify(reorganizedTree, null, 2).substring(0, 1000));
+    console.log('Original Tree Nodes:', Object.keys(originalMap).length);
+    console.log('Reorganized Tree Root:', String(reorganizedTree?.id ?? 'unknown'));
     console.log('==============================');
   }
 
@@ -898,9 +898,7 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
       byCategory[action.category] = (byCategory[action.category] || 0) + 1;
     }
     console.log(byCategory);
-    console.log('All Actions:', JSON.stringify(actions, null, 2));
-    console.log('Explanation type:', typeof explanation);
-    console.log('Explanation:', explanation);
+    console.log('Explanation Length:', explanation.length);
     console.log('==============================');
   }
 

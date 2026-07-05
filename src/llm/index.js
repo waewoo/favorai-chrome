@@ -102,13 +102,10 @@ export async function queryLLM(config, bookmarksTree, mode, signal) {
     console.log('Provider:', provider);
     console.log('Model:', modelName);
     console.log('Mode:', mode);
-    console.log('Context:', contextBlock);
-    console.log('--- System Prompt ---');
-    console.log(systemPrompt);
-    console.log('--- Mode Instruction ---');
-    console.log(modeInstruction);
-    console.log('--- User Prompt (Preview) ---');
-    console.log(userPrompt.substring(0, 500));
+    console.log('Context Length:', contextBlock.length);
+    console.log('System Prompt Length:', systemPrompt.length);
+    console.log('Mode Instruction Length:', modeInstruction.length);
+    console.log('User Prompt Length:', userPrompt.length);
     console.log('========================');
   }
 

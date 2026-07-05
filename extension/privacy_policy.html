@@ -227,7 +227,7 @@
     <tbody>
       <tr>
         <td><strong>LLM API Key</strong><br>(OpenAI, Gemini, Mistral, etc.)</td>
-        <td>Stored locally in <code>chrome.storage.sync</code> (encrypted by the browser)</td>
+        <td>Stored locally in <code>chrome.storage.local</code> (not synced)</td>
         <td>No — only used as a header in requests to the API you configured</td>
         <td>✅ Yes — LLM authentication</td>
       </tr>
@@ -301,7 +301,7 @@
       </tr>
       <tr>
         <td><code>storage</code></td>
-        <td>Store your configuration (API key, preferences) and local session history in your browser</td>
+        <td>Store your configuration preferences and local session history in your browser</td>
       </tr>
       <tr>
         <td><code>history</code></td>
@@ -327,7 +327,7 @@
   <!-- 6. API Key security -->
   <h2>6. API Key security</h2>
   <div class="highlight-box info">
-    <p>Your API key is stored in <code>chrome.storage.sync</code>. This storage is <strong>encrypted by the browser</strong> and synced across devices signed in to the same Chrome/Edge account. FavorAI cannot read your key outside the extension context.</p>
+    <p>Your API key is stored in <code>chrome.storage.local</code>. It stays on the current browser profile and is not synced across devices. FavorAI cannot read your key outside the extension context.</p>
     <p>Recommendation: Create a dedicated API key for FavorAI with a limited quota at your LLM provider.</p>
   </div>
 

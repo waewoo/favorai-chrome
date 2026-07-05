@@ -116,18 +116,20 @@ function resetSuggestion() {
 
 // ── Check configuration status ──────────────────────────────────────────────
 function checkConfig() {
-  chrome.storage.sync.get(['provider', 'apiKey'], (res) => {
-    const provider = res.provider || 'openai';
-    const apiKey = res.apiKey || '';
+  chrome.storage.sync.get(['provider'], (res) => {
+    chrome.storage.local.get(['apiKey'], (localRes) => {
+      const provider = res.provider || 'openai';
+      const apiKey = localRes.apiKey || '';
 
-    if (provider !== 'ollama' && !apiKey) {
-      elConfigAlert.classList.remove('hidden');
-      btnAnalyze.disabled = true;
-      btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
-    } else {
-      elConfigAlert.classList.add('hidden');
-      btnAnalyze.title = '';
-    }
+      if (provider !== 'ollama' && !apiKey) {
+        elConfigAlert.classList.remove('hidden');
+        btnAnalyze.disabled = true;
+        btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
+      } else {
+        elConfigAlert.classList.add('hidden');
+        btnAnalyze.title = '';
+      }
+    });
   });
 }
 
@@ -160,16 +162,18 @@ function loadActiveTab() {
       elUrl.textContent = activeUrl;
 
       if (activeUrl.startsWith('http://') || activeUrl.startsWith('https://')) {
-        chrome.storage.sync.get(['provider', 'apiKey'], (res) => {
-          const provider = res.provider || 'openai';
-          const apiKey = res.apiKey || '';
-          if (provider !== 'ollama' && !apiKey) {
-            btnAnalyze.disabled = true;
-            btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
-          } else {
-            btnAnalyze.disabled = false;
-            btnAnalyze.title = '';
-          }
+        chrome.storage.sync.get(['provider'], (res) => {
+          chrome.storage.local.get(['apiKey'], (localRes) => {
+            const provider = res.provider || 'openai';
+            const apiKey = localRes.apiKey || '';
+            if (provider !== 'ollama' && !apiKey) {
+              btnAnalyze.disabled = true;
+              btnAnalyze.title = chrome.i18n.getMessage('lightConfigApiKeyRequired');
+            } else {
+              btnAnalyze.disabled = false;
+              btnAnalyze.title = '';
+            }
+          });
         });
       } else {
         elTitle.value = chrome.i18n.getMessage('lightTabNotSupported');

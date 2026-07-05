@@ -148,7 +148,9 @@ test.describe('Popup Light (Minimal Interface)', () => {
       // Set provider to ollama via page evaluate in storage
       await page.evaluate(() => {
         return new Promise((resolve) => {
-          chrome.storage.sync.set({ provider: 'ollama', apiKey: '' }, resolve);
+          chrome.storage.sync.set({ provider: 'ollama' }, () => {
+            chrome.storage.local.set({ apiKey: '' }, resolve);
+          });
         });
       });
 

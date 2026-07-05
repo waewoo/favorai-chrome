@@ -243,14 +243,18 @@ export async function startReorganization() {
     }
   }
 
-  const syncRes = await new Promise(resolve => {
-    chrome.storage.sync.get(['promptMinimal', 'promptComplete', 'promptSuggest'], resolve);
-  });
+  const [syncRes, localRes] = await Promise.all([
+    new Promise(resolve => {
+      chrome.storage.sync.get(['promptMinimal', 'promptComplete', 'promptSuggest'], resolve);
+    }),
+    new Promise(resolve => {
+      chrome.storage.local.get(['apiKey'], resolve);
+    })
+  ]);
 
   const config = {
     provider: providerSelect ? providerSelect.value : 'google',
     apiUrl: apiUrlInput ? apiUrlInput.value.trim() : '',
-    apiKey: apiKeyInput ? apiKeyInput.value.trim() : '',
     modelName: modelNameInput ? modelNameInput.value.trim() : '',
     linkCheckBatchSize: linkCheckBatchSizeSelect ? (parseInt(linkCheckBatchSizeSelect.value, 10) || 24) : 24,
     maxTokens: maxTokensSelect ? (parseInt(maxTokensSelect.value, 10) || 32768) : 32768,
@@ -259,8 +263,9 @@ export async function startReorganization() {
     promptComplete: (promptCompleteInput && promptCompleteInput.value.trim()) || syncRes.promptComplete || '',
     promptSuggest: (promptSuggestInput && promptSuggestInput.value.trim()) || syncRes.promptSuggest || ''
   };
+  const apiKeyValue = apiKeyInput ? apiKeyInput.value.trim() : (localRes.apiKey || '');
 
-  if (analysisOptions.useAI && config.provider !== 'ollama' && !config.apiKey) {
+  if (analysisOptions.useAI && config.provider !== 'ollama' && !apiKeyValue) {
     markReorganizationIdle();
     showToast(chrome.i18n.getMessage('errApiKeyRequired') || 'Clé API requise');
     addLog(chrome.i18n.getMessage('errApiKeyRequired') || '> Erreur : Clé API requise.', 'error');

@@ -314,7 +314,10 @@ describe('llm/index.js', () => {
 
     expect(logSpy).toHaveBeenCalledWith('=== DEBUG: LLM Query ===');
     expect(logSpy).toHaveBeenCalledWith('Provider:', 'openai');
-    expect(logSpy.mock.calls.some((call) => typeof call[0] === 'string' && call[0].length === 500)).toBe(true);
+    expect(logSpy).toHaveBeenCalledWith('Context Length:', expect.any(Number));
+    expect(logSpy).toHaveBeenCalledWith('System Prompt Length:', expect.any(Number));
+    expect(logSpy).toHaveBeenCalledWith('Mode Instruction Length:', expect.any(Number));
+    expect(logSpy).toHaveBeenCalledWith('User Prompt Length:', expect.any(Number));
 
     logSpy.mockRestore();
   });
