@@ -1,0 +1,4 @@
+project_doc_max_bytes = 262144
+
+[features]
+codex_hooks = true

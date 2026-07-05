@@ -403,3 +403,11 @@ Before handing work back, report:
 - Which commands were run.
 - Any commands that were skipped and why.
 - Any residual risk or follow-up that matters.
+
+## Memory Management
+
+Project docs, memory, specs, and plans live in `aidd_docs/`.
+
+### Project memory
+
+<aidd_project_memory></aidd_project_memory>
