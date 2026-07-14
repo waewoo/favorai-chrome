@@ -1,6 +1,6 @@
 {
   "name": "favorai-extension",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "AI-powered bookmark manager Chrome extension",
   "type": "module",
   "scripts": {

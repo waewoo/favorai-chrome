@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-07-14
+
+### Added
+- **bookmarks**: classify new bookmarks with AI (`049db06`)
+- **skills**: add shared favorai agent skills (`c48c47e`)
+
+### Changed
+- **cleanup** (refactor): use shared isSafeUrl helper (`6781c69`)
+- **aidd** (chore): add memory bank scaffolding (`2de8656`)
+- **ci** (chore): align quality gates and workflow naming (`de37682`)
+- (docs) refresh agent and repo workflow docs (`e5ef82f`)
+- **tooling** (chore): add local quality scan and mcp bootstrap (`25dc33c`)
+
+### Fixed
+- **security**: store api keys locally and redact logs (`e675cf3`)
+
 ## [1.5.0] - 2026-06-13
 
 ### Added
