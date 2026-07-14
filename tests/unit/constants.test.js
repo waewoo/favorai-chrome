@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CHROME_ROOT_IDS,
+  AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT,
   LLM_TIMEOUT_MS,
   URL_CHECK_TIMEOUT_MS,
   MAX_HISTORY_SESSIONS,
@@ -32,6 +33,7 @@ describe('constants', () => {
     expect(LLM_TIMEOUT_MS).toBeGreaterThan(0);
     expect(URL_CHECK_TIMEOUT_MS).toBeGreaterThan(0);
     expect(MAX_HISTORY_SESSIONS).toBe(30);
+    expect(AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT).toBe(0.8);
   });
 
   it('should export the new folder prefix as new_', () => {

@@ -124,6 +124,7 @@
   },
   "bgModeComplete": { "message": "Complète" },
   "bgModeMinimal": { "message": "Minimale" },
+  "bgModeAuto": { "message": "Auto" },
   "bgChangesProposed": {
     "message": "✓ $count$ changement(s) proposé(s)",
     "placeholders": { "count": { "content": "$1" } }
@@ -188,7 +189,22 @@
   "lightSuggestionLabel": { "message": "💡 Recommandation de l'IA" },
   "lightBookmarkLabel": { "message": "Nom du favori" },
   "lightFolderLabel": { "message": "Dossier cible" },
+  "lightSuggestedFolderLabel": { "message": "Dossier cible proposé" },
   "lightConfirmBtn": { "message": "✓ Enregistrer" },
+  "lightApplyChosenTargetBtn": { "message": "Déplacer vers ce dossier" },
+  "lightAutoClassifyError": { "message": "Impossible de charger la suggestion d'auto-classement." },
+  "lightAutoClassifyLoading": { "message": "Analyse du nouveau favori en cours..." },
+  "lightAutoClassifyChooseTarget": { "message": "Vous pouvez changer le nom et le dossier cible ci-dessous." },
+  "lightAutoClassifySuggestionReady": { "message": "Suggestion prête." },
+  "lightAutoClassifyMoveSuccess": { "message": "Favori déplacé avec succès !" },
+  "lightAutoClassifyMoveFailed": { "message": "Échec du déplacement automatique." },
+  "lightAutoClassifyConfidence": {
+    "message": "Confiance : $1 (seuil : $2).",
+    "placeholders": {
+      "1": { "content": "$1" },
+      "2": { "content": "$2" }
+    }
+  },
   "lightPrivacyBtn": { "message": "Politique de confidentialité" },
   "lightNoTabDetected": { "message": "Aucun onglet actif détecté" },
   "lightManualSaveBtn": { "message": "✏️ Choisir manuellement" },
@@ -200,9 +216,9 @@
   "lightConfigAlertTitle": { "message": "🤖 Configuration IA requise" },
   "lightConfigAlertDesc": { "message": "Configurez votre clé API pour activer les suggestions automatiques de l'IA." },
   "lightConfigAlertBtn": { "message": "⚙️ Configurer l'IA" },
-  "lightQuickReorgTitle": { "message": "✨ Réorganiser tous les favoris" },
-  "lightQuickReorgDesc": { "message": "Nettoyez les liens morts, trouvez les doublons intelligents et classez automatiquement tous vos favoris." },
-  "lightQuickReorgBtn": { "message": "⚡ Lancer la réorganisation" },
+  "lightQuickReorgTitle": { "message": "✨ Réorganisation complète" },
+  "lightQuickReorgDesc": { "message": "Ouvre le mode avancé pour analyser, trier et réorganiser toute votre bibliothèque de favoris." },
+  "lightQuickReorgBtn": { "message": "Ouvrir la réorganisation" },
   "addBookmarkTitle": { "message": "➕ Ajouter l'onglet courant avec l'IA" },
   "addBookmarkDesc": { "message": "Analysez l'onglet actif et utilisez l'IA pour déterminer automatiquement le meilleur dossier pour ce favori." },
   "bookmarkTitleLabel": { "message": "Nom du favori :" },
@@ -223,6 +239,8 @@
   "customModelPlaceholder": { "message": "Nom du modèle personnalisé" },
   "maxTokens": { "message": "Max tokens" },
   "debugMode": { "message": "🐛 Mode débogage" },
+  "autoMoveNewBookmarks": { "message": "Déplacer automatiquement les nouveaux favoris" },
+  "autoMoveConfidenceThreshold": { "message": "Seuil de confiance" },
   "summaryPrompts": { "message": "📝 Personnaliser les prompts" },
   "promptMinimal": { "message": "Prompt — Mode Minimal" },
   "promptComplete": { "message": "Prompt — Mode Complet" },

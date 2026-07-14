@@ -233,6 +233,7 @@ Instructions:
 2. If the bookmark does not fit into any existing folders, recommend "create_new". Suggest a name for a new folder (e.g. "Cooking", "Finance" - optionally including an emoji like 🍳 Cooking) in "newFolderTitle", and return the existing parent folder ID under which it should be created in "newFolderParentId".
 3. Provide a brief explanation for your recommendation in "explanation".
 4. Recommend a cleaner/better title for this bookmark (e.g. removing site name suffixes like " - Google Maps" or " | GitHub") and return it in "suggestedTitle".
+5. Return a confidence score between 0 and 1 in "confidence". Use a higher score when you are very certain the folder choice is correct.
 
 Your response MUST be a valid JSON object matching this schema:
 {
@@ -241,5 +242,6 @@ Your response MUST be a valid JSON object matching this schema:
   "newFolderTitle": "Name of new folder (if action is create_new)",
   "newFolderParentId": "ID of existing parent folder (if action is create_new)",
   "suggestedTitle": "Suggested cleaner title for this bookmark",
-  "explanation": "Brief reason for this choice"
+  "explanation": "Brief reason for this choice",
+  "confidence": 0.0
 }`;

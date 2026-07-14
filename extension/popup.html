@@ -287,6 +287,24 @@
                 <input type="checkbox" id="debugMode" class="option-checkbox" />
                 <label for="debugMode" class="option-label option-label--flat" data-i18n="debugMode"></label>
               </div>
+
+              <div class="option-row option-row--center option-row--mt-sm">
+                <input type="checkbox" id="autoMoveNewBookmarks" class="option-checkbox" />
+                <label for="autoMoveNewBookmarks" class="option-label option-label--flat" data-i18n="autoMoveNewBookmarks"></label>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group form-group--0">
+                  <label for="autoMoveConfidenceThreshold" data-i18n="autoMoveConfidenceThreshold"></label>
+                  <select id="autoMoveConfidenceThreshold">
+                    <option value="0.6">60%</option>
+                    <option value="0.7">70%</option>
+                    <option value="0.8" selected>80%</option>
+                    <option value="0.9">90%</option>
+                    <option value="0.95">95%</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </details>
 

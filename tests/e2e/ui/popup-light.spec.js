@@ -221,4 +221,72 @@ test.describe('Popup Light (Minimal Interface)', () => {
       await cleanup(context, tmpDir);
     }
   });
+
+  test('should open organization tab when clicking the quick reorg title', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+
+      const reorgTitle = page.locator('#lightQuickReorgTitle');
+      await expect(reorgTitle).toBeVisible();
+      await reorgTitle.click();
+
+      await page.waitForTimeout(200);
+
+      const activeTab = await page.evaluate(() => {
+        return new Promise((resolve) => {
+          chrome.storage.local.get(['activeTab'], (res) => resolve(res.activeTab));
+        });
+      });
+      expect(activeTab).toBe('rangement');
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should allow a different folder when the suggested one contains a duplicate', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+      const folders = await page.evaluate(() => new Promise(resolve => {
+        chrome.runtime.sendMessage({ action: 'get_folders' }, response => resolve(response.folders));
+      }));
+      const [suggested, alternative] = folders.filter(folder => folder.id !== '0').slice(0, 2);
+      expect(suggested).toBeDefined();
+      expect(alternative).toBeDefined();
+
+      await page.evaluate(async ({ suggestedFolder, alternativeFolder }) => {
+        await chrome.storage.local.set({
+          pendingAutoBookmarkSuggestions: {
+            'auto-bookmark': {
+              type: 'suggestion',
+              bookmark: { id: 'auto-bookmark', title: 'Original title', url: 'https://example.com', parentId: '1' },
+              suggestion: { action: 'use_existing', targetFolderId: suggestedFolder.id, explanation: 'Suggested destination.' },
+              folders: [
+                suggestedFolder,
+                alternativeFolder
+              ],
+              existingDuplicate: { id: 'duplicate', folderId: suggestedFolder.id, folderPath: suggestedFolder.path },
+              autoMoveEnabled: false
+            }
+          }
+        });
+      }, { suggestedFolder: suggested, alternativeFolder: alternative });
+
+      await gotoPopup(page, extensionId, 'popup-light.html?mode=autoclassify&bookmarkId=auto-bookmark');
+
+      await expect(page.locator('#lightSuggestionCard')).toBeVisible();
+      await expect(page.locator('#lightBookmarkTitle')).toHaveValue('Original title');
+      await expect(page.locator('#lightAutoTargetTitle')).toHaveValue('Original title');
+      await expect(page.locator('#lightAutoTargetFolder')).toHaveValue(suggested.id);
+      await expect(page.locator('#btnLightConfirm')).toBeDisabled();
+
+      await page.locator('#lightAutoTargetFolder').selectOption(alternative.id);
+      await expect(page.locator('#btnLightConfirm')).toBeEnabled();
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
 });

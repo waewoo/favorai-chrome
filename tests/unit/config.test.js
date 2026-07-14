@@ -26,6 +26,8 @@ describe('popup config storage', () => {
       linkCheckBatchSize: field('24'),
       maxTokens: field('32768'),
       debugMode: field(),
+      autoMoveNewBookmarks: field(),
+      autoMoveConfidenceThreshold: field('0.8'),
       promptMinimal: field('min'),
       promptComplete: field('complete'),
       promptSuggest: field('suggest'),
@@ -45,6 +47,8 @@ describe('popup config storage', () => {
         checkDeadLinks: true,
         linkCheckBatchSize: 12,
         debugMode: true,
+        autoMoveNewBookmarks: true,
+        autoMoveConfidenceThreshold: 0.9,
         promptMinimal: 'sync-min',
         promptComplete: 'sync-complete',
         promptSuggest: 'sync-suggest',
@@ -65,6 +69,8 @@ describe('popup config storage', () => {
     await loadConfig();
 
     expect(elements.apiKey.value).toBe('local-secret');
+    expect(elements.autoMoveNewBookmarks.checked).toBe(true);
+    expect(elements.autoMoveConfidenceThreshold.value).toBe('0.9');
     expect(chrome.storage.sync.get).toHaveBeenCalledWith([
       'provider',
       'apiUrl',
@@ -72,6 +78,8 @@ describe('popup config storage', () => {
       'checkDeadLinks',
       'linkCheckBatchSize',
       'debugMode',
+      'autoMoveNewBookmarks',
+      'autoMoveConfidenceThreshold',
       'promptMinimal',
       'promptComplete',
       'maxTokens',
@@ -88,6 +96,8 @@ describe('popup config storage', () => {
     const [savedConfig] = chrome.storage.sync.set.mock.calls[0];
     expect(savedConfig).not.toHaveProperty('apiKey');
     expect(savedConfig.provider).toBe('google');
+    expect(savedConfig.autoMoveNewBookmarks).toBe(false);
+    expect(savedConfig.autoMoveConfidenceThreshold).toBe(0.8);
     expect(chrome.storage.local.set).toHaveBeenCalledWith({ apiKey: 'new-secret' }, expect.any(Function));
   });
 });

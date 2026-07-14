@@ -438,6 +438,13 @@ export function validateSuggestionResponse(response) {
     throw new Error('Réponse LLM invalide: "suggestedTitle" doit être une chaîne de caractères.');
   }
 
+  if ('confidence' in response && response.confidence !== undefined && response.confidence !== null) {
+    const confidence = Number(response.confidence);
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+      throw new Error('Réponse LLM invalide: "confidence" doit être un nombre compris entre 0 et 1.');
+    }
+  }
+
   return response;
 }
 

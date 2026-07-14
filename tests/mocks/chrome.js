@@ -12,6 +12,10 @@ export function createChromeMock() {
       remove: vi.fn().mockResolvedValue(undefined),
       removeTree: vi.fn().mockResolvedValue(undefined),
       getChildren: vi.fn().mockResolvedValue([]),
+      onCreated: {
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      },
     },
     alarms: {
       create: vi.fn(),
@@ -72,6 +76,7 @@ export function createChromeMock() {
       onMessage: { addListener: vi.fn() },
       onConnect: { addListener: vi.fn() },
       onInstalled: { addListener: vi.fn() },
+      onStartup: { addListener: vi.fn() },
       lastError: null,
       getURL: vi.fn((path) => `chrome-extension://test-id/${path}`),
       getManifest: vi.fn(() => ({ version: '1.1.0', name: 'FavorAI' })),

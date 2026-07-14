@@ -30,6 +30,8 @@ export function renderHistory() {
       const dateStr = new Date(session.timestamp).toLocaleString();
       const modeLabel = session.mode === 'complete'
         ? t('btnComplete', 'Complete')
+        : session.mode === 'auto'
+          ? t('bgModeAuto', 'Auto')
         : session.mode === 'forgotten'
           ? t('tabForgotten', 'Forgotten')
           : t('btnMinimal', 'Minimal');

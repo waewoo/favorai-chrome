@@ -5,13 +5,14 @@
 
 import { runAnalysis } from './analysis.js';
 import { applyChanges } from './apply.js';
-import { rollbackSession } from './history.js';
+import { rollbackSession, saveSessionToHistory } from './history.js';
 import { suggestBookmarkLocation } from '../llm/index.js';
 import { cleanAndParseJSON } from '../llm/utils.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
 import { mergeAnalysisConfigWithStoredApiKey, sanitizeAnalysisConfig, sanitizeLlmConfig } from './config.js';
 import { normalizeInterruptedAnalysisStatus } from './status.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
+import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
 
 const DIAGNOSTIC_LOG_LIMIT = 100;
 
@@ -47,12 +48,6 @@ function handleStartupRecovery() {
     syncInterruptedAnalysisState(res.extensionStatus || currentStatus);
   });
 }
-
-chrome.runtime.onStartup.addListener(() => {
-  handleStartupRecovery();
-});
-
-handleStartupRecovery();
 
 /**
  * Formate les messages d'erreur pour une meilleure lisibilité
@@ -131,8 +126,332 @@ const currentStatus = {
   bookmarkFolderId: null
 };
 
+const PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY = 'pendingAutoBookmarkSuggestions';
+let suppressAutoBookmarkClassificationCount = 0;
+let suppressAutoBookmarkClassificationTimer = null;
+
+chrome.bookmarks.onCreated.addListener((bookmarkId, bookmark) => {
+  if (!bookmark?.url) return;
+  if (consumeAutoBookmarkClassificationSuppression()) return;
+  void processAutoBookmarkCreation({ id: bookmarkId, ...bookmark });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  handleStartupRecovery();
+});
+
+handleStartupRecovery();
+
 function saveStatusToStorage() {
   chrome.storage.local.set({ extensionStatus: currentStatus });
+}
+
+function suppressNextAutoBookmarkClassification() {
+  suppressAutoBookmarkClassificationCount += 1;
+  if (suppressAutoBookmarkClassificationTimer) clearTimeout(suppressAutoBookmarkClassificationTimer);
+  suppressAutoBookmarkClassificationTimer = setTimeout(() => {
+    suppressAutoBookmarkClassificationCount = 0;
+    suppressAutoBookmarkClassificationTimer = null;
+  }, 5000);
+}
+
+function consumeAutoBookmarkClassificationSuppression() {
+  if (suppressAutoBookmarkClassificationCount <= 0) return false;
+  suppressAutoBookmarkClassificationCount -= 1;
+  if (suppressAutoBookmarkClassificationCount === 0 && suppressAutoBookmarkClassificationTimer) {
+    clearTimeout(suppressAutoBookmarkClassificationTimer);
+    suppressAutoBookmarkClassificationTimer = null;
+  }
+  return true;
+}
+
+function clearAutoBookmarkClassificationSuppression() {
+  suppressAutoBookmarkClassificationCount = 0;
+  if (suppressAutoBookmarkClassificationTimer) {
+    clearTimeout(suppressAutoBookmarkClassificationTimer);
+    suppressAutoBookmarkClassificationTimer = null;
+  }
+}
+
+function normalizeAutoMoveThreshold(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT;
+  return Math.max(0, Math.min(1, parsed));
+}
+
+function normalizeConfidence(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(0, Math.min(1, parsed));
+}
+
+function getStoredSync(keys) {
+  return new Promise(resolve => chrome.storage.sync.get(keys, resolve));
+}
+
+function getStoredLocal(keys) {
+  return new Promise(resolve => chrome.storage.local.get(keys, resolve));
+}
+
+function setStoredLocal(values) {
+  return new Promise(resolve => chrome.storage.local.set(values, resolve));
+}
+
+async function loadSuggestionConfig() {
+  const [syncRes, localRes] = await Promise.all([
+    getStoredSync(['provider', 'apiUrl', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold']),
+    getStoredLocal(['apiKey'])
+  ]);
+
+  const fullConfig = sanitizeLlmConfig({ ...syncRes, apiKey: localRes.apiKey }, {
+    defaultProvider: 'google',
+    defaultMaxTokens: 4096,
+    defaultLinkCheckBatchSize: 24
+  });
+
+  return {
+    ...fullConfig,
+    autoMoveNewBookmarks: syncRes.autoMoveNewBookmarks === true,
+    autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(syncRes.autoMoveConfidenceThreshold)
+  };
+}
+
+async function buildBookmarkSuggestionContext(bookmarkUrl, excludeBookmarkId = null) {
+  const trees = await chrome.bookmarks.getTree();
+  if (chrome.runtime.lastError || !trees?.[0]) {
+    throw new Error('Impossible de lire les favoris.');
+  }
+
+  const nodeMap = buildNodeMap(trees[0]);
+  const folders = [];
+  let existingDuplicate = null;
+
+  for (const id in nodeMap) {
+    if (excludeBookmarkId && String(id) === String(excludeBookmarkId)) continue;
+    const node = nodeMap[id];
+    if (!node.url && id !== '0') {
+      folders.push({
+        id: node.id,
+        path: getPathFromMap(node.id, nodeMap)
+      });
+    } else if (bookmarkUrl && node.url === bookmarkUrl) {
+      existingDuplicate = {
+        id: node.id,
+        title: node.title,
+        folderId: node.parentId,
+        folderPath: getPathFromMap(node.parentId, nodeMap)
+      };
+    }
+  }
+
+  return { folders, existingDuplicate, nodeMap };
+}
+
+async function requestBookmarkSuggestion(bookmark, ignoredFolderIds, signal) {
+  const config = await loadSuggestionConfig();
+  const { folders, existingDuplicate, nodeMap } = await buildBookmarkSuggestionContext(bookmark.url, bookmark.id);
+  const aiResponse = await suggestBookmarkLocation(config, bookmark, folders, ignoredFolderIds, signal);
+  const suggestion = cleanAndParseJSON(aiResponse);
+  return { config, folders, existingDuplicate, nodeMap, suggestion };
+}
+
+async function getPendingBookmarkSuggestions() {
+  const res = await getStoredLocal([PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY]);
+  return res[PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY] || {};
+}
+
+async function storePendingBookmarkSuggestion(bookmarkId, payload) {
+  const pending = await getPendingBookmarkSuggestions();
+  pending[bookmarkId] = payload;
+  await setStoredLocal({ [PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY]: pending });
+}
+
+async function readPendingBookmarkSuggestion(bookmarkId) {
+  const pending = await getPendingBookmarkSuggestions();
+  return pending[bookmarkId] || null;
+}
+
+async function clearPendingBookmarkSuggestion(bookmarkId) {
+  const pending = await getPendingBookmarkSuggestions();
+  if (!pending[bookmarkId]) return;
+  delete pending[bookmarkId];
+  await setStoredLocal({ [PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY]: pending });
+}
+
+async function openAutoBookmarkPopup(bookmarkId) {
+  await chrome.windows.create({
+    url: `${chrome.runtime.getURL('extension/popup-light.html')}?mode=autoclassify&bookmarkId=${encodeURIComponent(bookmarkId)}`,
+    type: 'popup',
+    width: 460,
+    height: 690,
+    focused: true
+  });
+}
+
+function buildHistoryEntryId() {
+  return `ent_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
+}
+
+async function recordAutoBookmarkMove(historyEntries, explanation) {
+  if (!historyEntries.length) return;
+  const entriesWithIds = historyEntries.map(entry => ({
+    id: buildHistoryEntryId(),
+    ...entry
+  }));
+  await saveSessionToHistory(entriesWithIds, 'auto', explanation);
+}
+
+export async function applyAutoBookmarkSuggestion(bookmark, suggestion, nodeMap, overrideTargetFolderId = null, overrideTargetTitle = '') {
+  const historyEntries = [];
+  const bookmarkNodes = await chrome.bookmarks.get(bookmark.id);
+  const currentBookmark = bookmarkNodes?.[0] || bookmark;
+  const nextTitle = overrideTargetTitle && overrideTargetTitle.trim() ? overrideTargetTitle.trim() : null;
+  let targetParentId = null;
+  let targetPath = '';
+
+  try {
+    if (overrideTargetFolderId) {
+      targetParentId = overrideTargetFolderId;
+      targetPath = getPathFromMap(targetParentId, nodeMap);
+    } else if (suggestion.action === 'create_new') {
+      if (!suggestion.newFolderParentId) {
+        throw new Error('Suggestion invalide: le dossier parent est manquant.');
+      }
+      if (!suggestion.newFolderTitle || !suggestion.newFolderTitle.trim()) {
+        throw new Error('Suggestion invalide: le titre du nouveau dossier est manquant.');
+      }
+
+      const parentPath = getPathFromMap(suggestion.newFolderParentId, nodeMap);
+      const createdFolder = await chrome.bookmarks.create({
+        parentId: suggestion.newFolderParentId,
+        title: suggestion.newFolderTitle.trim()
+      });
+      targetParentId = createdFolder.id;
+      targetPath = parentPath ? `${parentPath} > ${suggestion.newFolderTitle.trim()}` : suggestion.newFolderTitle.trim();
+      historyEntries.push({
+        type: 'create_folder',
+        title: suggestion.newFolderTitle.trim(),
+        realId: createdFolder.id,
+        parentId: suggestion.newFolderParentId,
+        targetPath
+      });
+    } else {
+      if (!suggestion.targetFolderId) {
+        throw new Error('Suggestion invalide: le dossier cible est manquant.');
+      }
+      targetParentId = suggestion.targetFolderId;
+      targetPath = getPathFromMap(targetParentId, nodeMap);
+    }
+
+    if (nextTitle && nextTitle !== (currentBookmark.title || bookmark.title || '')) {
+      const updated = await chrome.bookmarks.update(bookmark.id, { title: nextTitle });
+      historyEntries.push({
+        type: 'rename',
+        nodeId: bookmark.id,
+        oldTitle: currentBookmark.title || bookmark.title || '',
+        newTitle: nextTitle,
+        title: nextTitle,
+        oldUrl: currentBookmark.url || bookmark.url || ''
+      });
+      if (updated?.title) {
+        currentBookmark.title = updated.title;
+      }
+    }
+
+    const sourcePath = getPathFromMap(currentBookmark.parentId || bookmark.parentId || '1', nodeMap);
+    const movedBookmark = await chrome.bookmarks.move(bookmark.id, { parentId: targetParentId });
+    historyEntries.push({
+      type: 'move',
+      nodeId: bookmark.id,
+      title: currentBookmark.title || bookmark.title || 'Bookmark',
+      isFolder: false,
+      oldParentId: currentBookmark.parentId || bookmark.parentId || '',
+      newParentId: targetParentId,
+      sourcePath,
+      targetPath
+    });
+
+    await recordAutoBookmarkMove(historyEntries, suggestion.explanation || '');
+    return movedBookmark;
+  } catch (error) {
+    if (historyEntries.length) await rollbackSession(historyEntries);
+    throw error;
+  }
+}
+
+async function processAutoBookmarkCreation(bookmark) {
+  if (!bookmark?.url) return;
+
+  try {
+    await storePendingBookmarkSuggestion(bookmark.id, {
+      type: 'loading',
+      bookmark: {
+        id: bookmark.id,
+        title: bookmark.title || '',
+        url: bookmark.url || '',
+        parentId: bookmark.parentId || ''
+      },
+      createdAt: Date.now()
+    });
+    void openAutoBookmarkPopup(bookmark.id).catch(popupError => {
+      console.warn('[FavorAI] Unable to open auto-classification popup:', popupError?.message || popupError);
+    });
+
+    const suggestionData = await requestBookmarkSuggestion(bookmark, [], currentAbortController?.signal);
+    const confidence = normalizeConfidence(suggestionData.suggestion.confidence);
+    const shouldAutoMove = suggestionData.config.autoMoveNewBookmarks &&
+      confidence !== null &&
+      confidence >= suggestionData.config.autoMoveConfidenceThreshold;
+
+    if (shouldAutoMove) {
+      await applyAutoBookmarkSuggestion(bookmark, suggestionData.suggestion, suggestionData.nodeMap);
+      await storePendingBookmarkSuggestion(bookmark.id, {
+        type: 'moved',
+        bookmark: {
+          id: bookmark.id,
+          title: bookmark.title || '',
+          url: bookmark.url || '',
+          parentId: bookmark.parentId || ''
+        },
+        suggestion: suggestionData.suggestion,
+        confidence,
+        threshold: suggestionData.config.autoMoveConfidenceThreshold,
+        autoMoveEnabled: suggestionData.config.autoMoveNewBookmarks,
+        createdAt: Date.now(),
+        movedAt: Date.now()
+      });
+      return;
+    }
+
+    await storePendingBookmarkSuggestion(bookmark.id, {
+      type: 'suggestion',
+      bookmark: {
+        id: bookmark.id,
+        title: bookmark.title || '',
+        url: bookmark.url || '',
+        parentId: bookmark.parentId || ''
+      },
+      suggestion: suggestionData.suggestion,
+      confidence,
+      threshold: suggestionData.config.autoMoveConfidenceThreshold,
+      autoMoveEnabled: suggestionData.config.autoMoveNewBookmarks,
+      folders: suggestionData.folders,
+      existingDuplicate: suggestionData.existingDuplicate,
+      createdAt: Date.now()
+    });
+  } catch (error) {
+    await storePendingBookmarkSuggestion(bookmark.id, {
+      type: 'error',
+      bookmark: {
+        id: bookmark.id,
+        title: bookmark.title || '',
+        url: bookmark.url || '',
+        parentId: bookmark.parentId || ''
+      },
+      error: formatErrorMessage(error?.message || String(error)),
+      createdAt: Date.now()
+    });
+  }
 }
 
 function logStatus(text, type = 'info') {
@@ -452,57 +771,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'suggest_bookmark_location') {
-    chrome.bookmarks.getTree((trees) => {
-      if (chrome.runtime.lastError || !trees?.[0]) {
-        sendResponse({ success: false, error: 'Impossible de lire les favoris.' });
-        return;
-      }
-
-      const nodeMap = buildNodeMap(trees[0]);
-      const folders = [];
-      let existingDuplicate = null;
-
-      for (const id in nodeMap) {
-        const node = nodeMap[id];
-        if (!node.url && id !== '0') {
-          folders.push({
-            id: node.id,
-            path: getPathFromMap(node.id, nodeMap)
-          });
-        } else if (node.url === message.bookmark.url && node.url) {
-          existingDuplicate = {
-            id: node.id,
-            title: node.title,
-            folderId: node.parentId,
-            folderPath: getPathFromMap(node.parentId, nodeMap)
-          };
-        }
-      }
-
-      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest'], (syncRes) => {
-        chrome.storage.local.get(['apiKey'], (localRes) => {
-          const fullConfig = sanitizeLlmConfig({ ...syncRes, apiKey: localRes.apiKey }, {
-            defaultProvider: 'google',
-            defaultMaxTokens: 4096,
-            defaultLinkCheckBatchSize: 24
-          });
-
-          suggestBookmarkLocation(fullConfig, message.bookmark, folders, message.ignoredFolderIds, currentAbortController?.signal)
-            .then(aiResponse => {
-              const parsed = cleanAndParseJSON(aiResponse);
-              sendResponse({ success: true, suggestion: parsed, folders, existingDuplicate });
-            })
-            .catch(err => {
-              sendResponse({ success: false, error: formatErrorMessage(err.message) });
-            });
+    (async () => {
+      try {
+        const suggestionData = await requestBookmarkSuggestion(message.bookmark, message.ignoredFolderIds, currentAbortController?.signal);
+        sendResponse({
+          success: true,
+          suggestion: suggestionData.suggestion,
+          folders: suggestionData.folders,
+          existingDuplicate: suggestionData.existingDuplicate,
+          confidence: suggestionData.suggestion.confidence ?? null
         });
-      });
-    });
+      } catch (err) {
+        sendResponse({ success: false, error: formatErrorMessage(err?.message || String(err)) });
+      }
+    })();
     return true; // async
   }
 
   if (message.action === 'save_suggested_bookmark') {
     const { suggestion, bookmark } = message;
+    suppressNextAutoBookmarkClassification();
     
     (async () => {
       let parentId;
@@ -528,10 +816,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true, bookmark: newBookmark });
     })
     .catch(err => {
+      clearAutoBookmarkClassificationSuppression();
       sendResponse({ success: false, error: err.message });
     });
     
     return true; // async
+  }
+
+  if (message.action === 'get_pending_auto_bookmark_suggestion') {
+    (async () => {
+      try {
+        const bookmarkId = message.bookmarkId ? String(message.bookmarkId) : '';
+        if (!bookmarkId) {
+          sendResponse({ success: false, error: 'bookmarkId manquant.' });
+          return;
+        }
+
+        const pending = await readPendingBookmarkSuggestion(bookmarkId);
+        sendResponse({ success: true, pending });
+      } catch (err) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'apply_pending_auto_bookmark_suggestion') {
+    (async () => {
+      try {
+        const bookmarkId = message.bookmarkId ? String(message.bookmarkId) : '';
+        if (!bookmarkId) {
+          sendResponse({ success: false, error: 'bookmarkId manquant.' });
+          return;
+        }
+
+        const pending = await readPendingBookmarkSuggestion(bookmarkId);
+        if (!pending) {
+          sendResponse({ success: false, error: 'Aucune suggestion en attente.' });
+          return;
+        }
+        if (pending.type !== 'suggestion') {
+          sendResponse({ success: false, error: pending.error || 'La suggestion en attente est invalide.' });
+          return;
+        }
+
+        const { nodeMap } = await buildBookmarkSuggestionContext(pending.bookmark.url, pending.bookmark.id);
+        const targetFolderId = message.targetFolderId ? String(message.targetFolderId) : '';
+        const targetTitle = message.targetTitle ? String(message.targetTitle) : '';
+        await applyAutoBookmarkSuggestion(pending.bookmark, pending.suggestion, nodeMap, targetFolderId || null, targetTitle);
+        await clearPendingBookmarkSuggestion(bookmarkId);
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'clear_pending_auto_bookmark_suggestion') {
+    (async () => {
+      try {
+        const bookmarkId = message.bookmarkId ? String(message.bookmarkId) : '';
+        if (!bookmarkId) {
+          sendResponse({ success: false, error: 'bookmarkId manquant.' });
+          return;
+        }
+
+        await clearPendingBookmarkSuggestion(bookmarkId);
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
   }
 
   if (message.action === 'reset_status') {
@@ -567,12 +924,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
+    suppressNextAutoBookmarkClassification();
     chrome.bookmarks.create({
       parentId: bookmark.parentId,
       title: bookmark.title,
       url: bookmark.url
     }, (newBookmark) => {
       if (chrome.runtime.lastError) {
+        clearAutoBookmarkClassificationSuppression();
         sendResponse({ success: false, error: chrome.runtime.lastError.message });
       } else {
         sendResponse({ success: true, bookmark: newBookmark });

@@ -17,6 +17,13 @@ let lastSuggestion = null;
 let lastFolders = [];
 let ignoredIds = [];
 let lastDuplicate = null;
+let autoClassifyStorageListener = null;
+let autoClassifyCloseTimer = null;
+let autoSuggestedTargetFolderId = '';
+
+const popupParams = new URLSearchParams(window.location.search);
+const isAutoClassifyMode = popupParams.get('mode') === 'autoclassify';
+const autoClassifyBookmarkId = popupParams.get('bookmarkId') || '';
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const elTitle      = document.getElementById('lightBookmarkTitle');
@@ -27,11 +34,16 @@ const elName       = document.getElementById('lightSuggestionName');
 const elFolderIcon = document.getElementById('lightFolderIcon');
 const elFolderLbl  = document.getElementById('lightFolderLabel');
 const elFolderPath = document.getElementById('lightFolderPath');
+const elAutoStatus  = document.getElementById('lightAutoClassifyStatus');
+const elAutoTargetArea = document.getElementById('lightAutoTargetArea');
+const autoTitleInput = document.getElementById('lightAutoTargetTitle');
+const autoFolderSelect = document.getElementById('lightAutoTargetFolder');
 const elReason     = document.getElementById('lightSuggestionReason');
 const elToast      = document.getElementById('lightToast');
 const elDuplicateWarning = document.getElementById('lightDuplicateWarning');
 const elDuplicateLocation = document.getElementById('lightDuplicateLocation');
 const elConfigAlert       = document.getElementById('lightConfigAlert');
+const quickReorgCard      = document.getElementById('lightQuickReorgCard');
 const btnConfigureAI      = document.getElementById('btnLightConfigureAI');
 const btnReorgAll         = document.getElementById('btnLightReorgAll');
 
@@ -90,18 +102,27 @@ function loadFolders() {
 
 // ── Populate folder select ─────────────────────────────────────────────────────
 function populateFolderSelect() {
-  manualFolderSelect.textContent = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');
-  manualFolderSelect.appendChild(placeholder);
+  const selects = [manualFolderSelect, autoFolderSelect].filter(Boolean);
+  for (const select of selects) {
+    select.textContent = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = chrome.i18n.getMessage('lightSelectFolder');
+    select.appendChild(placeholder);
+  }
 
   lastFolders.forEach(folder => {
-    const option = document.createElement('option');
-    option.value = folder.id;
-    option.textContent = resolveFolder(folder.id);
-    manualFolderSelect.appendChild(option);
+    for (const select of selects) {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = resolveFolder(folder.id);
+      select.appendChild(option);
+    }
   });
+
+  if (autoFolderSelect && autoSuggestedTargetFolderId) {
+    autoFolderSelect.value = autoSuggestedTargetFolderId;
+  }
 }
 
 // ── Reset suggestion UI ───────────────────────────────────────────────────────
@@ -112,6 +133,244 @@ function resetSuggestion() {
   elCard.classList.add('hidden');
   btnConfirm.classList.add('hidden');
   btnAlternative.classList.add('hidden');
+  autoSuggestedTargetFolderId = '';
+  if (elAutoStatus) elAutoStatus.textContent = '';
+  if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
+}
+
+function updateAutoClassifyConfirmState() {
+  const selectedFolderId = autoFolderSelect?.value || autoSuggestedTargetFolderId;
+  btnConfirm.disabled = Boolean(lastDuplicate && selectedFolderId === String(lastDuplicate.folderId));
+  btnConfirm.title = btnConfirm.disabled
+    ? chrome.i18n.getMessage('lightDuplicateAvoid')
+    : '';
+}
+
+function clearAutoClassifyCloseTimer() {
+  clearTimeout(autoClassifyCloseTimer);
+  autoClassifyCloseTimer = null;
+}
+
+function scheduleAutoClassifyClose(delay = 900) {
+  clearAutoClassifyCloseTimer();
+  autoClassifyCloseTimer = setTimeout(() => {
+    chrome.runtime.sendMessage({
+      action: 'clear_pending_auto_bookmark_suggestion',
+      bookmarkId: autoClassifyBookmarkId
+    }, () => {
+      window.close();
+    });
+  }, delay);
+}
+
+function renderAutoClassifyLoading(pending) {
+  hideError();
+  clearAutoClassifyCloseTimer();
+  resetSuggestion();
+  lastFolders = pending?.folders || [];
+  lastDuplicate = pending?.existingDuplicate || null;
+
+  const bookmark = pending?.bookmark || {};
+  activeUrl = bookmark.url || '';
+  setBookmarkTitle(bookmark.title || '');
+  elUrl.textContent = activeUrl || '-';
+  elFolderIcon.textContent = '⏳';
+  elFolderLbl.textContent = chrome.i18n.getMessage('lightAutoClassifyLoading') || 'Analyse en cours';
+  elFolderPath.textContent = '';
+  if (elAutoStatus) elAutoStatus.textContent = chrome.i18n.getMessage('lightAutoClassifyLoading') || 'Analyse du favori en cours...';
+  elReason.textContent = chrome.i18n.getMessage('lightAutoClassifyLoading') || 'Analyse du favori en cours...';
+  btnConfirm.classList.add('hidden');
+  if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
+  elCard.classList.remove('hidden');
+}
+
+function setAutoClassifyModeLayout() {
+  btnAnalyze.classList.add('hidden');
+  btnAlternative.classList.add('hidden');
+  btnManualSave.classList.add('hidden');
+  manualSection.classList.add('hidden');
+  btnAdvanced.classList.add('hidden');
+  btnReorgAll.classList.add('hidden');
+  elTitle.readOnly = true;
+}
+
+function setBookmarkTitle(fullTitle) {
+  const value = fullTitle || '';
+  elTitle.value = value;
+  elTitle.title = value;
+  elName.textContent = value || '-';
+  elName.title = value;
+}
+
+function renderAutoClassifySuggestion(pending) {
+  hideError();
+  clearAutoClassifyCloseTimer();
+  resetSuggestion();
+  lastFolders = pending.folders || [];
+  lastDuplicate = pending.existingDuplicate || null;
+
+  const bookmark = pending.bookmark || {};
+  activeUrl = bookmark.url || '';
+  setBookmarkTitle(bookmark.title || '');
+  elUrl.textContent = activeUrl || '-';
+
+  if (pending.type === 'error') {
+    showError(pending.error || chrome.i18n.getMessage('lightAutoClassifyError') || 'Erreur de suggestion LLM.');
+    btnConfirm.classList.add('hidden');
+    if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
+    return;
+  }
+
+  if (pending.type === 'loading') {
+    renderAutoClassifyLoading(pending);
+    return;
+  }
+
+  if (pending.type === 'moved') {
+    lastSuggestion = pending.suggestion || null;
+    setBookmarkTitle(bookmark.title || '');
+    if (lastSuggestion?.action === 'create_new') {
+      elFolderIcon.textContent = '📁';
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightNewFolder');
+      const parentPath = resolveFolder(lastSuggestion.newFolderParentId);
+      elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
+    } else if (lastSuggestion?.targetFolderId) {
+      elFolderIcon.textContent = '📂';
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightFolderLabel');
+      elFolderPath.textContent = resolveFolder(lastSuggestion.targetFolderId);
+    }
+    if (elAutoStatus) elAutoStatus.textContent = chrome.i18n.getMessage('lightAutoClassifyMoveSuccess') || 'Le favori a été déplacé automatiquement.';
+    elReason.textContent = (lastSuggestion?.explanation || '').trim();
+    elCard.classList.remove('hidden');
+    btnConfirm.classList.add('hidden');
+    btnAlternative.classList.add('hidden');
+    if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
+    scheduleAutoClassifyClose(1200);
+    return;
+  }
+
+  lastSuggestion = pending.suggestion || null;
+  if (!lastSuggestion) {
+    showError(chrome.i18n.getMessage('lightAutoClassifyError') || 'Suggestion indisponible.');
+    btnConfirm.classList.add('hidden');
+    return;
+  }
+
+  setBookmarkTitle(bookmark.title || '');
+  if (lastSuggestion.action === 'create_new') {
+    elFolderIcon.textContent = '📁';
+    elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightNewFolder');
+    const parentPath = resolveFolder(lastSuggestion.newFolderParentId);
+    elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
+  } else {
+    elFolderIcon.textContent = '📂';
+    elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightFolderLabel');
+    elFolderPath.textContent = resolveFolder(lastSuggestion.targetFolderId);
+  }
+
+  const confidence = Number.parseFloat(pending.confidence);
+  const threshold = Number.parseFloat(pending.threshold);
+  const confidenceText = Number.isFinite(confidence) ? `${Math.round(confidence * 100)}%` : '?';
+  const thresholdText = Number.isFinite(threshold) ? `${Math.round(threshold * 100)}%` : '?';
+  if (elAutoStatus) {
+    if (pending.autoMoveEnabled) {
+      elAutoStatus.textContent = Number.isFinite(confidence) && Number.isFinite(threshold)
+        ? (chrome.i18n.getMessage('lightAutoClassifyConfidence', [confidenceText, thresholdText]) || `Confiance ${confidenceText} / seuil ${thresholdText}`)
+        : (chrome.i18n.getMessage('lightAutoClassifySuggestionReady') || 'Suggestion prête.');
+    } else {
+      elAutoStatus.textContent = chrome.i18n.getMessage('lightAutoClassifyChooseTarget') || 'Vous pouvez changer le nom et le dossier cible ci-dessous.';
+    }
+  }
+
+  elReason.textContent = lastSuggestion.explanation || chrome.i18n.getMessage('lightSemanticRecommendation');
+
+  if (lastDuplicate) {
+    elDuplicateLocation.textContent = chrome.i18n.getMessage('lightDuplicateLocation', [lastDuplicate.folderPath]);
+    elDuplicateWarning.style.display = 'block';
+  } else {
+    elDuplicateWarning.style.display = 'none';
+  }
+
+  btnConfirm.textContent = chrome.i18n.getMessage('lightApplyChosenTargetBtn') || 'Déplacer vers ce dossier';
+
+  if (elAutoTargetArea) elAutoTargetArea.classList.remove('hidden');
+  autoSuggestedTargetFolderId = lastSuggestion.action === 'use_existing'
+    ? String(lastSuggestion.targetFolderId || '')
+    : '';
+  populateFolderSelect();
+  if (autoTitleInput) {
+    const defaultTitle = lastSuggestion.suggestedTitle || bookmark.title || '';
+    autoTitleInput.value = defaultTitle;
+    autoTitleInput.title = bookmark.title || defaultTitle;
+  }
+  updateAutoClassifyConfirmState();
+
+  elCard.classList.remove('hidden');
+  btnConfirm.classList.remove('hidden');
+}
+
+function loadAutoClassifyState() {
+  if (!autoClassifyBookmarkId) {
+    showError(chrome.i18n.getMessage('lightAutoClassifyError') || 'Aucun bookmark à traiter.');
+    return;
+  }
+
+  btnAnalyze.disabled = true;
+  btnConfirm.classList.add('hidden');
+  btnConfirm.textContent = chrome.i18n.getMessage('lightApplyChosenTargetBtn') || 'Déplacer vers ce dossier';
+
+  chrome.runtime.sendMessage({
+    action: 'get_pending_auto_bookmark_suggestion',
+    bookmarkId: autoClassifyBookmarkId
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      showError(chrome.i18n.getMessage('lightErrorWorkerComm'));
+      return;
+    }
+
+    if (!response || !response.success) {
+      showError(response?.error || chrome.i18n.getMessage('lightAutoClassifyError') || 'Suggestion indisponible.');
+      return;
+    }
+
+    if (!response.pending) {
+      renderAutoClassifyLoading({});
+      return;
+    }
+
+    renderAutoClassifySuggestion(response.pending);
+  });
+}
+
+function confirmAutoClassifyMove() {
+  if (!autoClassifyBookmarkId) return;
+  btnConfirm.disabled = true;
+  const orig = btnConfirm.textContent;
+  btnConfirm.textContent = chrome.i18n.getMessage('lightSaving');
+  const targetFolderId = autoFolderSelect?.value || '';
+  const targetTitle = autoTitleInput?.value?.trim() || elTitle.value.trim();
+
+  chrome.runtime.sendMessage({
+    action: 'apply_pending_auto_bookmark_suggestion',
+    bookmarkId: autoClassifyBookmarkId,
+    targetFolderId,
+    targetTitle
+  }, (response) => {
+    btnConfirm.disabled = false;
+    btnConfirm.textContent = orig;
+
+    if (chrome.runtime.lastError) {
+      showError(chrome.i18n.getMessage('lightErrorSaving'));
+      return;
+    }
+
+    if (response && response.success) {
+      showToast('✅ ' + (chrome.i18n.getMessage('lightAutoClassifyMoveSuccess') || 'Favori déplacé avec succès !'));
+      setTimeout(() => window.close(), 900);
+    } else {
+      showError(`❌ ${response?.error || chrome.i18n.getMessage('lightAutoClassifyMoveFailed') || 'Déplacement impossible'}`);
+    }
+  });
 }
 
 // ── Check configuration status ──────────────────────────────────────────────
@@ -227,23 +486,22 @@ function runAnalysis() {
 
     // Update title if AI suggests a cleaner one
     if (lastSuggestion.suggestedTitle) {
-      elTitle.value = lastSuggestion.suggestedTitle;
+      setBookmarkTitle(lastSuggestion.suggestedTitle);
+    } else {
+      setBookmarkTitle(elTitle.value);
     }
-
-    // Render bookmark name
-    elName.textContent = elTitle.value || '-';
 
     // Render folder
     let suggestedFolderId = null;
     if (lastSuggestion.action === 'create_new') {
       elFolderIcon.textContent = '📁';
-      elFolderLbl.textContent = chrome.i18n.getMessage('lightNewFolder');
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightNewFolder');
       const parentPath = resolveFolder(lastSuggestion.newFolderParentId);
       elFolderPath.textContent = `${lastSuggestion.newFolderTitle}  ←  ${parentPath}`;
       suggestedFolderId = 'new_folder';
     } else {
       elFolderIcon.textContent = '📂';
-      elFolderLbl.textContent = chrome.i18n.getMessage('lightFolderLabel');
+      elFolderLbl.textContent = chrome.i18n.getMessage('lightSuggestedFolderLabel') || chrome.i18n.getMessage('lightFolderLabel');
       elFolderPath.textContent = resolveFolder(lastSuggestion.targetFolderId);
       suggestedFolderId = lastSuggestion.targetFolderId;
     }
@@ -395,6 +653,12 @@ function openAdvanced() {
   });
 }
 
+function openQuickReorg() {
+  chrome.storage.local.set({ activeTab: 'rangement' }, () => {
+    openAdvanced();
+  });
+}
+
 // ── Privacy policy ────────────────────────────────────────────────────────────
 function openPrivacy() {
   chrome.tabs.create({ url: chrome.runtime.getURL('extension/privacy_policy.html') });
@@ -415,7 +679,17 @@ btnAlternative.addEventListener('click', () => {
   runAnalysis();
 });
 
-btnConfirm.addEventListener('click', confirmSave);
+btnConfirm.addEventListener('click', () => {
+  if (isAutoClassifyMode) {
+    confirmAutoClassifyMove();
+  } else {
+    confirmSave();
+  }
+});
+
+if (autoFolderSelect) {
+  autoFolderSelect.addEventListener('change', updateAutoClassifyConfirmState);
+}
 
 btnManualSave.addEventListener('click', () => {
   if (manualSection.classList.contains('hidden')) {
@@ -436,17 +710,47 @@ btnConfigureAI.addEventListener('click', () => {
     openAdvanced();
   });
 });
-btnReorgAll.addEventListener('click', () => {
-  chrome.storage.local.set({ activeTab: 'rangement' }, () => {
-    openAdvanced();
+btnReorgAll.addEventListener('click', openQuickReorg);
+if (quickReorgCard) {
+  quickReorgCard.addEventListener('click', (event) => {
+    if (event.target === btnReorgAll) return;
+    openQuickReorg();
   });
-});
+  quickReorgCard.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openQuickReorg();
+    }
+  });
+}
 
 // ── Auto-load on open ─────────────────────────────────────────────────────────
 applyI18n();
-loadActiveTab();
+if (isAutoClassifyMode) {
+  setAutoClassifyModeLayout();
+  loadAutoClassifyState();
+} else {
+  loadActiveTab();
+}
 loadFolders();
 checkConfig();
+
+if (isAutoClassifyMode) {
+  autoClassifyStorageListener = (changes, areaName) => {
+    if (areaName !== 'local' || !changes.pendingAutoBookmarkSuggestions) return;
+    const nextPending = changes.pendingAutoBookmarkSuggestions.newValue?.[autoClassifyBookmarkId] || null;
+    if (!nextPending) return;
+    renderAutoClassifySuggestion(nextPending);
+  };
+  chrome.storage.onChanged.addListener(autoClassifyStorageListener);
+  window.addEventListener('beforeunload', () => {
+    if (autoClassifyStorageListener) {
+      chrome.storage.onChanged.removeListener(autoClassifyStorageListener);
+      autoClassifyStorageListener = null;
+    }
+    clearAutoClassifyCloseTimer();
+  });
+}
 
 window.addEventListener('unhandledrejection', (event) => {
   const msg = event.reason?.message || String(event.reason) || 'Unknown error';

@@ -4,12 +4,24 @@
 
 import { PROVIDER_DEFAULTS, PROVIDER_MODELS, showToast, addLog } from './utils.js';
 import { PROMPT_MINIMAL, PROMPT_COMPLETE, PROMPT_SUGGEST } from '../llm/prompts.js';
+import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
 
 export const PROMPT_DEFAULTS = {
   minimal: PROMPT_MINIMAL,
   complete: PROMPT_COMPLETE,
   suggest: PROMPT_SUGGEST
 };
+
+export const AUTO_MOVE_DEFAULTS = {
+  enabled: false,
+  threshold: AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT
+};
+
+function normalizeAutoMoveThreshold(value) {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed)) return AUTO_MOVE_DEFAULTS.threshold;
+  return Math.min(1, Math.max(0, parsed));
+}
 
 export function checkConfigStatus() {
   const configMissingAlert = document.getElementById('configMissingAlert');
@@ -107,13 +119,15 @@ export function loadConfig() {
   const linkCheckBatchSizeSelect = document.getElementById('linkCheckBatchSize');
   const maxTokensSelect = document.getElementById('maxTokens');
   const debugModeCheckbox = document.getElementById('debugMode');
+  const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
+  const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
 
   return Promise.all([
     new Promise(resolve => {
-      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], resolve);
+      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], resolve);
     }),
     new Promise(resolve => {
       chrome.storage.local.get(['apiKey'], resolve);
@@ -127,6 +141,8 @@ export function loadConfig() {
     if (res.linkCheckBatchSize) linkCheckBatchSizeSelect.value = res.linkCheckBatchSize;
     if (res.maxTokens) maxTokensSelect.value = res.maxTokens;
     debugModeCheckbox.checked = res.debugMode === true;
+    autoMoveNewBookmarksCheckbox.checked = res.autoMoveNewBookmarks === true;
+    autoMoveConfidenceThresholdSelect.value = String(normalizeAutoMoveThreshold(res.autoMoveConfidenceThreshold));
     promptMinimalInput.value = res.promptMinimal || PROMPT_DEFAULTS.minimal;
     promptCompleteInput.value = res.promptComplete || PROMPT_DEFAULTS.complete;
     promptSuggestInput.value = res.promptSuggest || PROMPT_DEFAULTS.suggest;
@@ -146,6 +162,8 @@ export async function saveConfig() {
   const linkCheckBatchSizeSelect = document.getElementById('linkCheckBatchSize');
   const maxTokensSelect = document.getElementById('maxTokens');
   const debugModeCheckbox = document.getElementById('debugMode');
+  const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
+  const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
@@ -157,6 +175,8 @@ export async function saveConfig() {
     linkCheckBatchSize: parseInt(linkCheckBatchSizeSelect.value, 10) || 24,
     maxTokens: parseInt(maxTokensSelect.value, 10) || 32768,
     debugMode: debugModeCheckbox.checked,
+    autoMoveNewBookmarks: autoMoveNewBookmarksCheckbox?.checked === true,
+    autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(autoMoveConfidenceThresholdSelect?.value),
     promptMinimal: promptMinimalInput.value.trim() || PROMPT_DEFAULTS.minimal,
     promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete,
     promptSuggest: promptSuggestInput.value.trim() || PROMPT_DEFAULTS.suggest
@@ -179,6 +199,8 @@ export function resetConfig() {
   const modelNameInput = document.getElementById('modelName');
   const checkDeadLinksCheckbox = document.getElementById('checkDeadLinks');
   const linkCheckBatchSizeSelect = document.getElementById('linkCheckBatchSize');
+  const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
+  const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
@@ -189,6 +211,8 @@ export function resetConfig() {
   modelNameInput.value = PROVIDER_DEFAULTS.google.model;
   checkDeadLinksCheckbox.checked = false;
   linkCheckBatchSizeSelect.value = '24';
+  if (autoMoveNewBookmarksCheckbox) autoMoveNewBookmarksCheckbox.checked = AUTO_MOVE_DEFAULTS.enabled;
+  if (autoMoveConfidenceThresholdSelect) autoMoveConfidenceThresholdSelect.value = String(AUTO_MOVE_DEFAULTS.threshold);
   promptMinimalInput.value = PROMPT_DEFAULTS.minimal;
   promptCompleteInput.value = PROMPT_DEFAULTS.complete;
   promptSuggestInput.value = PROMPT_DEFAULTS.suggest;
@@ -229,8 +253,11 @@ export function exportConfig() {
       linkCheckBatchSize: config.linkCheckBatchSize || 24,
       maxTokens: config.maxTokens || 32768,
       debugMode: config.debugMode === true,
+      autoMoveNewBookmarks: config.autoMoveNewBookmarks === true,
+      autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(config.autoMoveConfidenceThreshold),
       promptMinimal: config.promptMinimal || '',
-      promptComplete: config.promptComplete || ''
+      promptComplete: config.promptComplete || '',
+      promptSuggest: config.promptSuggest || ''
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -265,8 +292,11 @@ export function importConfig(e) {
         linkCheckBatchSize: config.linkCheckBatchSize || 24,
         maxTokens: config.maxTokens || 32768,
         debugMode: config.debugMode === true,
+        autoMoveNewBookmarks: config.autoMoveNewBookmarks === true,
+        autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(config.autoMoveConfidenceThreshold),
         promptMinimal: config.promptMinimal || '',
-        promptComplete: config.promptComplete || ''
+        promptComplete: config.promptComplete || '',
+        promptSuggest: config.promptSuggest || ''
       };
 
       chrome.storage.sync.set({
@@ -277,8 +307,11 @@ export function importConfig(e) {
         linkCheckBatchSize: configToSave.linkCheckBatchSize,
         maxTokens: configToSave.maxTokens,
         debugMode: configToSave.debugMode,
+        autoMoveNewBookmarks: configToSave.autoMoveNewBookmarks,
+        autoMoveConfidenceThreshold: configToSave.autoMoveConfidenceThreshold,
         promptMinimal: configToSave.promptMinimal,
-        promptComplete: configToSave.promptComplete
+        promptComplete: configToSave.promptComplete,
+        promptSuggest: configToSave.promptSuggest
       }, () => {
         chrome.storage.local.set({ apiKey: configToSave.apiKey }, () => {
           loadConfig();

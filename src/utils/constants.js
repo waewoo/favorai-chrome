@@ -11,6 +11,9 @@ export const URL_CHECK_TIMEOUT_MS = 10_000;
 /** Sessions max dans l'historique */
 export const MAX_HISTORY_SESSIONS = 30;
 
+/** Seuil par défaut pour le déplacement automatique des nouveaux favoris */
+export const AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT = 0.8;
+
 /** Préfixe IDs temporaires de nouveaux dossiers */
 export const NEW_FOLDER_PREFIX = 'new_';
 

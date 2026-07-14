@@ -25,6 +25,7 @@ describe('prompts', () => {
     expect(PROMPT_SUGGEST.length).toBeGreaterThan(50);
     expect(PROMPT_SUGGEST).toContain('{title}');
     expect(PROMPT_SUGGEST).toContain('{folders}');
+    expect(PROMPT_SUGGEST).toContain('"confidence"');
   });
 
   it('PROMPT_MINIMAL and PROMPT_COMPLETE should be distinct', () => {

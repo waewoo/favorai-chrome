@@ -48,7 +48,8 @@ describe('LLM response validation helpers', () => {
       newFolderTitle: 'Design',
       newFolderParentId: '1',
       explanation: 'ok',
-      suggestedTitle: 'Design'
+      suggestedTitle: 'Design',
+      confidence: 0.92
     };
 
     expect(validateSuggestionResponse(response)).toBe(response);
@@ -79,6 +80,12 @@ describe('LLM response validation helpers', () => {
       targetFolderId: '1',
       suggestedTitle: { text: 'bad' }
     })).toThrow(/suggestedTitle/i);
+
+    expect(() => validateSuggestionResponse({
+      action: 'use_existing',
+      targetFolderId: '1',
+      confidence: 1.3
+    })).toThrow(/confidence/i);
   });
 
   it('rejects when retryTransientRequest is called with an already aborted signal', async () => {

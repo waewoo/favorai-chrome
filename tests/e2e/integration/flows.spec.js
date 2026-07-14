@@ -73,7 +73,9 @@ test.describe('End-to-End Integration Flows', () => {
     await extContext.route('**/generativelanguage.googleapis.com/**', async (route) => {
       apiCalled = true;
       const requestBody = route.request().postData();
-      expect(requestBody).toContain('CSS Tricks');
+      const requestJson = JSON.parse(requestBody);
+      const promptText = requestJson?.contents?.[0]?.parts?.[0]?.text || '';
+      expect(promptText).toMatch(/CSS Tricks|Stack Overflow/);
       
       expect(cssTricksId).not.toBe('');
       expect(stackOverflowId).not.toBe('');
@@ -354,8 +356,7 @@ test.describe('End-to-End Integration Flows', () => {
       const suggestionCard = page.locator('#lightSuggestionCard');
       await expect(suggestionCard).toBeVisible();
       
-      // Note: 'lightFolderLabel' is hardcoded as 'Nouveau dossier' in popup-light.js for create_new action
-      await expect(page.locator('#lightFolderLabel')).toHaveText('Nouveau dossier');
+      await expect(page.locator('#lightFolderLabel')).toHaveText('Dossier cible proposé');
       await expect(page.locator('#lightFolderPath')).toContainText('Tech News');
       await expect(page.locator('#lightSuggestionReason')).toHaveText('Creates a new tech news category folder.');
 

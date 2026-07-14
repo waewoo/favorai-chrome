@@ -124,6 +124,7 @@
   },
   "bgModeComplete": { "message": "Complete" },
   "bgModeMinimal": { "message": "Minimal" },
+  "bgModeAuto": { "message": "Auto" },
   "bgChangesProposed": {
     "message": "✓ $count$ proposed change(s)",
     "placeholders": { "count": { "content": "$1" } }
@@ -188,7 +189,22 @@
   "lightSuggestionLabel": { "message": "💡 AI Recommendation" },
   "lightBookmarkLabel": { "message": "Bookmark name" },
   "lightFolderLabel": { "message": "Target folder" },
+  "lightSuggestedFolderLabel": { "message": "Suggested destination folder" },
   "lightConfirmBtn": { "message": "✓ Save" },
+  "lightApplyChosenTargetBtn": { "message": "Move to this folder" },
+  "lightAutoClassifyError": { "message": "Unable to load the auto-classification suggestion." },
+  "lightAutoClassifyLoading": { "message": "Analyzing the new bookmark..." },
+  "lightAutoClassifyChooseTarget": { "message": "You can change the name and destination folder below." },
+  "lightAutoClassifySuggestionReady": { "message": "Suggestion ready." },
+  "lightAutoClassifyMoveSuccess": { "message": "Bookmark moved successfully!" },
+  "lightAutoClassifyMoveFailed": { "message": "Automatic move failed." },
+  "lightAutoClassifyConfidence": {
+    "message": "Confidence: $1 (threshold: $2).",
+    "placeholders": {
+      "1": { "content": "$1" },
+      "2": { "content": "$2" }
+    }
+  },
   "lightPrivacyBtn": { "message": "Privacy Policy" },
   "lightNoTabDetected": { "message": "No active tab detected" },
   "lightManualSaveBtn": { "message": "✏️ Choose manually" },
@@ -200,9 +216,9 @@
   "lightConfigAlertTitle": { "message": "🤖 AI Configuration Required" },
   "lightConfigAlertDesc": { "message": "Set up your API key to activate AI bookmark suggestions." },
   "lightConfigAlertBtn": { "message": "⚙️ Configure AI" },
-  "lightQuickReorgTitle": { "message": "✨ Organize all bookmarks" },
-  "lightQuickReorgDesc": { "message": "Clean dead links, find smart duplicates, and automatically group all your bookmarks." },
-  "lightQuickReorgBtn": { "message": "⚡ Start Reorganization" },
+  "lightQuickReorgTitle": { "message": "✨ Full reorganization" },
+  "lightQuickReorgDesc": { "message": "Opens advanced mode to analyze, sort, and reorganize your entire bookmark library." },
+  "lightQuickReorgBtn": { "message": "Open reorganization" },
   "addBookmarkTitle": { "message": "➕ Add Current Tab with AI" },
   "addBookmarkDesc": { "message": "Analyze the active browser tab and use AI to automatically determine the best folder location for this bookmark." },
   "bookmarkTitleLabel": { "message": "Bookmark name:" },
@@ -223,6 +239,8 @@
   "customModelPlaceholder": { "message": "Custom model name" },
   "maxTokens": { "message": "Max tokens" },
   "debugMode": { "message": "🐛 Debug Mode" },
+  "autoMoveNewBookmarks": { "message": "Automatically move new bookmarks" },
+  "autoMoveConfidenceThreshold": { "message": "Confidence threshold" },
   "summaryPrompts": { "message": "📝 Customize prompts" },
   "promptMinimal": { "message": "Prompt — Minimal Mode" },
   "promptComplete": { "message": "Prompt — Complete Mode" },
