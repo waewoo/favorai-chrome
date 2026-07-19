@@ -32,6 +32,7 @@ If FavorAI saves you time, you can support the project here:
 - **Duplicate detection**: detects exact URL duplicates, URL variants, tracking URLs, redirects to the same final page, and similar article content.
 - **Dead link checks**: detects unreachable pages, 404 responses, connection errors, and request timeouts.
 - **Smart bookmark placement**: suggests the best destination folder when saving a new bookmark.
+- **Automatic new-bookmark classification**: analyzes newly created URL bookmarks in the background, optionally moves high-confidence results automatically, and offers a popup fallback for manual destination and title choices.
 - **Multi-provider LLM support**: works with OpenAI, Gemini, Claude, Mistral, DeepSeek, Grok, Ollama, and custom OpenAI-compatible endpoints.
 - **Folder size estimation**: shows a live bookmark count and approximate token estimate when a target folder is selected, so users can gauge cost and scope before launching.
 - **Partial failure reporting**: apply operations collect per-operation failures and surface them individually in the UI instead of silently succeeding.
@@ -337,6 +338,7 @@ Use `make publish` only after the ZIP in `dist/` is ready and the store credenti
 - **Safe apply flow**: `src/background/apply.js` performs bookmark mutations sequentially, resolves newly created folder IDs before moving children, and returns `{ failures }` — an array of per-operation errors surfaced in the popup instead of silently swallowed.
 - **Popup modules**: `src/popup/` keeps configuration, navigation, history, reorganization, and utilities separated. `progress.js` exposes `updateFolderStats()` to estimate bookmark count and token usage for the selected folder before launch.
 - **Storage model**: dynamic state uses `chrome.storage.local`; user configuration uses `chrome.storage.sync`.
+- **New-bookmark workflow**: `chrome.bookmarks.onCreated` persists the pending suggestion in local storage; auto-move is disabled by default and uses a configurable `0..1` confidence threshold whose default is `0.8`.
 - **Internationalization**: strings are stored in `_locales/en/messages.json` and `_locales/fr/messages.json`.
 
 ## Contributing

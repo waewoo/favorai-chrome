@@ -1,0 +1,117 @@
+name: "🧩 Feature Request"
+description: Propose a new feature or improvement for FavorAI Chrome
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 New Feature / Improvement
+        Thank you for taking the time to suggest a feature! Please fill in each section as precisely as possible.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "🎯 Goal"
+      description: "What do you want to achieve? Describe the user need or problem clearly."
+      placeholder: "Allow users to… / As a user, I want to…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "📦 Scope"
+      description: "List the main functional changes or additions expected."
+      placeholder: |
+        - Add a new provider in the LLM dispatch layer
+        - Handle states: unavailable / downloadable / available
+        - Route requests between extension page and background
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: "⚠️ Product / Privacy / Technical Constraints"
+      description: "Any known limitations, platform requirements, or privacy considerations?"
+      placeholder: |
+        - Requires Chrome ≥ M127
+        - Bookmark data must not leave the device
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ Acceptance Criteria"
+      description: "List the conditions that must be met for this feature to be considered done."
+      placeholder: |
+        - [ ] Users can select the provider only when supported
+        - [ ] Unsupported devices show a fallback path
+        - [ ] Unit tests cover: availability states, cancellation, invalid output
+        - [ ] E2E tests cover: provider selection, unavailable state
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "🗂️ Area"
+      description: "Which part of the extension is primarily impacted?"
+      options:
+        - AI / LLM Provider
+        - Bookmark Management
+        - UI / Popup
+        - Settings
+        - Background / Service Worker
+        - Content Script
+        - Sync / Storage
+        - CI/CD / Build
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "📊 Priority"
+      options:
+        - "🔴 High"
+        - "🟠 Medium"
+        - "🟢 Low"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "🔀 Alternatives Considered"
+      description: "Did you consider other approaches? Why is this one preferred?"
+      placeholder: "We could also… but it was rejected because…"
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "🔗 References / Related Issues"
+      placeholder: |
+        - Related: #18
+        - Chrome Prompt API: https://developer.chrome.com/docs/...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "☑️ Pre-submission Checklist"
+      options:
+        - label: "I searched existing issues and this is not a duplicate"
+          required: true
+        - label: "I described the acceptance criteria with verifiable conditions"
+          required: true
+        - label: "I mentioned any known constraints or privacy implications"
+          required: false

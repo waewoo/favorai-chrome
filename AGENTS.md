@@ -79,7 +79,7 @@ Key entrypoints:
 
 - `manifest.json`: extension permissions, CSP, service worker declaration, popup entrypoint
 - `extension/background.js`: service worker entrypoint
-- `src/background/orchestrator.js`: message routing, status persistence, analysis/apply orchestration
+- `src/background/orchestrator.js`: message routing, status persistence, analysis/apply orchestration, and automatic classification of newly created bookmarks
 - `src/background/analysis.js`: duplicate checks, dead link checks, LLM preparation, response alignment, diff generation
 - `src/background/apply.js`: safe bookmark mutations and temporary folder ID resolution
 - `src/background/history.js`: reorganization history and rollback
@@ -198,6 +198,17 @@ Required rules:
 - Complete mode expects new top-level folders under the bookmarks bar. Original folder IDs may appear deeper only when intentionally preserved as subfolders.
 - Keep prompt template replacement single-pass. Do not replace placeholders sequentially in a way that allows bookmark content to create new placeholders.
 - When adding a provider, wire it through `dispatchToProvider()` and add focused unit tests for routing, request shape, error handling, and parsing.
+
+### New Bookmark Suggestion
+
+New bookmark classification reuses `suggestBookmarkLocation()` from the background service worker.
+
+- `chrome.bookmarks.onCreated` starts the workflow for URL bookmarks and persists loading, suggestion, moved, or error state in `chrome.storage.local`.
+- Automatic movement is opt-in through `autoMoveNewBookmarks` in `chrome.storage.sync` and requires a normalized `0..1` confidence at or above `autoMoveConfidenceThreshold` (default `0.8`).
+- Low-confidence or disabled auto-move results remain available in the `popup-light` fallback, where the user can choose the destination and title before applying the move.
+- LLM failures leave the bookmark unchanged and persist an error for the fallback popup.
+- Automatic moves and user-confirmed moves use the existing sequential bookmark mutation and history/rollback path.
+- Internal bookmark mutations use a short-lived suppression guard so a move or rename performed by this workflow does not recursively start another classification.
 
 ## Bookmark Reorganization Flow
 
