@@ -4,7 +4,7 @@
 [![E2E Tests](https://github.com/waewoo/favorai-chrome/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/waewoo/favorai-chrome/actions/workflows/e2e-tests.yml)
 [![Latest Release](https://img.shields.io/github/v/release/waewoo/favorai-chrome?display_name=tag&label=release)](https://github.com/waewoo/favorai-chrome/releases/latest)
 [![Coverage](https://codecov.io/gh/waewoo/favorai-chrome/graph/badge.svg)](https://app.codecov.io/gh/waewoo/favorai-chrome)
-[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red)](./LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE.md)
 
 FavorAI is a Chrome and Chromium extension that helps you clean up, reorganize, and maintain your bookmarks with AI-assisted suggestions and local safety checks.
 
@@ -25,6 +25,7 @@ If FavorAI saves you time, you can support the project here:
 - [Release Workflow](#release-workflow)
 - [Architecture Notes](#architecture-notes)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -358,3 +359,9 @@ make test-e2e
 ```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md), [SECURITY.md](./SECURITY.md), and [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) for project guidelines.
+
+## License
+
+FavorAI's original source code is released under the [MIT License](./LICENSE.md).
+Bundled fonts and npm dependencies remain under their respective licenses; see
+[THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) for attribution details.
