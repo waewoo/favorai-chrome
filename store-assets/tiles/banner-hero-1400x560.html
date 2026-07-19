@@ -18,8 +18,9 @@ body{width:1400px;height:560px;overflow:hidden;font-family:-apple-system,BlinkMa
 .eyebrow-dot{width:8px;height:8px;border-radius:50%;background:#818cf8;}
 .eyebrow-text{font-size:12px;font-weight:600;color:#818cf8;letter-spacing:1px;text-transform:uppercase;}
 .brand{font-size:62px;font-weight:800;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,#ffffff 30%,#c084fc 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
-.subtitle{font-size:20px;font-weight:500;color:rgba(255,255,255,0.45);letter-spacing:0.5px;margin-bottom:28px;}
+.subtitle{font-size:20px;font-weight:600;color:#dbeafe;letter-spacing:0.5px;margin-bottom:28px;}
 .features{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
+.features .feat:nth-child(n+4){display:none;}
 .feat{display:flex;align-items:center;gap:12px;}
 .feat-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
 .feat-icon.green{background:rgba(16,185,129,0.15);}
@@ -75,8 +76,11 @@ body{width:1400px;height:560px;overflow:hidden;font-family:-apple-system,BlinkMa
   <div class="left">
     <div class="eyebrow"><div class="eyebrow-dot"></div><div class="eyebrow-text">Chrome Extension</div></div>
     <div class="brand">FavorAI</div>
-    <div class="subtitle">Clean. Organize. AI-powered.</div>
+    <div class="subtitle">Save once. Let AI place it. Stay in control.</div>
     <div class="features">
+      <div class="feat"><div class="feat-icon green">OK</div><div class="feat-text"><strong>Automatic placement</strong> - high-confidence bookmarks move above your threshold</div></div>
+      <div class="feat"><div class="feat-icon blue">EDIT</div><div class="feat-text"><strong>Review and rename</strong> - change the bookmark name before moving it</div></div>
+      <div class="feat"><div class="feat-icon purple">MOVE</div><div class="feat-text"><strong>Manual override</strong> - choose another destination whenever you want</div></div>
       <div class="feat"><div class="feat-icon green">🔍</div><div class="feat-text"><strong>Smart duplicate detection</strong> — finds identical URLs across all folders</div></div>
       <div class="feat"><div class="feat-icon blue">🔗</div><div class="feat-text"><strong>Dead link checker</strong> — removes unreachable bookmarks automatically</div></div>
       <div class="feat"><div class="feat-icon purple">🤖</div><div class="feat-text"><strong>AI semantic reorganization</strong> — works with your configured provider</div></div>

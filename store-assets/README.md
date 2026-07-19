@@ -8,6 +8,7 @@ Marketing assets for the Chrome Web Store listing. Not included in the extension
 store-assets/
 |-- README.md                          This file
 |-- generate.mjs                       Playwright script to render all HTML -> PNG
+|-- readability.css                    Shared high-contrast presentation layer
 |-- screenshots/
 |   |-- 01-main-popup.html             1280x800 - Main popup (Organization tab)
 |   |-- 02-analysis-in-progress.html   1280x800 - Analysis running (progress + logs)
@@ -15,6 +16,7 @@ store-assets/
 |   |-- 04-configuration.html          1280x800 - Config tab (provider, API key)
 |   |-- 05-session-history.html        1280x800 - History tab with rollback
 |   `-- 06-forgotten-bookmarks.html    1280x800 - Forgotten Bookmarks tab
+|   `-- 07-auto-classification.html    1280x800 - Automatic bookmark classification
 |-- tiles/
 |   |-- tile-promotional-440x280.html  440x280  - Small promotional tile
 |   `-- banner-hero-1400x560.html      1400x560 - Large hero banner
@@ -28,6 +30,7 @@ store-assets/
     |-- screenshot-04-configuration.png
     |-- screenshot-05-session-history.png
     |-- screenshot-06-forgotten-bookmarks.png
+    |-- screenshot-07-auto-classification.png
     |-- tile-promotional-440x280.png
     `-- banner-hero-1400x560.png
 ```
@@ -53,7 +56,7 @@ Output goes to `store-assets/output/`.
 
 ## Chrome Web Store Upload Checklist
 
-- [ ] Screenshots: 6 x PNG, 1280x800 px
+- [ ] Screenshots: 7 x PNG, 1280x800 px
 - [ ] Small promotional tile: 440x280 px
 - [ ] Large promotional banner: 1400x560 px
 - [ ] Summary (<= 132 chars) -> see `listing/store-listing-en.md` / `store-listing-fr.md`

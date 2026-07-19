@@ -28,6 +28,7 @@ const SCREENSHOTS = [
   { file: 'screenshots/04-configuration.html',        out: 'screenshot-04-configuration.png',        w: 1280, h: 800 },
   { file: 'screenshots/05-session-history.html',      out: 'screenshot-05-session-history.png',      w: 1280, h: 800 },
   { file: 'screenshots/06-forgotten-bookmarks.html',   out: 'screenshot-06-forgotten-bookmarks.png',  w: 1280, h: 800 },
+  { file: 'screenshots/07-auto-classification.html',  out: 'screenshot-07-auto-classification.png', w: 1280, h: 800 },
 ];
 
 const TILES = [

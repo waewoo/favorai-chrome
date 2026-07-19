@@ -37,7 +37,7 @@ Chaque session est sauvegardée localement. Une erreur ? Annulez instantanément
 Un onglet dédié remonte les favoris que vous n'avez pas visités depuis des mois (3 mois, 6 mois, 1 an, ou jamais). Décidez pour chacun : visiter, garder ou supprimer, individuellement ou en masse.
 
 💡 Classement intelligent des favoris
-Lorsque vous enregistrez un nouveau favori, FavorAI suggère le meilleur dossier basé sur le contenu de la page, propulsé par votre IA. Acceptez la suggestion, demandez-en une autre ou choisissez manuellement.
+Lorsque vous enregistrez un nouveau favori, FavorAI suggère le meilleur dossier basé sur le contenu de la page, propulsé par votre IA. Si la confiance dépasse votre seuil configuré, le favori peut être déplacé automatiquement. Vous pouvez vérifier la suggestion, modifier le nom du favori ou choisir un autre dossier manuellement.
 
 🌍 Interface en anglais et français
 L'interface s'adapte automatiquement à la langue de votre navigateur.
@@ -49,7 +49,7 @@ L'interface s'adapte automatiquement à la langue de votre navigateur.
 COMMENT ÇA MARCHE
 
 1. Configurez votre fournisseur d'IA. Entrez votre clé API - elle reste sur votre appareil.
-2. Lorsque vous enregistrez une page, FavorAI suggère instantanément le bon dossier. Acceptez, obtenez une autre suggestion ou choisissez manuellement.
+2. Lorsque vous enregistrez une page, FavorAI suggère instantanément le bon dossier. Les suggestions très fiables peuvent être déplacées automatiquement ; vous pouvez aussi modifier le nom, vérifier la proposition ou choisir un dossier manuellement.
 3. Pour un nettoyage complet, cliquez sur "Réorganiser tous les favoris" pour scanner les doublons intelligents, vérifier éventuellement les redirections et les liens morts, et tout restructurer.
 4. Utilisez les contrôles d'analyse pour choisir quelles vérifications lancer avant la phase IA.
 5. Examinez chaque changement proposé dans la checklist - approuvez tout, une partie ou rien.

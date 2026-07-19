@@ -37,7 +37,7 @@ Every session is saved locally. Made a mistake? Roll back instantly with one cli
 A dedicated tab surfaces bookmarks you have not visited in months (3 months, 6 months, 1 year, or never). Review each one and decide: visit, keep, or delete individually or all at once.
 
 💡 Smart Bookmark Placement
-When saving a new bookmark, FavorAI suggests the best folder based on the page content, powered by your AI. Accept the suggestion, ask for an alternative, or choose manually.
+When saving a new bookmark, FavorAI suggests the best folder based on the page content, powered by your AI. If confidence is high enough, it can move the bookmark automatically using your configurable threshold. Review the suggestion, rename the bookmark, or choose another folder manually.
 
 🌍 English and French Interface
 The UI adapts to your browser language automatically.
@@ -49,7 +49,7 @@ The UI adapts to your browser language automatically.
 HOW IT WORKS
 
 1. Configure your AI provider. Enter your API key - it stays on your device.
-2. When saving a page, FavorAI instantly suggests the right folder. Accept, get an alternative, or pick manually.
+2. When saving a page, FavorAI instantly suggests the right folder. Let high-confidence suggestions move automatically, review them, rename the bookmark, or pick a folder manually.
 3. For a full cleanup, click "Reorganize all bookmarks" to scan smart duplicates, optionally verify redirects and dead links, and restructure everything.
 4. Use the analysis options to control which checks run before the AI step.
 5. Review every proposed change in the checklist - approve all, some, or none.
