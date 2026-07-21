@@ -17,12 +17,11 @@ describe('truncateString', () => {
     expect(truncateString('', 5)).toBe('');
   });
 
-  it('should return empty string for falsy numeric 0 (truthy-check branch)', () => {
-    // 0 is falsy → !str is true → early return ''
+  it('treats zero as an empty value', () => {
     expect(truncateString(0, 5)).toBe('');
   });
 
-  it('should return the string when length equals maxLength exactly (boundary of <= branch)', () => {
+  it('does not truncate strings whose length exactly reaches the limit', () => {
     expect(truncateString('hello', 5)).toBe('hello');
     expect(truncateString('hi', 2)).toBe('hi');
   });

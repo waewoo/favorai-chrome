@@ -40,4 +40,25 @@ describe('cleanTreeForLLM', () => {
       ]
     });
   });
+
+  it('removes the protected managed folder from the LLM tree', () => {
+    const rootNode = {
+      id: '1',
+      title: 'Bookmarks Bar',
+      children: [
+        {
+          id: 'managed',
+          title: '⭐ Les plus consultés',
+          children: [{ id: 'copy', title: 'Copy', url: 'https://copy.example' }]
+        },
+        { id: 'keep', title: 'Keep', url: 'https://keep.example' }
+      ]
+    };
+
+    const cleaned = cleanTreeForLLM(rootNode, new Set(), new Set(), 'managed');
+
+    expect(cleaned.children).toEqual([
+      { id: 'keep', title: 'Keep', url: 'https://keep.example' }
+    ]);
+  });
 });

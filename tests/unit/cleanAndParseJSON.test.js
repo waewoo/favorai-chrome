@@ -90,7 +90,7 @@ describe('cleanAndParseJSON', () => {
     });
   });
 
-  it('should cover JSON.parse fallback catch block when prefix parsing fails', () => {
+  it('uses an alternative JSON representation when the first extraction fails', () => {
     const originalParse = JSON.parse;
     vi.spyOn(JSON, 'parse').mockImplementation((text) => {
       if (text === '{"key": "value"}') {
@@ -140,14 +140,12 @@ describe('cleanAndParseJSON', () => {
     expect(result.key).toBe('"hello" world');
   });
 
-  it('should handle nested JSON objects (braceCount > 0 inner } FALSE branch)', () => {
-    // Inner `}` decrements braceCount to 1 (not 0 yet) — exercises the FALSE branch
+  it('correctly extracts a nested JSON object', () => {
     const input = 'Prefix {"outer": {"inner": 1}} suffix';
     expect(cleanAndParseJSON(input)).toEqual({ outer: { inner: 1 } });
   });
 
-  it('should handle nested JSON arrays (bracketCount > 0 inner ] FALSE branch)', () => {
-    // Inner `]` decrements bracketCount to 1 (not 0 yet) — exercises the FALSE branch
+  it('correctly extracts a nested JSON array', () => {
     const input = 'Text [[1, 2], [3, 4]] end';
     expect(cleanAndParseJSON(input)).toEqual([[1, 2], [3, 4]]);
   });

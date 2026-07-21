@@ -190,11 +190,11 @@ describe('applyChanges', () => {
     // Verify it runs without throwing uncaught exception
     await expect(applyChanges(approvedActionIds, pendingActions, 'complete')).resolves.not.toThrow();
 
-    // Verify removeTree was called for folder deletion (covers line 99)
+    // Verify that the folder deletion is still applied for the cleanup scenario.
     expect(chrome.bookmarks.removeTree).toHaveBeenCalledWith('node_to_delete_folder');
   });
 
-  it('should cover deletion sorting priorities and post-cleanup inner errors', async () => {
+  it('deletes bookmarks before folders and keeps cleanup explicit after an error', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
     chrome.bookmarks.get.mockResolvedValue([{ id: '10', title: 'A', url: 'https://a.com' }]);
 
@@ -300,7 +300,7 @@ describe('applyChanges', () => {
     expect(chrome.bookmarks.move).toHaveBeenCalledWith('99', { parentId: '1' });
   });
 
-  it('should cover rename and delete branch variations', async () => {
+  it('applies renames and deletions according to the actual node type', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([
       {
         id: '0',
@@ -581,7 +581,7 @@ describe('applyChanges', () => {
     );
   });
 
-  it('should log correct console.warn messages when parent folder is not resolved', async () => {
+  it('skips mutations whose temporary parent folder cannot be resolved', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
     chrome.bookmarks.getChildren.mockResolvedValue([]);
 
@@ -592,9 +592,8 @@ describe('applyChanges', () => {
 
     await applyChanges(['c1', 'm1'], pendingActions, 'complete');
 
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('[FavorAI]'));
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Sub'));
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('My BM'));
+    expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
   });
 
   it('should delete bookmarks before folders and deepest folders first', async () => {
