@@ -537,6 +537,21 @@ describe('diff.js functions', () => {
       // Using toStrictEqual to catch url: undefined being incorrectly added
       expect(result).toStrictEqual({ id: '10', title: 'Folder', children: [] });
     });
+
+    it('should remove a protected managed folder from the LLM tree', () => {
+      const node = {
+        id: '0',
+        title: 'Root',
+        children: [
+          { id: '1', title: 'Bookmarks Bar', children: [
+            { id: 'managed', title: 'Most used', children: [{ id: 'copy', url: 'https://copy.com' }] },
+            { id: '10', title: 'Keep', url: 'https://keep.com' }
+          ] }
+        ]
+      };
+      const result = cleanTreeForLLM(node, new Set(), new Set(), 'managed');
+      expect(result.children[0].children.map(child => child.id)).toEqual(['10']);
+    });
   });
 
   describe('alignReorganizedIds – additional mutation kills', () => {
@@ -553,14 +568,14 @@ describe('diff.js functions', () => {
       originalBookmarksByTitle = { 'bookmark x': [originalMap['20']] };
     });
 
-    it('should trim whitespace from node title when building titleKey (line 65)', () => {
+    it('matches a folder when its name contains extra whitespace', () => {
       // ' Folder A ' should normalize to 'folder a' and match original '10'
       const node = { id: 'new_x', title: '  Folder A  ', children: [] };
       alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
       expect(node.id).toBe('10');
     });
 
-    it('should trim whitespace from byId.title when comparing for exact match (line 70)', () => {
+    it('matches a node when the original title contains extra whitespace', () => {
       // Original node has padded title; incoming node has clean title
       originalMap['10'].title = '  Folder A  ';
       const node = { id: '10', title: 'Folder A', children: [] };
@@ -642,7 +657,7 @@ describe('diff.js functions', () => {
   });
 
   describe('sanitizeReorganizedTree – additional mutation kills', () => {
-    it('should trim whitespace from child.title when building origFoldersByName (line 128)', () => {
+    it('recognizes an original folder despite whitespace in the child title', () => {
       // Original root has child with padded title; reorganized tree uses clean title for lookup
       const originalMap = {
         '0': { id: '0', title: 'Root', children: [
@@ -660,7 +675,7 @@ describe('diff.js functions', () => {
       expect(node.children[0].id).toBe('10');
     });
 
-    it('should trim whitespace from child.title in reorganized tree for lookup (line 134)', () => {
+    it('recognizes a reorganized folder despite whitespace in the child title', () => {
       // Reorganized tree has padded child title; should still match original folder
       const originalMap = {
         '0': { id: '0', title: 'Root', children: [
@@ -677,7 +692,7 @@ describe('diff.js functions', () => {
       expect(node.children[0].id).toBe('10');
     });
 
-    it('should cover _removeCandidate FALSE branch (idx === -1: node not in array)', () => {
+    it('ignores a candidate that is not part of the matching list', () => {
       // When folder is matched by ID+title, the second _removeCandidate call uses the opposite type map.
       // If that map has entries for the same titleKey but NOT containing this node → idx = -1 → no-op branch.
       const folderNode = { id: '10', title: 'Folder A', parentId: '0', children: [] };
@@ -692,10 +707,10 @@ describe('diff.js functions', () => {
 
       const node = { id: '10', title: 'Folder A', children: [] };
       alignReorganizedIds(node, map, foldersByTitle, bookmarksByTitle);
-      expect(node.id).toBe('10'); // matched correctly; FALSE branch of idx !== -1 was exercised
+      expect(node.id).toBe('10');
     });
 
-    it('should cover !child.url FALSE branch (bookmark child in origNode.children)', () => {
+    it('preserves bookmark children while aligning a folder', () => {
       // origNode.children contains a bookmark (has url) → `if (!child.url)` is FALSE → not added to origFoldersByName
       const originalMap = {
         '0': { id: '0', title: 'Root', children: [
@@ -714,7 +729,7 @@ describe('diff.js functions', () => {
       expect(node.children[0].id).toBe('10');
     });
 
-    it('should cover if(child.children) FALSE branch (self-parented child with no children array)', () => {
+    it('ignores a self-referencing child without a nested-folder structure', () => {
       // A self-parented node (child.id === origId) but with NO children array → false branch
       const originalMap = {
         '0': { id: '0', title: 'Root', children: [] },

@@ -55,6 +55,14 @@ describe('LLM response validation helpers', () => {
     expect(validateSuggestionResponse(response)).toBe(response);
   });
 
+  it('accepts suggestions without confidence and at the confidence boundaries', () => {
+    const base = { action: 'use_existing', targetFolderId: '1', explanation: 'ok' };
+
+    expect(validateSuggestionResponse(base)).toBe(base);
+    expect(validateSuggestionResponse({ ...base, confidence: 0 }).confidence).toBe(0);
+    expect(validateSuggestionResponse({ ...base, confidence: 1 }).confidence).toBe(1);
+  });
+
   it('rejects invalid suggestion containers and required fields', () => {
     expect(() => validateSuggestionResponse(null))
       .toThrow(/suggestion doit être un objet JSON/i);
@@ -85,6 +93,12 @@ describe('LLM response validation helpers', () => {
       action: 'use_existing',
       targetFolderId: '1',
       confidence: 1.3
+    })).toThrow(/confidence/i);
+
+    expect(() => validateSuggestionResponse({
+      action: 'use_existing',
+      targetFolderId: '1',
+      confidence: -0.1
     })).toThrow(/confidence/i);
   });
 

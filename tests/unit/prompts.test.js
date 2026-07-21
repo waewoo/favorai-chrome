@@ -2,30 +2,33 @@ import { describe, it, expect } from 'vitest';
 import { SYSTEM_PROMPT_COMMON, PROMPT_MINIMAL, PROMPT_COMPLETE, PROMPT_SUGGEST } from '../../src/llm/prompts.js';
 
 describe('prompts', () => {
-  it('SYSTEM_PROMPT_COMMON should be a non-empty string with key instructions', () => {
-    expect(typeof SYSTEM_PROMPT_COMMON).toBe('string');
-    expect(SYSTEM_PROMPT_COMMON.length).toBeGreaterThan(100);
-    expect(SYSTEM_PROMPT_COMMON).toContain('bookmark');
+  it('describes the JSON contract and bookmark safety rules', () => {
+    expect(SYSTEM_PROMPT_COMMON).toContain('reorganizedTree');
+    expect(SYSTEM_PROMPT_COMMON).toContain('explanation');
+    expect(SYSTEM_PROMPT_COMMON).toContain('new_');
+    expect(SYSTEM_PROMPT_COMMON).toContain('Do NOT lose');
   });
 
-  it('PROMPT_MINIMAL should be a non-empty string with mode instruction', () => {
-    expect(typeof PROMPT_MINIMAL).toBe('string');
-    expect(PROMPT_MINIMAL.length).toBeGreaterThan(50);
+  it('defines minimal mode and its conservative strategy', () => {
     expect(PROMPT_MINIMAL).toContain('MODE');
+    expect(PROMPT_MINIMAL).toContain('When in doubt');
+    expect(PROMPT_MINIMAL).toContain('DO NOT MOVE');
   });
 
-  it('PROMPT_COMPLETE should be a non-empty string with mode instruction', () => {
-    expect(typeof PROMPT_COMPLETE).toBe('string');
-    expect(PROMPT_COMPLETE.length).toBeGreaterThan(50);
+  it('defines complete mode and its reorganization constraints', () => {
     expect(PROMPT_COMPLETE).toContain('MODE');
+    expect(PROMPT_COMPLETE).toContain('6 to 8');
+    expect(PROMPT_COMPLETE).toContain('new_');
+    expect(PROMPT_COMPLETE).toContain('every bookmark');
   });
 
-  it('PROMPT_SUGGEST should be a non-empty string with required placeholders', () => {
-    expect(typeof PROMPT_SUGGEST).toBe('string');
-    expect(PROMPT_SUGGEST.length).toBeGreaterThan(50);
+  it('contains the required fields for a bookmark suggestion', () => {
     expect(PROMPT_SUGGEST).toContain('{title}');
     expect(PROMPT_SUGGEST).toContain('{folders}');
+    expect(PROMPT_SUGGEST).toContain('targetFolderId');
+    expect(PROMPT_SUGGEST).toContain('newFolderParentId');
     expect(PROMPT_SUGGEST).toContain('"confidence"');
+    expect(PROMPT_SUGGEST).toContain('valid JSON object');
   });
 
   it('PROMPT_MINIMAL and PROMPT_COMPLETE should be distinct', () => {

@@ -16,6 +16,11 @@ vi.mock('../../src/llm/providers/deepseek.js');
 vi.mock('../../src/llm/providers/ollama.js');
 vi.mock('../../src/llm/providers/custom.js');
 
+function getPromptFromProviderCall(mockedProvider) {
+  const [, , , prompt] = mockedProvider.mock.calls.at(-1);
+  return prompt;
+}
+
 describe('suggestBookmarkLocation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -213,8 +218,7 @@ describe('suggestBookmarkLocation - all providers', () => {
     expect(queryOpenAI).toHaveBeenCalled();
     // Check that avoidInstruction was built
     // queryOpenAI signature: (url, key, model, prompt, systemPrompt, signal, debugMode, maxTokens)
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    const finalPrompt = callArgs[3]; // prompt is the 4th argument (index 3)
+    const finalPrompt = getPromptFromProviderCall(vi.mocked(queryOpenAI));
     expect(finalPrompt).toContain('CRITICAL CONSTRAINT');
     expect(finalPrompt).toContain('avoid');
   });
@@ -240,8 +244,7 @@ describe('suggestBookmarkLocation - all providers', () => {
     // ignoredFolderIds contains IDs not present in foldersWithIgnored → ignoredPaths.length === 0
     await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, ['999']);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    const finalPrompt = callArgs[3];
+    const finalPrompt = getPromptFromProviderCall(vi.mocked(queryOpenAI));
     // avoidInstruction should NOT be appended
     expect(finalPrompt).not.toContain('CRITICAL CONSTRAINT');
   });
@@ -253,8 +256,7 @@ describe('suggestBookmarkLocation - all providers', () => {
 
     await suggestBookmarkLocation(config, bookmark, foldersWithIgnored, null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    const finalPrompt = callArgs[3];
+    const finalPrompt = getPromptFromProviderCall(vi.mocked(queryOpenAI));
     expect(finalPrompt).not.toContain('CRITICAL CONSTRAINT');
   });
 });

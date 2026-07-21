@@ -16,6 +16,12 @@ vi.mock('../../src/llm/providers/deepseek.js');
 vi.mock('../../src/llm/providers/ollama.js');
 vi.mock('../../src/llm/providers/custom.js');
 
+function getProviderCallArguments(mockedProvider) {
+  const [apiUrl, apiKey, modelName, prompt, systemPrompt, signal, debugMode, maxTokens] =
+    mockedProvider.mock.calls.at(-1);
+  return { apiUrl, apiKey, modelName, prompt, systemPrompt, signal, debugMode, maxTokens };
+}
+
 describe('llm/index.js', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
@@ -190,9 +196,8 @@ describe('llm/index.js', () => {
 
     await queryLLM(config, techTree, 'complete', null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    // callArgs[3] is the prompt (userPrompt parameter)
-    expect(callArgs[3]).toContain('Custom complete prompt');
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.prompt).toContain('Custom complete prompt');
   });
 
   it('should use default prompts when custom ones are not provided', async () => {
@@ -205,9 +210,8 @@ describe('llm/index.js', () => {
 
     await queryLLM(config, techTree, 'minimal', null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    // Should contain default prompt content
-    expect(callArgs[3]).toBeDefined();
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.prompt).toContain('MODE: Minimal');
   });
 
   it('should apply maxTokens config correctly', async () => {
@@ -221,9 +225,8 @@ describe('llm/index.js', () => {
 
     await queryLLM(config, techTree, 'complete', null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    // callArgs[7] is maxTokens parameter
-    expect(callArgs[7]).toBe(5000);
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.maxTokens).toBe(5000);
   });
 
   it('should use default maxTokens when not provided or invalid', async () => {
@@ -237,9 +240,8 @@ describe('llm/index.js', () => {
 
     await queryLLM(config, techTree, 'complete', null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[0];
-    // callArgs[7] is maxTokens, should default to 131072 when invalid
-    expect(callArgs[7]).toBe(131072);
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.maxTokens).toBe(131072);
   });
 
   it('should fall back to English for unknown UI languages, and support language code splitting', async () => {
@@ -248,14 +250,14 @@ describe('llm/index.js', () => {
     // Test unknown UI language
     chrome.i18n.getUILanguage.mockReturnValueOnce('xyz');
     await queryLLM({ provider: 'openai', apiKey: 'test-key' }, techTree, 'complete', null);
-    let callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
-    expect(callArgs[4]).toContain('Respond in English');
+    let call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.systemPrompt).toContain('Respond in English');
 
     // Test language code splitting (e.g., 'de-DE')
     chrome.i18n.getUILanguage.mockReturnValueOnce('de-DE');
     await queryLLM({ provider: 'openai', apiKey: 'test-key' }, techTree, 'complete', null);
-    callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
-    expect(callArgs[4]).toContain('Respond in German');
+    call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.systemPrompt).toContain('Respond in German');
   });
 
   it('should handle tree without children in getTopLevelFolders during context building', async () => {
@@ -264,8 +266,8 @@ describe('llm/index.js', () => {
     const noChildrenTree = { id: '0', title: 'root' }; // no children key
     await queryLLM({ provider: 'openai', apiKey: 'test-key' }, noChildrenTree, 'complete', null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
-    expect(callArgs[3]).toContain('Current top-level folders: (none)');
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.prompt).toContain('Current top-level folders: (none)');
   });
 
   it('should handle template placeholders not in substitutions during suggestBookmarkLocation', async () => {
@@ -285,9 +287,8 @@ describe('llm/index.js', () => {
 
     await suggestBookmarkLocation(config, bookmark, folders, [], null);
 
-    const callArgs = vi.mocked(queryOpenAI).mock.calls[vi.mocked(queryOpenAI).mock.calls.length - 1];
-    // The placeholder {non_existent} is ignored by regex; {url} falls back to {url} via nullish coalescing
-    expect(callArgs[3]).toContain('Recommend for My Bookmark and {url} and {non_existent}');
+    const call = getProviderCallArguments(vi.mocked(queryOpenAI));
+    expect(call.prompt).toContain('Recommend for My Bookmark and {url} and {non_existent}');
   });
 
   it('should log useful debug information when debugMode is enabled', async () => {
