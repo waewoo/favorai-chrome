@@ -57,6 +57,9 @@ export function createChromeMock() {
     },
     history: {
       getVisits: vi.fn().mockResolvedValue([]),
+      search: vi.fn().mockResolvedValue([]),
+      onVisited: { addListener: vi.fn(), removeListener: vi.fn() },
+      onVisitRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
     },
     storage: {
       local: {
