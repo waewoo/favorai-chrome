@@ -158,7 +158,8 @@ export function sanitizeReorganizedTree(node, originalMap, idMap = {}) {
  *   afin d'aider à la classification sémantique des favoris.
  * - Retire les doublons et liens morts déjà traités
  */
-export function cleanTreeForLLM(node, duplicatesSet, deadLinksSet) {
+export function cleanTreeForLLM(node, duplicatesSet, deadLinksSet, protectedFolderId = null) {
+  if (protectedFolderId && String(node.id) === String(protectedFolderId)) return null;
   if (duplicatesSet.has(node.id) || deadLinksSet.has(node.id)) return null;
 
   const clean = { id: node.id, title: node.title };
@@ -166,7 +167,7 @@ export function cleanTreeForLLM(node, duplicatesSet, deadLinksSet) {
 
   if (node.children) {
     clean.children = node.children
-      .map(c => cleanTreeForLLM(c, duplicatesSet, deadLinksSet))
+      .map(c => cleanTreeForLLM(c, duplicatesSet, deadLinksSet, protectedFolderId))
       .filter(Boolean);
   }
   return clean;

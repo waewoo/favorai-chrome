@@ -192,11 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Restore deep link tabs if set
   chrome.storage.local.get(['activeTab'], (res) => {
-    if (res.activeTab) {
-      switchTab(res.activeTab);
-      if (res.activeTab === 'history') {
+    const restoredTab = res.activeTab === 'mostUsed' ? null : res.activeTab;
+    if (restoredTab) {
+      switchTab(restoredTab);
+      if (restoredTab === 'history') {
         renderHistory();
-      } else if (res.activeTab === 'forgotten') {
+      } else if (restoredTab === 'forgotten') {
         renderForgotten();
       }
       chrome.storage.local.remove('activeTab');

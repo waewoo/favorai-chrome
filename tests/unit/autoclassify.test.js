@@ -6,7 +6,14 @@ vi.mock('../../src/llm/index.js', () => ({
 
 import { suggestBookmarkLocation } from '../../src/llm/index.js';
 
-const flush = () => new Promise(resolve => setImmediate(resolve));
+async function waitForPendingSuggestion(bookmarkId, type) {
+  await vi.waitFor(() => {
+    const call = chrome.storage.local.set.mock.calls.find(
+      ([data]) => data.pendingAutoBookmarkSuggestions?.[bookmarkId]?.type === type
+    );
+    expect(call).toBeTruthy();
+  });
+}
 
 function buildTree() {
   return [{
@@ -87,8 +94,7 @@ describe('auto bookmark classification on create', () => {
       url: 'https://example.com',
       parentId: '1'
     });
-    await flush();
-    await flush();
+    await vi.waitFor(() => expect(chrome.bookmarks.move).toHaveBeenCalledWith('bm-1', { parentId: '2' }));
 
     expect(chrome.bookmarks.move).toHaveBeenCalledWith('bm-1', { parentId: '2' });
     expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -128,8 +134,7 @@ describe('auto bookmark classification on create', () => {
       url: 'https://example.org',
       parentId: '1'
     });
-    await flush();
-    await flush();
+    await waitForPendingSuggestion('bm-2', 'suggestion');
 
     expect(chrome.bookmarks.move).not.toHaveBeenCalled();
     expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
@@ -164,7 +169,10 @@ describe('auto bookmark classification on create', () => {
       parentId: '1'
     });
 
-    await flush();
+    await vi.waitFor(() => expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'popup',
+      url: expect.stringContaining('mode=autoclassify')
+    })));
 
     expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
       type: 'popup',
@@ -181,8 +189,7 @@ describe('auto bookmark classification on create', () => {
       confidence: 0.42
     }));
 
-    await flush();
-    await flush();
+    await waitForPendingSuggestion('bm-4', 'suggestion');
 
     const suggestionCall = chrome.storage.local.set.mock.calls.find(call => call[0].pendingAutoBookmarkSuggestions?.['bm-4']?.type === 'suggestion');
     expect(suggestionCall).toBeTruthy();
@@ -201,8 +208,7 @@ describe('auto bookmark classification on create', () => {
       url: 'https://broken.example',
       parentId: '1'
     });
-    await flush();
-    await flush();
+    await waitForPendingSuggestion('bm-3', 'error');
 
     expect(chrome.windows.create).toHaveBeenCalled();
     const pendingCall = chrome.storage.local.set.mock.calls.find(call => call[0].pendingAutoBookmarkSuggestions?.['bm-3']?.type === 'error');
@@ -241,10 +247,79 @@ describe('auto bookmark classification on create', () => {
       }
     }, {}, sendResponse);
 
-    await flush();
-    await flush();
+    await new Promise(resolve => setImmediate(resolve));
 
     expect(suggestBookmarkLocation).not.toHaveBeenCalled();
+    expect(chrome.windows.create).not.toHaveBeenCalled();
+  });
+
+  it('still classifies a normal bookmark when the managed-folder check fails', async () => {
+    vi.mocked(suggestBookmarkLocation).mockResolvedValue(JSON.stringify({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'Normal bookmark.',
+      confidence: 0.42
+    }));
+    const { createdListener } = await loadOrchestrator();
+    chrome.storage.local.get.mockImplementationOnce(() => {
+      throw new Error('storage temporarily unavailable');
+    });
+    createdListener('bm-storage-error', {
+      id: 'bm-storage-error',
+      title: 'Normal bookmark',
+      url: 'https://storage-error.example',
+      parentId: '1'
+    });
+
+    await waitForPendingSuggestion('bm-storage-error', 'suggestion');
+    expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'popup',
+      url: expect.stringContaining('mode=autoclassify')
+    }));
+  });
+
+  it('classifies a user-created bookmark placed inside the managed folder', async () => {
+    vi.mocked(suggestBookmarkLocation).mockResolvedValue(JSON.stringify({
+      action: 'use_existing',
+      targetFolderId: '2',
+      explanation: 'User-created bookmark inside managed folder.',
+      confidence: 0.42
+    }));
+    const { createdListener } = await loadOrchestrator();
+    chrome.storage.local.get.mockImplementation((keys, cb) => {
+      if (Array.isArray(keys) && keys.includes('apiKey')) cb({ apiKey: 'local-secret' });
+      else cb({ mostUsedBookmarksFolderId: 'managed-folder', mostUsedBookmarksSystemCopyIds: [] });
+    });
+
+    createdListener('manual-in-managed', {
+      id: 'manual-in-managed',
+      title: 'Manual bookmark in managed folder',
+      url: 'https://manual-managed.example',
+      parentId: 'managed-folder'
+    });
+
+    await waitForPendingSuggestion('manual-in-managed', 'suggestion');
+    expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'popup',
+      url: expect.stringContaining('mode=autoclassify')
+    }));
+  });
+
+  it('ignores a system-created managed-folder copy', async () => {
+    const { createdListener } = await loadOrchestrator();
+    chrome.storage.local.get.mockImplementation((keys, cb) => {
+      if (Array.isArray(keys) && keys.includes('apiKey')) cb({ apiKey: 'local-secret' });
+      else cb({ mostUsedBookmarksFolderId: 'managed-folder', mostUsedBookmarksSystemCopyIds: ['system-copy'] });
+    });
+
+    createdListener('system-copy', {
+      id: 'system-copy',
+      title: 'Managed copy',
+      url: 'https://system-copy.example',
+      parentId: 'managed-folder'
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 150));
     expect(chrome.windows.create).not.toHaveBeenCalled();
   });
 

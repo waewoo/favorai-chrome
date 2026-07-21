@@ -394,6 +394,5 @@
   "lightErrorSaving": { "message": "❌ Erreur lors de l'enregistrement." },
   "lightManualTitleRequired": { "message": "❌ Veuillez entrer un titre." },
   "lightManualFolderRequired": { "message": "❌ Veuillez sélectionner un dossier." },
-  "popupUnhandledError": { "message": "Erreur inattendue : $msg$", "placeholders": { "msg": { "content": "$1" } } },
-  "folderMostVisited": { "message": "★ Pages visitées" }
+  "popupUnhandledError": { "message": "Erreur inattendue : $msg$", "placeholders": { "msg": { "content": "$1" } } }
 }

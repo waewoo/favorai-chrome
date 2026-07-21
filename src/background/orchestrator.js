@@ -13,6 +13,7 @@ import { mergeAnalysisConfigWithStoredApiKey, sanitizeAnalysisConfig, sanitizeLl
 import { normalizeInterruptedAnalysisStatus } from './status.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
 import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
+import { MOST_USED_ALARM, MOST_USED_FOLDER_ID_KEY, MOST_USED_SYSTEM_COPY_IDS_KEY, getMostUsedBookmarks, queueMostUsedRefresh, refreshMostUsedBookmarks, setMostUsedWindow } from './most-used.js';
 
 const DIAGNOSTIC_LOG_LIMIT = 100;
 
@@ -130,14 +131,47 @@ const PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY = 'pendingAutoBookmarkSuggestions';
 let suppressAutoBookmarkClassificationCount = 0;
 let suppressAutoBookmarkClassificationTimer = null;
 
+console.info('[FavorAI] Service worker loaded.');
+
 chrome.bookmarks.onCreated.addListener((bookmarkId, bookmark) => {
   if (!bookmark?.url) return;
+  console.info('[FavorAI] Bookmark created:', bookmarkId, 'parent:', bookmark.parentId);
   if (consumeAutoBookmarkClassificationSuppression()) return;
-  void processAutoBookmarkCreation({ id: bookmarkId, ...bookmark });
+  void (async () => {
+    try {
+      const managed = await getStoredLocal([MOST_USED_FOLDER_ID_KEY]);
+      const managedFolderId = managed[MOST_USED_FOLDER_ID_KEY];
+      if (managedFolderId && String(bookmark.parentId) === String(managedFolderId)) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const systemCopies = await getStoredLocal([MOST_USED_SYSTEM_COPY_IDS_KEY]);
+        const ids = Array.isArray(systemCopies[MOST_USED_SYSTEM_COPY_IDS_KEY])
+          ? systemCopies[MOST_USED_SYSTEM_COPY_IDS_KEY].map(String)
+          : [];
+        if (ids.includes(String(bookmarkId))) {
+          console.info('[FavorAI] Managed-folder copy ignored:', bookmarkId);
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn('[FavorAI] Could not check the managed most-used folder:', error?.message || error);
+    }
+    console.info('[FavorAI] Starting bookmark suggestion:', bookmarkId);
+    await processAutoBookmarkCreation({ id: bookmarkId, ...bookmark });
+  })().catch(error => {
+    console.error('[FavorAI] Auto-classification failed to start:', error?.message || error);
+  });
 });
+
+if (chrome.history?.onVisited) chrome.history.onVisited.addListener(() => { void queueMostUsedRefresh(); });
+if (chrome.history?.onVisitRemoved) chrome.history.onVisitRemoved.addListener(() => { void queueMostUsedRefresh(); });
 
 chrome.runtime.onStartup.addListener(() => {
   handleStartupRecovery();
+  void queueMostUsedRefresh();
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  void refreshMostUsedBookmarks();
 });
 
 handleStartupRecovery();
@@ -504,6 +538,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAliveAlarm') {
     chrome.storage.local.get(['__keepalive'], () => {});
   }
+  if (alarm.name === MOST_USED_ALARM) void refreshMostUsedBookmarks();
 });
 
 // Écouteur de messages
@@ -512,6 +547,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (sender.id !== chrome.runtime.id) {
     console.error('Message bloqué : Expéditeur non autorisé.', sender.id);
     return false;
+  }
+
+  if (message.action === 'get_most_used_bookmarks') {
+    getMostUsedBookmarks().then(result => sendResponse({ success: true, ...result }))
+      .catch(() => sendResponse({ success: true, state: 'history_unavailable', items: [] }));
+    return true;
+  }
+
+  if (message.action === 'set_most_used_window') {
+    setMostUsedWindow(message.days).then(result => sendResponse({ success: true, ...result }))
+      .catch(() => sendResponse({ success: true, state: 'history_unavailable', items: [] }));
+    return true;
   }
 
   if (message.action === 'get_current_status') {

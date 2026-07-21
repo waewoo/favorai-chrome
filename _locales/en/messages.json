@@ -394,6 +394,5 @@
   "lightErrorSaving": { "message": "❌ Error while saving." },
   "lightManualTitleRequired": { "message": "❌ Please enter a title." },
   "lightManualFolderRequired": { "message": "❌ Please select a folder." },
-  "popupUnhandledError": { "message": "Unexpected error: $msg$", "placeholders": { "msg": { "content": "$1" } } },
-  "folderMostVisited": { "message": "★ Most Visited" }
+  "popupUnhandledError": { "message": "Unexpected error: $msg$", "placeholders": { "msg": { "content": "$1" } } }
 }
