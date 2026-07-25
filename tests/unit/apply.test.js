@@ -98,6 +98,24 @@ describe('applyChanges', () => {
     );
   });
 
+  it('should save a dated snapshot before the first approved mutation', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'folder-id', title: 'Folder' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const result = await applyChanges(
+      ['create'],
+      [{ id: 'create', type: 'create_folder', params: { tempId: 'new_folder', title: 'Folder', parentId: '1' } }],
+      'complete'
+    );
+
+    expect(result.snapshotId).toMatch(/^snap_/);
+    const snapshotCall = chrome.storage.local.set.mock.calls.findIndex(([value]) => value.bookmarkSnapshots);
+    const createCall = chrome.bookmarks.create.mock.invocationCallOrder[0];
+    const snapshotStorageCall = chrome.storage.local.set.mock.invocationCallOrder[snapshotCall];
+    expect(snapshotStorageCall).toBeLessThan(createCall);
+  });
+
   it('should recursively delete empty folders while preserving non-empty ones and root folders', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([
       { id: '0', title: 'Root', children: [{ id: '1', title: 'Barre de favoris' }] }
@@ -419,8 +437,10 @@ describe('applyChanges', () => {
 
     await applyChanges(['act_fail'], pendingActions, 'complete', 'No history produced');
 
-    // saveSessionToHistory should NOT have been called since no operations succeeded
-    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    // A failed mutation still has a pre-mutation snapshot for recovery.
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({ bookmarkSnapshots: expect.any(Array) })
+    );
   });
 
   it('should filter out non-approved actions and only process approved ones', async () => {
@@ -852,6 +872,7 @@ describe('applyChanges', () => {
     )).rejects.toThrow(/changed|favoris/i);
 
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(chrome.storage.local.set).not.toHaveBeenCalledWith(expect.objectContaining({ bookmarkSnapshots: expect.anything() }));
   });
 
   it('should validate the selected bookmark subtree before applying scoped changes', async () => {

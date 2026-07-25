@@ -3,6 +3,7 @@ import { NEW_FOLDER_PREFIX, CHROME_ROOT_IDS } from '../utils/constants.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
 import { saveSessionToHistory } from './history.js';
 import { buildBookmarkTreeFingerprint } from './tree-fingerprint.js';
+import { createBookmarkSnapshot, saveBookmarkSnapshot } from './snapshots.js';
 
 /**
  * Résout l'ID réel d'un parent (gestion des IDs temporaires new_).
@@ -25,6 +26,11 @@ export function resolveParentId(id, idMap) {
 export async function applyChanges(approvedActionIds, pendingActions, mode, explanation = '', options = {}) {
   const approvedSet = new Set(approvedActionIds);
   const toRun = pendingActions.filter(a => approvedSet.has(a.id));
+  const mutableTypes = new Set([
+    'create_folder', 'rename_folder', 'rename_bookmark', 'move_bookmark', 'move_folder',
+    'delete_duplicate', 'delete_dead', 'delete_folder'
+  ]);
+  const hasApprovedMutation = toRun.some(action => mutableTypes.has(action.type));
 
   let nodeMap = {};
   let rootNode = null;
@@ -44,6 +50,13 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       }
     }
     nodeMap = buildNodeMap(rootNode);
+  }
+
+  let snapshotId = null;
+  if (rootNode && hasApprovedMutation && options.captureSnapshot !== false) {
+    const snapshot = createBookmarkSnapshot(rootNode, { bookmarkFolderId: options.bookmarkFolderId });
+    await saveBookmarkSnapshot(snapshot);
+    snapshotId = snapshot.id;
   }
 
   const idMap = {};
@@ -146,7 +159,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     await saveSessionToHistory(historyWithIds, mode, explanation);
   }
 
-  return { failures };
+  return { failures, snapshotId };
 }
 
 async function readBookmarkRoot(bookmarkFolderId) {

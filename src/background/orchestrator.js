@@ -857,7 +857,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           currentStatus.logs = [];
           currentStatus.analysisTreeFingerprint = null;
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
-          sendResponse({ success: true, failures: result?.failures || [] });
+          sendResponse({ success: true, failures: result?.failures || [], snapshotId: result?.snapshotId || null });
         })
         .catch(error => {
           sendResponse({ success: false, error: error.message });
