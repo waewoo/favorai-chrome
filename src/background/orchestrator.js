@@ -16,6 +16,7 @@ import { sendRuntimeMessage } from './runtime-messaging.js';
 import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
 import { normalizeAutoBookmarkPolicy } from './auto-bookmark-policy.js';
 import { createAutoBookmarkQueue } from './auto-bookmark-queue.js';
+import { buildBookmarkTreeFingerprint } from './tree-fingerprint.js';
 import { MOST_USED_ALARM, MOST_USED_FOLDER_ID_KEY, MOST_USED_SYSTEM_COPY_IDS_KEY, getMostUsedBookmarks, queueMostUsedRefresh, refreshMostUsedBookmarks, setMostUsedWindow } from './most-used.js';
 
 const DIAGNOSTIC_LOG_LIMIT = 100;
@@ -897,9 +898,46 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (!snapshot) throw new Error('Snapshot not found.');
         const scopeId = snapshot.scope?.bookmarkFolderId || null;
         const currentTree = await getBookmarkTree(scopeId);
-        return sendResponse({ success: true, snapshotId: snapshot.id, diff: buildBookmarkSnapshotDiff(snapshot, currentTree) });
+        const diff = buildBookmarkSnapshotDiff(snapshot, currentTree);
+        return sendResponse({ success: true, snapshotId: snapshot.id, currentTreeFingerprint: buildBookmarkTreeFingerprint(currentTree), diff });
       })
       .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (message.action === 'restore_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(async snapshot => {
+        if (!snapshot) throw new Error('Snapshot not found.');
+        const scopeId = snapshot.scope?.bookmarkFolderId || null;
+        const currentTree = await getBookmarkTree(scopeId);
+        const diff = buildBookmarkSnapshotDiff(snapshot, currentTree);
+        if (diff.unrestorable.length > 0) {
+          const details = diff.unrestorable.map(item => `${item.title}: ${item.reason}`).join('; ');
+          throw new Error(`Snapshot cannot be restored automatically. ${details}`);
+        }
+        const result = await applyChanges(
+          diff.operations.map(operation => operation.id),
+          diff.operations,
+          'snapshot_restore',
+          `Restored snapshot ${snapshot.id}`,
+          {
+            expectedTreeFingerprint: message.expectedTreeFingerprint || buildBookmarkTreeFingerprint(currentTree),
+            bookmarkFolderId: scopeId,
+            skipCleanup: true
+          }
+        );
+        const successCount = diff.operations.length - result.failures.length;
+        return sendResponse({
+          success: result.failures.length === 0,
+          partial: successCount > 0 && result.failures.length > 0,
+          successCount,
+          failureCount: result.failures.length,
+          failures: result.failures,
+          snapshotId: snapshot.id
+        });
+      })
+      .catch(error => sendResponse({ success: false, error: error.message, failures: error.failures || [] }));
     return true;
   }
 

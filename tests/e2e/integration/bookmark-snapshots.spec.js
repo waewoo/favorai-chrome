@@ -51,4 +51,46 @@ test.describe('Bookmark snapshots', () => {
       await cleanup(context, tmpDir);
     }
   });
+
+  test('cancels confirmation without mutation and restores sequentially after confirmation', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId);
+      await page.evaluate(async () => {
+        const [root] = await chrome.bookmarks.getTree();
+        const serialize = (node, parentId = null) => ({
+          id: String(node.id),
+          title: node.title || '',
+          parentId: node.parentId === undefined ? parentId : String(node.parentId),
+          ...(node.url ? { url: node.url } : {}),
+          ...(node.children ? { children: node.children.map(child => serialize(child, String(node.id))) } : {})
+        });
+        const tree = serialize(root);
+        const bar = tree.children.find(child => child.id === '1');
+        bar.children = [...(bar.children || []), {
+          id: 'snapshot-bookmark',
+          title: 'Restored from snapshot',
+          parentId: '1',
+          url: 'https://snapshot-restore.example'
+        }];
+        await chrome.storage.local.set({ bookmarkSnapshots: [{ version: 1, id: 'snap_restore_e2e', timestamp: Date.now(), scope: null, tree }] });
+      });
+
+      await page.locator('#tabHistoryBtn').click();
+      await page.locator('.btn-snapshot-preview').click();
+      await expect(page.locator('.btn-snapshot-restore')).toBeVisible();
+
+      await page.locator('.btn-snapshot-restore').click();
+      await expect(page.locator('#confirmModal')).toBeVisible();
+      await page.locator('#modalBtnCancel').click();
+      expect(await page.evaluate(async () => (await chrome.bookmarks.search({ url: 'https://snapshot-restore.example' })).length)).toBe(0);
+
+      await page.locator('.btn-snapshot-restore').click();
+      await page.locator('#modalBtnConfirm').click();
+      await expect.poll(async () => page.evaluate(async () => (await chrome.bookmarks.search({ url: 'https://snapshot-restore.example' })).length)).toBe(1);
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
 });

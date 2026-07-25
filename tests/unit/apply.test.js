@@ -116,6 +116,27 @@ describe('applyChanges', () => {
     expect(snapshotStorageCall).toBeLessThan(createCall);
   });
 
+  it('should create bookmark children after folders and report bookmark failures', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.create
+      .mockResolvedValueOnce({ id: 'folder-id', title: 'Folder' })
+      .mockRejectedValueOnce(new Error('bookmark create failed'));
+
+    const result = await applyChanges(
+      ['folder', 'bookmark'],
+      [
+        { id: 'bookmark', type: 'create_bookmark', params: { tempId: 'new_bookmark', title: 'Site', url: 'https://example.com', parentId: 'new_folder' } },
+        { id: 'folder', type: 'create_folder', params: { tempId: 'new_folder', title: 'Folder', parentId: '1' } }
+      ],
+      'snapshot_restore'
+    );
+
+    expect(chrome.bookmarks.create).toHaveBeenNthCalledWith(1, { parentId: '1', title: 'Folder' });
+    expect(chrome.bookmarks.create).toHaveBeenNthCalledWith(2, { parentId: 'folder-id', title: 'Site', url: 'https://example.com' });
+    expect(result.failures).toEqual([{ type: 'create_bookmark', title: 'Site', error: 'bookmark create failed' }]);
+  });
+
   it('should recursively delete empty folders while preserving non-empty ones and root folders', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([
       { id: '0', title: 'Root', children: [{ id: '1', title: 'Barre de favoris' }] }

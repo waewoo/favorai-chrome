@@ -314,7 +314,11 @@ function sendSnapshotMessage(message) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, response => {
       if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-      else if (!response?.success) reject(new Error(response?.error || 'Snapshot request failed.'));
+      else if (!response?.success) {
+        const error = new Error(response?.error || 'Snapshot request failed.');
+        error.failures = response?.failures || [];
+        reject(error);
+      }
       else resolve(response);
     });
   });
@@ -361,7 +365,10 @@ export function renderSnapshots() {
       }
 
       container.querySelectorAll('.btn-snapshot-preview').forEach(button => {
-        button.addEventListener('click', () => previewSnapshot(button.dataset.snapshotId));
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try { await previewSnapshot(button.dataset.snapshotId); } finally { button.disabled = false; }
+        });
       });
       container.querySelectorAll('.btn-snapshot-export').forEach(button => {
         button.addEventListener('click', () => exportSnapshot(button.dataset.snapshotId));
@@ -398,7 +405,9 @@ async function previewSnapshot(snapshotId) {
   preview.textContent = t('snapshotLoading', 'Calculating snapshot differences...');
 
   try {
-    const { diff } = await sendSnapshotMessage({ action: 'preview_bookmark_snapshot', snapshotId });
+    const response = await sendSnapshotMessage({ action: 'preview_bookmark_snapshot', snapshotId });
+    const { diff } = response;
+    preview.dataset.treeFingerprint = response.currentTreeFingerprint || '';
     preview.textContent = '';
     const heading = document.createElement('div');
     heading.style.cssText = 'font-weight: 600; margin-bottom: 6px;';
@@ -443,11 +452,19 @@ async function requestSnapshotRestore(snapshotId) {
   const button = document.querySelector(`.btn-snapshot-restore[data-snapshot-id="${CSS.escape(snapshotId)}"]`);
   if (button) button.disabled = true;
   try {
-    await sendSnapshotMessage({ action: 'restore_bookmark_snapshot', snapshotId });
+    await sendSnapshotMessage({
+      action: 'restore_bookmark_snapshot',
+      snapshotId,
+      expectedTreeFingerprint: document.getElementById('snapshotPreview')?.dataset.treeFingerprint || null
+    });
     showToast(t('snapshotRestoreSuccess', 'Snapshot restored.'));
     renderHistory();
   } catch (error) {
+    const details = Array.isArray(error.failures) && error.failures.length > 0
+      ? ` ${error.failures.map(failure => `${failure.type}: ${failure.title || ''} — ${failure.error || ''}`).join('; ')}`
+      : '';
     showToast(error.message || t('snapshotRestoreFailed', 'Snapshot restoration failed.'));
+    addLog(`${t('snapshotRestoreFailed', 'Snapshot restoration failed.')}${details}`, 'error');
     if (button) button.disabled = false;
   }
 }

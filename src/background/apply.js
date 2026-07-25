@@ -27,8 +27,8 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
   const approvedSet = new Set(approvedActionIds);
   const toRun = pendingActions.filter(a => approvedSet.has(a.id));
   const mutableTypes = new Set([
-    'create_folder', 'rename_folder', 'rename_bookmark', 'move_bookmark', 'move_folder',
-    'delete_duplicate', 'delete_dead', 'delete_folder'
+    'create_folder', 'create_bookmark', 'rename_folder', 'rename_bookmark', 'move_bookmark', 'move_folder',
+    'delete_duplicate', 'delete_dead', 'delete_bookmark', 'delete_folder'
   ]);
   const hasApprovedMutation = toRun.some(action => mutableTypes.has(action.type));
 
@@ -82,6 +82,22 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     }
   }
 
+  // Create bookmarks after their parent folders.
+  for (const act of toRun.filter(a => a.type === 'create_bookmark')) {
+    const parentId = resolveParentId(act.params.parentId, idMap);
+    if (parentId === null) {
+      failures.push({ type: act.type, title: act.params.title, error: `Parent ${act.params.parentId} was not created.` });
+      continue;
+    }
+    try {
+      const created = await chrome.bookmarks.create({ parentId, title: act.params.title, url: act.params.url });
+      idMap[act.params.tempId] = created.id;
+      history.push({ type: 'create_bookmark', title: act.params.title, realId: created.id, parentId, url: act.params.url, targetPath: getPathFromMap(parentId, nodeMap) });
+    } catch (e) {
+      failures.push({ type: act.type, title: act.params.title, error: e.message });
+    }
+  }
+
   // B. Renommages
   for (const act of toRun.filter(a => a.type === 'rename_folder' || a.type === 'rename_bookmark')) {
     const realId = idMap[act.params.nodeId] || act.params.nodeId;
@@ -122,7 +138,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
   }
 
   // D. Suppressions (favoris d'abord, dossiers les plus profonds en dernier)
-  const deletions = toRun.filter(a => ['delete_duplicate', 'delete_dead', 'delete_folder'].includes(a.type))
+  const deletions = toRun.filter(a => ['delete_duplicate', 'delete_dead', 'delete_bookmark', 'delete_folder'].includes(a.type))
     .sort((a, b) => {
       if (a.type === 'delete_folder' && b.type !== 'delete_folder') return 1;
       if (a.type !== 'delete_folder' && b.type === 'delete_folder') return -1;
@@ -149,7 +165,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
   }
 
   // E. Post-apply cleanup: remove any folders left empty after moves/deletions
-  await removeEmptyFoldersRecursive('0', history);
+  if (!options.skipCleanup) await removeEmptyFoldersRecursive('0', history);
 
   if (history.length > 0) {
     const historyWithIds = history.map(entry => ({
