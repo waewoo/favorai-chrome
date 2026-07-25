@@ -13,6 +13,8 @@ import { mergeAnalysisConfigWithStoredApiKey, sanitizeAnalysisConfig, sanitizeLl
 import { normalizeInterruptedAnalysisStatus } from './status.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
 import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
+import { normalizeAutoBookmarkPolicy } from './auto-bookmark-policy.js';
+import { createAutoBookmarkQueue } from './auto-bookmark-queue.js';
 import { MOST_USED_ALARM, MOST_USED_FOLDER_ID_KEY, MOST_USED_SYSTEM_COPY_IDS_KEY, getMostUsedBookmarks, queueMostUsedRefresh, refreshMostUsedBookmarks, setMostUsedWindow } from './most-used.js';
 
 const DIAGNOSTIC_LOG_LIMIT = 100;
@@ -128,10 +130,18 @@ const currentStatus = {
 };
 
 const PENDING_AUTO_BOOKMARK_SUGGESTIONS_KEY = 'pendingAutoBookmarkSuggestions';
+const AUTO_BOOKMARK_USAGE_KEY = 'autoBookmarkClassificationUsage';
+const autoBookmarkPopupStates = new Map();
 let suppressAutoBookmarkClassificationCount = 0;
 let suppressAutoBookmarkClassificationTimer = null;
 
 console.info('[FavorAI] Service worker loaded.');
+
+chrome.windows?.onRemoved?.addListener((windowId) => {
+  for (const [bookmarkId, state] of autoBookmarkPopupStates) {
+    if (state.windowId === windowId) autoBookmarkPopupStates.delete(bookmarkId);
+  }
+});
 
 chrome.bookmarks.onCreated.addListener((bookmarkId, bookmark) => {
   if (!bookmark?.url) return;
@@ -155,8 +165,27 @@ chrome.bookmarks.onCreated.addListener((bookmarkId, bookmark) => {
     } catch (error) {
       console.warn('[FavorAI] Could not check the managed most-used folder:', error?.message || error);
     }
-    console.info('[FavorAI] Starting bookmark suggestion:', bookmarkId);
-    await processAutoBookmarkCreation({ id: bookmarkId, ...bookmark });
+    console.info('[FavorAI] Queueing bookmark suggestion:', bookmarkId);
+    await storePendingBookmarkSuggestion(bookmarkId, {
+      type: 'loading',
+      bookmark: {
+        id: bookmarkId,
+        title: bookmark.title || '',
+        url: bookmark.url || '',
+        parentId: bookmark.parentId || ''
+      },
+      createdAt: Date.now()
+    });
+    void openAutoBookmarkPopup(bookmarkId).catch(popupError => {
+      console.warn('[FavorAI] Unable to open auto-classification popup:', popupError?.message || popupError);
+    });
+    await autoBookmarkQueue.enqueue({
+      id: bookmarkId,
+      title: bookmark.title || '',
+      url: bookmark.url || '',
+      parentId: bookmark.parentId || '',
+      createdAt: Date.now()
+    });
   })().catch(error => {
     console.error('[FavorAI] Auto-classification failed to start:', error?.message || error);
   });
@@ -219,6 +248,29 @@ function normalizeConfidence(value) {
   return Math.max(0, Math.min(1, parsed));
 }
 
+function isBookmarkSnapshotCurrent(expected, current) {
+  if (!expected || !current) return false;
+  if (String(expected.id) !== String(current.id)) return false;
+  if (current.url !== undefined && String(expected.url || '') !== String(current.url || '')) return false;
+  if (current.title !== undefined && String(expected.title || '') !== String(current.title || '')) return false;
+  if (current.parentId !== undefined && String(expected.parentId || '') !== String(current.parentId || '')) return false;
+  return true;
+}
+
+function createStaleBookmarkError() {
+  const error = new Error('Le favori a changé depuis la suggestion.');
+  error.code = 'STALE_BOOKMARK';
+  return error;
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) {
+    const error = new Error('Classification annulée.');
+    error.name = 'AbortError';
+    throw error;
+  }
+}
+
 function getStoredSync(keys) {
   return new Promise(resolve => chrome.storage.sync.get(keys, resolve));
 }
@@ -233,7 +285,7 @@ function setStoredLocal(values) {
 
 async function loadSuggestionConfig() {
   const [syncRes, localRes] = await Promise.all([
-    getStoredSync(['provider', 'apiUrl', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold']),
+    getStoredSync(['provider', 'apiUrl', 'modelName', 'debugMode', 'maxTokens', 'promptSuggest', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold', 'autoBookmarkMode', 'autoBookmarkDailyLimit', 'autoBookmarkDebounceMs', 'autoBookmarkBurstThreshold', 'autoBookmarkRetentionMs']),
     getStoredLocal(['apiKey'])
   ]);
 
@@ -246,8 +298,14 @@ async function loadSuggestionConfig() {
   return {
     ...fullConfig,
     autoMoveNewBookmarks: syncRes.autoMoveNewBookmarks === true,
-    autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(syncRes.autoMoveConfidenceThreshold)
+    autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(syncRes.autoMoveConfidenceThreshold),
+    autoBookmarkPolicy: normalizeAutoBookmarkPolicy(syncRes)
   };
+}
+
+async function loadAutoBookmarkPolicy() {
+  const syncRes = await getStoredSync(['autoMoveNewBookmarks', 'autoMoveConfidenceThreshold', 'autoBookmarkMode', 'autoBookmarkDailyLimit', 'autoBookmarkDebounceMs', 'autoBookmarkBurstThreshold', 'autoBookmarkRetentionMs']);
+  return normalizeAutoBookmarkPolicy(syncRes);
 }
 
 async function buildBookmarkSuggestionContext(bookmarkUrl, excludeBookmarkId = null) {
@@ -313,13 +371,39 @@ async function clearPendingBookmarkSuggestion(bookmarkId) {
 }
 
 async function openAutoBookmarkPopup(bookmarkId) {
-  await chrome.windows.create({
+  const key = String(bookmarkId);
+  const existing = autoBookmarkPopupStates.get(key);
+  if (existing) return existing.promise;
+
+  const promise = chrome.windows.create({
     url: `${chrome.runtime.getURL('extension/popup-light.html')}?mode=autoclassify&bookmarkId=${encodeURIComponent(bookmarkId)}`,
     type: 'popup',
     width: 460,
     height: 690,
     focused: true
+  }).then(window => {
+    const state = autoBookmarkPopupStates.get(key);
+    if (state?.promise === promise) state.windowId = window?.id ?? null;
+    return window;
+  }).catch(error => {
+    const state = autoBookmarkPopupStates.get(key);
+    if (state?.promise === promise) autoBookmarkPopupStates.delete(key);
+    throw error;
   });
+
+  autoBookmarkPopupStates.set(key, { promise, windowId: null });
+  return promise;
+}
+
+async function consumeAutoBookmarkCall(policy) {
+  const today = new Date().toISOString().slice(0, 10);
+  const stored = await getStoredLocal([AUTO_BOOKMARK_USAGE_KEY]);
+  const usage = stored[AUTO_BOOKMARK_USAGE_KEY]?.date === today
+    ? stored[AUTO_BOOKMARK_USAGE_KEY]
+    : { date: today, count: 0 };
+  if (usage.count >= policy.dailyLimit) return false;
+  await setStoredLocal({ [AUTO_BOOKMARK_USAGE_KEY]: { date: today, count: usage.count + 1 } });
+  return true;
 }
 
 function buildHistoryEntryId() {
@@ -330,15 +414,18 @@ async function recordAutoBookmarkMove(historyEntries, explanation) {
   if (!historyEntries.length) return;
   const entriesWithIds = historyEntries.map(entry => ({
     id: buildHistoryEntryId(),
+    source: 'auto_bookmark',
     ...entry
   }));
-  await saveSessionToHistory(entriesWithIds, 'auto', explanation);
+  return saveSessionToHistory(entriesWithIds, 'auto', explanation);
 }
 
-export async function applyAutoBookmarkSuggestion(bookmark, suggestion, nodeMap, overrideTargetFolderId = null, overrideTargetTitle = '') {
+export async function applyAutoBookmarkSuggestion(bookmark, suggestion, nodeMap, overrideTargetFolderId = null, overrideTargetTitle = '', signal = null) {
   const historyEntries = [];
   const bookmarkNodes = await chrome.bookmarks.get(bookmark.id);
   const currentBookmark = bookmarkNodes?.[0] || bookmark;
+  throwIfAborted(signal);
+  if (!isBookmarkSnapshotCurrent(bookmark, currentBookmark)) throw createStaleBookmarkError();
   const nextTitle = overrideTargetTitle && overrideTargetTitle.trim() ? overrideTargetTitle.trim() : null;
   let targetParentId = null;
   let targetPath = '';
@@ -377,6 +464,8 @@ export async function applyAutoBookmarkSuggestion(bookmark, suggestion, nodeMap,
       targetPath = getPathFromMap(targetParentId, nodeMap);
     }
 
+    throwIfAborted(signal);
+
     if (nextTitle && nextTitle !== (currentBookmark.title || bookmark.title || '')) {
       const updated = await chrome.bookmarks.update(bookmark.id, { title: nextTitle });
       historyEntries.push({
@@ -405,18 +494,30 @@ export async function applyAutoBookmarkSuggestion(bookmark, suggestion, nodeMap,
       targetPath
     });
 
-    await recordAutoBookmarkMove(historyEntries, suggestion.explanation || '');
-    return movedBookmark;
+    const historySessionId = await recordAutoBookmarkMove(historyEntries, suggestion.explanation || '');
+    return { movedBookmark, historySessionId };
   } catch (error) {
     if (historyEntries.length) await rollbackSession(historyEntries);
     throw error;
   }
 }
 
-async function processAutoBookmarkCreation(bookmark) {
+async function processAutoBookmarkCreation(bookmark, signal = null) {
   if (!bookmark?.url) return;
 
   try {
+    throwIfAborted(signal);
+    const currentNodes = await chrome.bookmarks.get(bookmark.id);
+    const currentBookmark = currentNodes?.[0];
+    if (!isBookmarkSnapshotCurrent(bookmark, currentBookmark)) {
+      await storePendingBookmarkSuggestion(bookmark.id, {
+        type: 'stale',
+        bookmark,
+        createdAt: Date.now()
+      });
+      await openAutoBookmarkPopup(bookmark.id);
+      return;
+    }
     await storePendingBookmarkSuggestion(bookmark.id, {
       type: 'loading',
       bookmark: {
@@ -431,14 +532,29 @@ async function processAutoBookmarkCreation(bookmark) {
       console.warn('[FavorAI] Unable to open auto-classification popup:', popupError?.message || popupError);
     });
 
-    const suggestionData = await requestBookmarkSuggestion(bookmark, [], currentAbortController?.signal);
+    if (!await consumeAutoBookmarkCall(await loadAutoBookmarkPolicy())) {
+      await storePendingBookmarkSuggestion(bookmark.id, {
+        type: 'rate_limited',
+        bookmark: {
+          id: bookmark.id,
+          title: bookmark.title || '',
+          url: bookmark.url || '',
+          parentId: bookmark.parentId || ''
+        },
+        createdAt: Date.now()
+      });
+      return;
+    }
+
+    const suggestionData = await requestBookmarkSuggestion(bookmark, [], signal);
+    throwIfAborted(signal);
     const confidence = normalizeConfidence(suggestionData.suggestion.confidence);
     const shouldAutoMove = suggestionData.config.autoMoveNewBookmarks &&
       confidence !== null &&
       confidence >= suggestionData.config.autoMoveConfidenceThreshold;
 
     if (shouldAutoMove) {
-      await applyAutoBookmarkSuggestion(bookmark, suggestionData.suggestion, suggestionData.nodeMap);
+      const applied = await applyAutoBookmarkSuggestion(bookmark, suggestionData.suggestion, suggestionData.nodeMap, null, '', signal);
       await storePendingBookmarkSuggestion(bookmark.id, {
         type: 'moved',
         bookmark: {
@@ -452,7 +568,8 @@ async function processAutoBookmarkCreation(bookmark) {
         threshold: suggestionData.config.autoMoveConfidenceThreshold,
         autoMoveEnabled: suggestionData.config.autoMoveNewBookmarks,
         createdAt: Date.now(),
-        movedAt: Date.now()
+        movedAt: Date.now(),
+        historySessionId: applied.historySessionId
       });
       return;
     }
@@ -474,6 +591,23 @@ async function processAutoBookmarkCreation(bookmark) {
       createdAt: Date.now()
     });
   } catch (error) {
+    if (error?.code === 'STALE_BOOKMARK') {
+      await storePendingBookmarkSuggestion(bookmark.id, {
+        type: 'stale',
+        bookmark,
+        createdAt: Date.now()
+      });
+      await openAutoBookmarkPopup(bookmark.id);
+      return;
+    }
+    if (error?.name === 'AbortError') {
+      await storePendingBookmarkSuggestion(bookmark.id, {
+        type: 'canceled',
+        bookmark,
+        createdAt: Date.now()
+      });
+      return;
+    }
     await storePendingBookmarkSuggestion(bookmark.id, {
       type: 'error',
       bookmark: {
@@ -487,6 +621,29 @@ async function processAutoBookmarkCreation(bookmark) {
     });
   }
 }
+
+async function handleUncertainAutoBookmark(bookmark, reason) {
+  await storePendingBookmarkSuggestion(bookmark.id, {
+    type: 'uncertain',
+    reason,
+    bookmark: {
+      id: bookmark.id,
+      title: bookmark.title || '',
+      url: bookmark.url || '',
+      parentId: bookmark.parentId || ''
+    },
+    createdAt: Date.now()
+  });
+  await openAutoBookmarkPopup(bookmark.id);
+}
+
+const autoBookmarkQueue = createAutoBookmarkQueue({
+  getPolicy: loadAutoBookmarkPolicy,
+  processItem: (item, signal) => processAutoBookmarkCreation(item, signal),
+  onUncertain: (item, reason) => handleUncertainAutoBookmark(item, reason)
+});
+
+void autoBookmarkQueue.recover();
 
 function logStatus(text, type = 'info') {
   const entry = { text, type, at: Date.now() };
@@ -920,6 +1077,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'undo_auto_bookmark_suggestion') {
+    (async () => {
+      try {
+        const bookmarkId = message.bookmarkId ? String(message.bookmarkId) : '';
+        const pending = await readPendingBookmarkSuggestion(bookmarkId);
+        const sessionId = pending?.historySessionId;
+        if (!sessionId) {
+          sendResponse({ success: false, error: 'Aucune modification automatique à annuler.' });
+          return;
+        }
+        const stored = await getStoredLocal(['reorgHistory']);
+        const history = Array.isArray(stored.reorgHistory) ? stored.reorgHistory : [];
+        const index = history.findIndex(session => session.id === sessionId);
+        if (index === -1) {
+          sendResponse({ success: false, error: 'Modification automatique introuvable dans l’historique.' });
+          return;
+        }
+        const rollback = await rollbackSession(history[index].entries);
+        if (rollback.failureCount > 0) {
+          sendResponse({ success: false, error: rollback.failures[0]?.message || 'Annulation partielle impossible.', rollback });
+          return;
+        }
+        history.splice(index, 1);
+        await setStoredLocal({ reorgHistory: history });
+        await storePendingBookmarkSuggestion(bookmarkId, { ...pending, type: 'undone', undoneAt: Date.now() });
+        sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
   if (message.action === 'clear_pending_auto_bookmark_suggestion') {
     (async () => {
       try {
@@ -931,6 +1121,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         await clearPendingBookmarkSuggestion(bookmarkId);
         sendResponse({ success: true });
+      } catch (err) {
+        sendResponse({ success: false, error: err?.message || String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === 'cancel_pending_auto_bookmark_suggestion') {
+    (async () => {
+      try {
+        const bookmarkId = message.bookmarkId ? String(message.bookmarkId) : '';
+        if (!bookmarkId) {
+          sendResponse({ success: false, error: 'bookmarkId manquant.' });
+          return;
+        }
+        const canceled = await autoBookmarkQueue.cancel(bookmarkId);
+        const pending = await readPendingBookmarkSuggestion(bookmarkId);
+        if (pending) {
+          await storePendingBookmarkSuggestion(bookmarkId, {
+            ...pending,
+            type: 'canceled',
+            canceledAt: Date.now()
+          });
+        }
+        sendResponse({ success: true, canceled });
       } catch (err) {
         sendResponse({ success: false, error: err?.message || String(err) });
       }

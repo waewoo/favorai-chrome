@@ -289,4 +289,109 @@ test.describe('Popup Light (Minimal Interface)', () => {
       await cleanup(context, tmpDir);
     }
   });
+
+  test('should show an untouched state for an uncertain creation burst', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+      await page.evaluate(async () => {
+        await chrome.storage.local.set({
+          pendingAutoBookmarkSuggestions: {
+            'uncertain-bookmark': {
+              type: 'uncertain',
+              reason: 'burst',
+              bookmark: { id: 'uncertain-bookmark', title: 'Imported link', url: 'https://import.example', parentId: '1' }
+            }
+          }
+        });
+      });
+
+      await gotoPopup(page, extensionId, 'popup-light.html?mode=autoclassify&bookmarkId=uncertain-bookmark');
+
+      await expect(page.locator('#lightSuggestionCard')).toBeVisible();
+      await expect(page.locator('#lightAutoClassifyStatus')).toBeVisible();
+      await expect(page.locator('#btnLightConfirm')).toBeHidden();
+      await expect(page.locator('#lightAutoTargetArea')).toBeHidden();
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
+
+  test('should render persisted classification errors and undo a moved bookmark', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId, 'popup-light.html');
+      const movedBookmark = await page.evaluate(async () => {
+        const targetFolder = await chrome.bookmarks.create({ parentId: '1', title: 'E2E Undo Target' });
+        const bookmark = await chrome.bookmarks.create({
+          parentId: '1',
+          title: 'Moved link',
+          url: 'https://moved.example'
+        });
+        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => chrome.runtime.sendMessage({
+          action: 'cancel_pending_auto_bookmark_suggestion',
+          bookmarkId: bookmark.id
+        }, resolve));
+        await chrome.bookmarks.move(bookmark.id, { parentId: targetFolder.id });
+        return { id: bookmark.id, targetFolderId: targetFolder.id };
+      });
+
+      await page.evaluate(async ({ movedBookmark }) => {
+        await chrome.storage.local.set({
+          pendingAutoBookmarkSuggestions: {
+            'error-bookmark': {
+              type: 'error',
+              error: 'Provider unavailable.',
+              bookmark: { id: 'error-bookmark', title: 'Broken provider link', url: 'https://error.example', parentId: '1' }
+            },
+            [movedBookmark.id]: {
+              type: 'moved',
+              historySessionId: 'sess-test',
+              bookmark: { id: movedBookmark.id, title: 'Moved link', url: 'https://moved.example', parentId: movedBookmark.targetFolderId },
+              suggestion: { action: 'use_existing', targetFolderId: movedBookmark.targetFolderId, explanation: 'Moved safely.' }
+            }
+          },
+          reorgHistory: [{
+            id: 'sess-test',
+            entries: [{
+              id: 'entry-test',
+              type: 'move',
+              nodeId: movedBookmark.id,
+              oldParentId: '1',
+              newParentId: movedBookmark.targetFolderId,
+              title: 'Moved link'
+            }]
+          }]
+        });
+      }, { movedBookmark });
+
+      await gotoPopup(page, extensionId, 'popup-light.html?mode=autoclassify&bookmarkId=error-bookmark');
+      await expect(page.locator('#errorBanner')).toContainText('Provider unavailable.');
+
+      await gotoPopup(page, extensionId, `popup-light.html?mode=autoclassify&bookmarkId=${movedBookmark.id}`);
+      await expect(page.locator('#btnLightUndoAuto')).toBeVisible();
+      await page.locator('#btnLightUndoAuto').click();
+      await expect(page.locator('#btnLightUndoAuto')).toBeHidden();
+
+      const verification = await page.evaluate(async (bookmarkId) => {
+        const [bookmark] = await chrome.bookmarks.get(bookmarkId);
+        const stored = await chrome.storage.local.get(['pendingAutoBookmarkSuggestions', 'reorgHistory']);
+        return {
+          parentId: bookmark?.parentId,
+          pendingType: stored.pendingAutoBookmarkSuggestions?.[bookmarkId]?.type,
+          history: stored.reorgHistory || []
+        };
+      }, movedBookmark.id);
+      expect(verification.parentId).toBe('1');
+      expect(verification.pendingType).toBe('undone');
+      expect(verification.history).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'sess-test' })
+      ]));
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
 });

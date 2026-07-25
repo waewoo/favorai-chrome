@@ -50,6 +50,8 @@ const btnReorgAll         = document.getElementById('btnLightReorgAll');
 const btnAnalyze          = document.getElementById('btnLightAnalyze');
 const btnAlternative      = document.getElementById('btnLightAlternative');
 const btnConfirm          = document.getElementById('btnLightConfirm');
+const btnCancelAuto       = document.getElementById('btnLightCancelAuto');
+const btnUndoAuto          = document.getElementById('btnLightUndoAuto');
 const btnAdvanced         = document.getElementById('btnOpenAdvanced');
 const btnPrivacy          = document.getElementById('btnLightPrivacy');
 const btnManualSave       = document.getElementById('btnLightManualSave');
@@ -132,6 +134,8 @@ function resetSuggestion() {
   ignoredIds = [];
   elCard.classList.add('hidden');
   btnConfirm.classList.add('hidden');
+  btnCancelAuto?.classList.add('hidden');
+  btnUndoAuto?.classList.add('hidden');
   btnAlternative.classList.add('hidden');
   autoSuggestedTargetFolderId = '';
   if (elAutoStatus) elAutoStatus.textContent = '';
@@ -151,18 +155,6 @@ function clearAutoClassifyCloseTimer() {
   autoClassifyCloseTimer = null;
 }
 
-function scheduleAutoClassifyClose(delay = 900) {
-  clearAutoClassifyCloseTimer();
-  autoClassifyCloseTimer = setTimeout(() => {
-    chrome.runtime.sendMessage({
-      action: 'clear_pending_auto_bookmark_suggestion',
-      bookmarkId: autoClassifyBookmarkId
-    }, () => {
-      window.close();
-    });
-  }, delay);
-}
-
 function renderAutoClassifyLoading(pending) {
   hideError();
   clearAutoClassifyCloseTimer();
@@ -180,6 +172,7 @@ function renderAutoClassifyLoading(pending) {
   if (elAutoStatus) elAutoStatus.textContent = chrome.i18n.getMessage('lightAutoClassifyLoading') || 'Analyse du favori en cours...';
   elReason.textContent = chrome.i18n.getMessage('lightAutoClassifyLoading') || 'Analyse du favori en cours...';
   btnConfirm.classList.add('hidden');
+  btnCancelAuto?.classList.remove('hidden');
   if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
   elCard.classList.remove('hidden');
 }
@@ -221,6 +214,28 @@ function renderAutoClassifySuggestion(pending) {
     return;
   }
 
+  if (['uncertain', 'stale', 'canceled', 'rate_limited', 'undone'].includes(pending.type)) {
+    const messages = {
+      uncertain: 'lightAutoClassifyUncertain',
+      stale: 'lightAutoClassifyStale',
+      canceled: 'lightAutoClassifyCanceled',
+      rate_limited: 'lightAutoClassifyRateLimited',
+      undone: 'lightAutoClassifyUndone'
+    };
+    const message = chrome.i18n.getMessage(messages[pending.type]) || 'Le favori reste inchangé.';
+    elFolderIcon.textContent = pending.type === 'undone' ? '↩️' : '⏸️';
+    elFolderLbl.textContent = chrome.i18n.getMessage('lightAutoClassifyStateLabel') || 'État de la classification';
+    elFolderPath.textContent = chrome.i18n.getMessage('lightAutoClassifyUntouched') || 'Favori non modifié';
+    if (elAutoStatus) elAutoStatus.textContent = message;
+    elReason.textContent = pending.reason ? `${message} (${pending.reason})` : message;
+    elCard.classList.remove('hidden');
+    btnConfirm.classList.add('hidden');
+    btnCancelAuto?.classList.add('hidden');
+    btnUndoAuto?.classList.add('hidden');
+    if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
+    return;
+  }
+
   if (pending.type === 'loading') {
     renderAutoClassifyLoading(pending);
     return;
@@ -244,8 +259,9 @@ function renderAutoClassifySuggestion(pending) {
     elCard.classList.remove('hidden');
     btnConfirm.classList.add('hidden');
     btnAlternative.classList.add('hidden');
+    btnCancelAuto?.classList.add('hidden');
+    btnUndoAuto?.classList.remove('hidden');
     if (elAutoTargetArea) elAutoTargetArea.classList.add('hidden');
-    scheduleAutoClassifyClose(1200);
     return;
   }
 
@@ -307,6 +323,7 @@ function renderAutoClassifySuggestion(pending) {
 
   elCard.classList.remove('hidden');
   btnConfirm.classList.remove('hidden');
+  btnCancelAuto?.classList.remove('hidden');
 }
 
 function loadAutoClassifyState() {
@@ -370,6 +387,44 @@ function confirmAutoClassifyMove() {
     } else {
       showError(`❌ ${response?.error || chrome.i18n.getMessage('lightAutoClassifyMoveFailed') || 'Déplacement impossible'}`);
     }
+  });
+}
+
+function cancelAutoClassify() {
+  if (!autoClassifyBookmarkId) return;
+  chrome.runtime.sendMessage({
+    action: 'cancel_pending_auto_bookmark_suggestion',
+    bookmarkId: autoClassifyBookmarkId
+  }, (response) => {
+    if (chrome.runtime.lastError || !response?.success) {
+      showError(response?.error || chrome.i18n.getMessage('lightAutoClassifyError'));
+      return;
+    }
+    renderAutoClassifySuggestion({
+      type: 'canceled',
+      bookmark: { title: elTitle.value, url: activeUrl },
+      createdAt: Date.now()
+    });
+  });
+}
+
+function undoAutoClassify() {
+  if (!autoClassifyBookmarkId || !btnUndoAuto) return;
+  btnUndoAuto.disabled = true;
+  chrome.runtime.sendMessage({
+    action: 'undo_auto_bookmark_suggestion',
+    bookmarkId: autoClassifyBookmarkId
+  }, (response) => {
+    btnUndoAuto.disabled = false;
+    if (chrome.runtime.lastError || !response?.success) {
+      showError(response?.error || chrome.i18n.getMessage('lightAutoClassifyMoveFailed'));
+      return;
+    }
+    renderAutoClassifySuggestion({
+      type: 'undone',
+      bookmark: { title: elTitle.value, url: activeUrl },
+      createdAt: Date.now()
+    });
   });
 }
 
@@ -686,6 +741,9 @@ btnConfirm.addEventListener('click', () => {
     confirmSave();
   }
 });
+
+btnCancelAuto?.addEventListener('click', cancelAutoClassify);
+btnUndoAuto?.addEventListener('click', undoAutoClassify);
 
 if (autoFolderSelect) {
   autoFolderSelect.addEventListener('change', updateAutoClassifyConfirmState);

@@ -13,15 +13,16 @@ export function saveSessionToHistory(entries, mode, explanation = '') {
   _historyQueue = _historyQueue.then(() => new Promise((resolve) => {
     chrome.storage.local.get(['reorgHistory'], (res) => {
       const history = res.reorgHistory || [];
+      const sessionId = `sess_${Date.now()}`;
       history.unshift({
-        id: `sess_${Date.now()}`,
+        id: sessionId,
         timestamp: Date.now(),
         mode: mode || 'minimal',
         explanation: explanation,
         entries
       });
       if (history.length > MAX_HISTORY_SESSIONS) history.pop();
-      chrome.storage.local.set({ reorgHistory: history }, resolve);
+      chrome.storage.local.set({ reorgHistory: history }, () => resolve(sessionId));
     });
   }));
   return _historyQueue;

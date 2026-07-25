@@ -68,7 +68,7 @@ describe('auto bookmark classification on create', () => {
     });
 
     chrome.bookmarks.getTree.mockResolvedValue(buildTree());
-    chrome.bookmarks.get.mockResolvedValue([{ id: 'bm-1', title: 'Example bookmark', parentId: '1' }]);
+    chrome.bookmarks.get.mockImplementation((bookmarkId) => Promise.resolve([{ id: bookmarkId, parentId: '1' }]));
     chrome.bookmarks.move.mockResolvedValue({ id: 'bm-1', parentId: '2' });
     chrome.bookmarks.create.mockResolvedValue({ id: 'created-folder', title: 'Projects' });
     chrome.windows.create.mockResolvedValue({ id: 99 });
@@ -137,6 +137,7 @@ describe('auto bookmark classification on create', () => {
     await waitForPendingSuggestion('bm-2', 'suggestion');
 
     expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+    expect(chrome.windows.create).toHaveBeenCalledTimes(1);
     expect(chrome.windows.create).toHaveBeenCalledWith(expect.objectContaining({
       type: 'popup',
       url: expect.stringContaining('mode=autoclassify')
@@ -181,6 +182,8 @@ describe('auto bookmark classification on create', () => {
 
     const loadingCall = chrome.storage.local.set.mock.calls.find(call => call[0].pendingAutoBookmarkSuggestions?.['bm-4']?.type === 'loading');
     expect(loadingCall).toBeTruthy();
+
+    await vi.waitFor(() => expect(resolveSuggestion).toBeTypeOf('function'));
 
     resolveSuggestion(JSON.stringify({
       action: 'use_existing',
@@ -278,6 +281,29 @@ describe('auto bookmark classification on create', () => {
     }));
   });
 
+  it('leaves the bookmark untouched when the daily classification limit is reached', async () => {
+    chrome.storage.sync.get.mockImplementation((keys, cb) => cb({
+      provider: 'google',
+      apiUrl: 'https://generativelanguage.googleapis.com',
+      modelName: 'gemini-3.5-flash',
+      autoMoveNewBookmarks: true,
+      autoMoveConfidenceThreshold: 0.8,
+      autoBookmarkDailyLimit: 0
+    }));
+
+    const { createdListener } = await loadOrchestrator();
+    createdListener('bm-limit', {
+      id: 'bm-limit',
+      title: 'Limited bookmark',
+      url: 'https://limited.example',
+      parentId: '1'
+    });
+
+    await waitForPendingSuggestion('bm-limit', 'rate_limited');
+    expect(suggestBookmarkLocation).not.toHaveBeenCalled();
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+  });
+
   it('classifies a user-created bookmark placed inside the managed folder', async () => {
     vi.mocked(suggestBookmarkLocation).mockResolvedValue(JSON.stringify({
       action: 'use_existing',
@@ -290,6 +316,7 @@ describe('auto bookmark classification on create', () => {
       if (Array.isArray(keys) && keys.includes('apiKey')) cb({ apiKey: 'local-secret' });
       else cb({ mostUsedBookmarksFolderId: 'managed-folder', mostUsedBookmarksSystemCopyIds: [] });
     });
+    chrome.bookmarks.get.mockResolvedValue([{ id: 'manual-in-managed', parentId: 'managed-folder' }]);
 
     createdListener('manual-in-managed', {
       id: 'manual-in-managed',
@@ -354,6 +381,20 @@ describe('auto bookmark classification on create', () => {
 
     expect(chrome.bookmarks.update).toHaveBeenNthCalledWith(1, 'bm-6', { title: 'Renamed bookmark' });
     expect(chrome.bookmarks.update).toHaveBeenNthCalledWith(2, 'bm-6', { title: 'Original title', url: 'https://example.com' });
+  });
+
+  it('leaves a bookmark untouched when a pending suggestion is stale', async () => {
+    chrome.bookmarks.get.mockResolvedValue([{ id: 'bm-stale', title: 'Changed title', url: 'https://example.com', parentId: '1' }]);
+
+    const { applyAutoBookmarkSuggestion } = await loadOrchestrator();
+    await expect(applyAutoBookmarkSuggestion(
+      { id: 'bm-stale', title: 'Original title', url: 'https://example.com', parentId: '1' },
+      { action: 'use_existing', targetFolderId: '2', explanation: 'Old suggestion.' },
+      { 1: { id: '1', title: 'Bookmarks Bar', parentId: '0' }, 2: { id: '2', title: 'Projects', parentId: '1' } }
+    )).rejects.toMatchObject({ code: 'STALE_BOOKMARK' });
+
+    expect(chrome.bookmarks.update).not.toHaveBeenCalled();
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
   });
 
 });
