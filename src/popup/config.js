@@ -5,6 +5,7 @@
 import { PROVIDER_DEFAULTS, PROVIDER_MODELS, showToast, addLog } from './utils.js';
 import { PROMPT_MINIMAL, PROMPT_COMPLETE, PROMPT_SUGGEST } from '../llm/prompts.js';
 import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
+import { AUTO_BOOKMARK_MODES, AUTO_BOOKMARK_POLICY_DEFAULTS, normalizeAutoBookmarkPolicy } from '../background/auto-bookmark-policy.js';
 
 export const PROMPT_DEFAULTS = {
   minimal: PROMPT_MINIMAL,
@@ -16,6 +17,8 @@ export const AUTO_MOVE_DEFAULTS = {
   enabled: false,
   threshold: AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT
 };
+
+export const AUTO_BOOKMARK_DEFAULTS = AUTO_BOOKMARK_POLICY_DEFAULTS;
 
 function normalizeAutoMoveThreshold(value) {
   const parsed = Number.parseFloat(value);
@@ -121,13 +124,15 @@ export function loadConfig() {
   const debugModeCheckbox = document.getElementById('debugMode');
   const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
   const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
+  const autoBookmarkModeSelect = document.getElementById('autoBookmarkMode');
+  const autoBookmarkDailyLimitInput = document.getElementById('autoBookmarkDailyLimit');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
 
   return Promise.all([
     new Promise(resolve => {
-      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], resolve);
+      chrome.storage.sync.get(['provider', 'apiUrl', 'modelName', 'checkDeadLinks', 'linkCheckBatchSize', 'debugMode', 'autoMoveNewBookmarks', 'autoMoveConfidenceThreshold', 'autoBookmarkMode', 'autoBookmarkDailyLimit', 'promptMinimal', 'promptComplete', 'maxTokens', 'promptSuggest'], resolve);
     }),
     new Promise(resolve => {
       chrome.storage.local.get(['apiKey'], resolve);
@@ -143,6 +148,9 @@ export function loadConfig() {
     debugModeCheckbox.checked = res.debugMode === true;
     autoMoveNewBookmarksCheckbox.checked = res.autoMoveNewBookmarks === true;
     autoMoveConfidenceThresholdSelect.value = String(normalizeAutoMoveThreshold(res.autoMoveConfidenceThreshold));
+    const policy = normalizeAutoBookmarkPolicy(res);
+    if (autoBookmarkModeSelect) autoBookmarkModeSelect.value = policy.mode;
+    if (autoBookmarkDailyLimitInput) autoBookmarkDailyLimitInput.value = String(policy.dailyLimit);
     promptMinimalInput.value = res.promptMinimal || PROMPT_DEFAULTS.minimal;
     promptCompleteInput.value = res.promptComplete || PROMPT_DEFAULTS.complete;
     promptSuggestInput.value = res.promptSuggest || PROMPT_DEFAULTS.suggest;
@@ -164,6 +172,8 @@ export async function saveConfig() {
   const debugModeCheckbox = document.getElementById('debugMode');
   const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
   const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
+  const autoBookmarkModeSelect = document.getElementById('autoBookmarkMode');
+  const autoBookmarkDailyLimitInput = document.getElementById('autoBookmarkDailyLimit');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
@@ -177,6 +187,8 @@ export async function saveConfig() {
     debugMode: debugModeCheckbox.checked,
     autoMoveNewBookmarks: autoMoveNewBookmarksCheckbox?.checked === true,
     autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(autoMoveConfidenceThresholdSelect?.value),
+    autoBookmarkMode: autoBookmarkModeSelect?.value === AUTO_BOOKMARK_MODES.AUTO ? AUTO_BOOKMARK_MODES.AUTO : AUTO_BOOKMARK_MODES.CONFIRM,
+    autoBookmarkDailyLimit: normalizeAutoBookmarkPolicy({ autoBookmarkDailyLimit: autoBookmarkDailyLimitInput?.value }).dailyLimit,
     promptMinimal: promptMinimalInput.value.trim() || PROMPT_DEFAULTS.minimal,
     promptComplete: promptCompleteInput.value.trim() || PROMPT_DEFAULTS.complete,
     promptSuggest: promptSuggestInput.value.trim() || PROMPT_DEFAULTS.suggest
@@ -201,6 +213,8 @@ export function resetConfig() {
   const linkCheckBatchSizeSelect = document.getElementById('linkCheckBatchSize');
   const autoMoveNewBookmarksCheckbox = document.getElementById('autoMoveNewBookmarks');
   const autoMoveConfidenceThresholdSelect = document.getElementById('autoMoveConfidenceThreshold');
+  const autoBookmarkModeSelect = document.getElementById('autoBookmarkMode');
+  const autoBookmarkDailyLimitInput = document.getElementById('autoBookmarkDailyLimit');
   const promptMinimalInput = document.getElementById('promptMinimal');
   const promptCompleteInput = document.getElementById('promptComplete');
   const promptSuggestInput = document.getElementById('promptSuggest');
@@ -213,6 +227,8 @@ export function resetConfig() {
   linkCheckBatchSizeSelect.value = '24';
   if (autoMoveNewBookmarksCheckbox) autoMoveNewBookmarksCheckbox.checked = AUTO_MOVE_DEFAULTS.enabled;
   if (autoMoveConfidenceThresholdSelect) autoMoveConfidenceThresholdSelect.value = String(AUTO_MOVE_DEFAULTS.threshold);
+  if (autoBookmarkModeSelect) autoBookmarkModeSelect.value = AUTO_BOOKMARK_DEFAULTS.mode;
+  if (autoBookmarkDailyLimitInput) autoBookmarkDailyLimitInput.value = String(AUTO_BOOKMARK_DEFAULTS.dailyLimit);
   promptMinimalInput.value = PROMPT_DEFAULTS.minimal;
   promptCompleteInput.value = PROMPT_DEFAULTS.complete;
   promptSuggestInput.value = PROMPT_DEFAULTS.suggest;
@@ -255,6 +271,8 @@ export function exportConfig() {
       debugMode: config.debugMode === true,
       autoMoveNewBookmarks: config.autoMoveNewBookmarks === true,
       autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(config.autoMoveConfidenceThreshold),
+      autoBookmarkMode: config.autoBookmarkMode === AUTO_BOOKMARK_MODES.AUTO ? AUTO_BOOKMARK_MODES.AUTO : AUTO_BOOKMARK_MODES.CONFIRM,
+      autoBookmarkDailyLimit: normalizeAutoBookmarkPolicy({ autoBookmarkDailyLimit: config.autoBookmarkDailyLimit }).dailyLimit,
       promptMinimal: config.promptMinimal || '',
       promptComplete: config.promptComplete || '',
       promptSuggest: config.promptSuggest || ''
@@ -294,6 +312,8 @@ export function importConfig(e) {
         debugMode: config.debugMode === true,
         autoMoveNewBookmarks: config.autoMoveNewBookmarks === true,
         autoMoveConfidenceThreshold: normalizeAutoMoveThreshold(config.autoMoveConfidenceThreshold),
+        autoBookmarkMode: config.autoBookmarkMode === AUTO_BOOKMARK_MODES.AUTO ? AUTO_BOOKMARK_MODES.AUTO : AUTO_BOOKMARK_MODES.CONFIRM,
+        autoBookmarkDailyLimit: normalizeAutoBookmarkPolicy({ autoBookmarkDailyLimit: config.autoBookmarkDailyLimit }).dailyLimit,
         promptMinimal: config.promptMinimal || '',
         promptComplete: config.promptComplete || '',
         promptSuggest: config.promptSuggest || ''
@@ -309,6 +329,8 @@ export function importConfig(e) {
         debugMode: configToSave.debugMode,
         autoMoveNewBookmarks: configToSave.autoMoveNewBookmarks,
         autoMoveConfidenceThreshold: configToSave.autoMoveConfidenceThreshold,
+        autoBookmarkMode: configToSave.autoBookmarkMode,
+        autoBookmarkDailyLimit: configToSave.autoBookmarkDailyLimit,
         promptMinimal: configToSave.promptMinimal,
         promptComplete: configToSave.promptComplete,
         promptSuggest: configToSave.promptSuggest

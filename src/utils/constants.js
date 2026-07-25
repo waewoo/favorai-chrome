@@ -14,6 +14,18 @@ export const MAX_HISTORY_SESSIONS = 30;
 /** Seuil par défaut pour le déplacement automatique des nouveaux favoris */
 export const AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT = 0.8;
 
+/** Limite quotidienne par défaut des appels de classification automatique */
+export const AUTO_BOOKMARK_DAILY_LIMIT_DEFAULT = 20;
+
+/** Délai de regroupement des créations de favoris (ms) */
+export const AUTO_BOOKMARK_DEBOUNCE_MS_DEFAULT = 100;
+
+/** Taille à partir de laquelle une rafale est considérée comme incertaine */
+export const AUTO_BOOKMARK_BURST_THRESHOLD_DEFAULT = 3;
+
+/** Durée de conservation des états de classification (ms) */
+export const AUTO_BOOKMARK_RETENTION_MS_DEFAULT = 7 * 24 * 60 * 60 * 1000;
+
 /** Préfixe IDs temporaires de nouveaux dossiers */
 export const NEW_FOLDER_PREFIX = 'new_';
 

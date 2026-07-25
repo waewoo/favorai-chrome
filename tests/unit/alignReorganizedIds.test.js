@@ -39,6 +39,23 @@ describe('alignReorganizedIds', () => {
     expect(node.children[0].id).toBe('1');
   });
 
+  it('should restore a missing Chrome root title from local metadata', () => {
+    const node = { id: '0', title: '', children: [{ id: 'new_child', title: 'Folder A', children: [] }] };
+
+    alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+
+    expect(node.title).toBe('Root');
+    expect(node.children[0].id).toBe('1');
+  });
+
+  it('should preserve a Chrome root without children', () => {
+    const node = { id: '0', title: 'Root' };
+
+    alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+
+    expect(node.id).toBe('0');
+  });
+
   it('should match and align by exact title when ID has drifted', () => {
     const node = { id: 'new_123', title: 'Folder A', children: [] };
     alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
