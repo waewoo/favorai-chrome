@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   buildArticleFingerprint,
   normalizeUrlForDuplicate,
-  performLocalCleanup
+  performLocalCleanup,
+  preserveManagedFolder
 } from '../../src/background/analysis.js';
 import { buildNodeMap } from '../../src/background/diff.js';
 
@@ -152,5 +153,25 @@ describe('smart duplicate cleanup', () => {
   it('does not build an article fingerprint for very short pages', () => {
     expect(buildArticleFingerprint('Tiny', '<html><head><title>Tiny</title></head><body>Too short</body></html>'))
       .toBeNull();
+  });
+
+  it('rebuilds a missing parent chain when preserving the managed folder', () => {
+    const originalMap = {
+      0: { id: '0', title: 'Root', parentId: '' },
+      1: { id: '1', title: 'Bookmarks Bar', parentId: '0' },
+      managed: { id: 'managed', title: '⭐ Les plus consultés', parentId: '1', children: [] }
+    };
+    const reorganizedTree = { id: '0', title: 'Root', children: [] };
+
+    preserveManagedFolder(reorganizedTree, originalMap, 'managed');
+
+    expect(reorganizedTree.children).toEqual([
+      {
+        id: '1',
+        title: 'Bookmarks Bar',
+        parentId: '0',
+        children: [{ id: 'managed', title: '⭐ Les plus consultés', parentId: '1', children: [] }]
+      }
+    ]);
   });
 });
