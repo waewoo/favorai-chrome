@@ -6,6 +6,7 @@
 import { runAnalysis } from './analysis.js';
 import { applyChanges } from './apply.js';
 import { rollbackSession, saveSessionToHistory } from './history.js';
+import { buildBookmarkSnapshotDiff, getBookmarkSnapshot, getBookmarkSnapshots, getBookmarkTree, getSnapshotExportPayload } from './snapshots.js';
 import { suggestBookmarkLocation } from '../llm/index.js';
 import { cleanAndParseJSON } from '../llm/utils.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
@@ -870,6 +871,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     saveSessionToHistory(message.entries, 'forgotten', '')
       .then(() => sendResponse({ success: true }))
       .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (message.action === 'get_bookmark_snapshots') {
+    getBookmarkSnapshots()
+      .then(snapshots => sendResponse({ success: true, snapshots }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (message.action === 'export_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(snapshot => {
+        if (!snapshot) throw new Error('Snapshot not found.');
+        return sendResponse({ success: true, snapshot: getSnapshotExportPayload(snapshot) });
+      })
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (message.action === 'preview_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(async snapshot => {
+        if (!snapshot) throw new Error('Snapshot not found.');
+        const scopeId = snapshot.scope?.bookmarkFolderId || null;
+        const currentTree = await getBookmarkTree(scopeId);
+        return sendResponse({ success: true, snapshotId: snapshot.id, diff: buildBookmarkSnapshotDiff(snapshot, currentTree) });
+      })
+      .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
 

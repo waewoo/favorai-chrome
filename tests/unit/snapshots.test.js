@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BOOKMARK_SNAPSHOT_VERSION,
   captureBookmarkSnapshot,
+  buildBookmarkSnapshotDiff,
   createBookmarkSnapshot,
   getBookmarkSnapshot,
   saveBookmarkSnapshot,
@@ -72,5 +73,38 @@ describe('bookmark snapshots', () => {
 
   it('rejects malformed bookmark trees', () => {
     expect(() => createBookmarkSnapshot({ id: '0', title: 'Root', children: [{ title: 'Missing id' }] })).toThrow();
+  });
+
+  it('builds a deterministic preview with URL remapping and no bookmark mutations', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0', title: 'Root', children: [{ id: '1', title: 'Work', children: [{ id: '10', title: 'Old title', url: 'https://example.com' }] }]
+    }, { id: 'snap-test', timestamp: 1 });
+    const current = {
+      id: '0', title: 'Root', children: [
+        { id: '2', title: 'Work', children: [] },
+        { id: '99', title: 'New title', url: 'https://example.com' }
+      ]
+    };
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, current);
+
+    expect(diff.summary.renames).toBe(1);
+    expect(diff.summary.moves).toBe(1);
+    expect(diff.summary.creates).toBe(0);
+    expect(diff.summary.deletes).toBe(0);
+    expect(diff.operations.map(operation => operation.type)).toEqual(['rename_bookmark', 'move_bookmark']);
+    expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+  });
+
+  it('creates folders before their bookmark children and reports missing parents', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0', title: 'Root', children: [{ id: '1', title: 'New folder', children: [{ id: '10', title: 'Site', url: 'https://example.com' }] }]
+    }, { id: 'snap-create', timestamp: 1 });
+    const diff = buildBookmarkSnapshotDiff(snapshot, { id: '0', title: 'Root', children: [] });
+
+    expect(diff.operations.map(operation => operation.type)).toEqual(['create_folder', 'create_bookmark']);
+    expect(diff.operations[1].params.parentId).toBe(diff.operations[0].params.tempId);
+    expect(diff.unrestorable).toEqual([]);
   });
 });

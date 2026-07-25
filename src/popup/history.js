@@ -11,6 +11,8 @@ export function renderHistory() {
   const btnClearHistory = document.getElementById('btnClearHistory');
   if (!historyListContainer) return;
 
+  renderSnapshots();
+
   chrome.storage.local.get(['reorgHistory'], (res) => {
     const history = res.reorgHistory || [];
     historyListContainer.textContent = '';
@@ -306,6 +308,148 @@ export function renderHistory() {
       });
     });
   });
+}
+
+function sendSnapshotMessage(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, response => {
+      if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+      else if (!response?.success) reject(new Error(response?.error || 'Snapshot request failed.'));
+      else resolve(response);
+    });
+  });
+}
+
+function createSnapshotButton(label, className, snapshotId) {
+  const button = document.createElement('button');
+  button.className = `btn btn-flat ${className}`;
+  button.dataset.snapshotId = snapshotId;
+  button.textContent = label;
+  button.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; margin-left: 4px;';
+  return button;
+}
+
+export function renderSnapshots() {
+  const container = document.getElementById('snapshotsListContainer');
+  if (!container) return;
+  container.textContent = '';
+
+  sendSnapshotMessage({ action: 'get_bookmark_snapshots' })
+    .then(({ snapshots }) => {
+      if (!snapshots.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding: 12px; text-align: center; color: var(--text-muted); font-size: 11px;';
+        empty.textContent = t('snapshotsEmpty', 'No bookmark snapshots available.');
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const snapshot of snapshots) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08);';
+        const label = document.createElement('span');
+        label.style.color = 'var(--text-main)';
+        label.textContent = new Date(snapshot.timestamp).toLocaleString();
+        const actions = document.createElement('span');
+        const preview = createSnapshotButton(t('snapshotPreview', 'Preview'), 'btn-snapshot-preview', snapshot.id);
+        const exportButton = createSnapshotButton(t('snapshotExport', 'Export'), 'btn-snapshot-export', snapshot.id);
+        actions.appendChild(preview);
+        actions.appendChild(exportButton);
+        row.appendChild(label);
+        row.appendChild(actions);
+        container.appendChild(row);
+      }
+
+      container.querySelectorAll('.btn-snapshot-preview').forEach(button => {
+        button.addEventListener('click', () => previewSnapshot(button.dataset.snapshotId));
+      });
+      container.querySelectorAll('.btn-snapshot-export').forEach(button => {
+        button.addEventListener('click', () => exportSnapshot(button.dataset.snapshotId));
+      });
+    })
+    .catch(error => {
+      const failed = document.createElement('div');
+      failed.style.cssText = 'padding: 12px; color: var(--error-color); font-size: 11px;';
+      failed.textContent = error.message;
+      container.appendChild(failed);
+    });
+}
+
+async function exportSnapshot(snapshotId) {
+  try {
+    const { snapshot } = await sendSnapshotMessage({ action: 'export_bookmark_snapshot', snapshotId });
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `favorai-${snapshotId}.json`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(t('snapshotExportSuccess', 'Snapshot exported.'));
+  } catch (error) {
+    showToast(error.message || t('snapshotExportFailed', 'Snapshot export failed.'));
+  }
+}
+
+async function previewSnapshot(snapshotId) {
+  const preview = document.getElementById('snapshotPreview');
+  if (!preview) return;
+  preview.style.display = 'block';
+  preview.textContent = t('snapshotLoading', 'Calculating snapshot differences...');
+
+  try {
+    const { diff } = await sendSnapshotMessage({ action: 'preview_bookmark_snapshot', snapshotId });
+    preview.textContent = '';
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-weight: 600; margin-bottom: 6px;';
+    heading.textContent = t('snapshotPreviewTitle', 'Restoration preview');
+    preview.appendChild(heading);
+
+    const summary = document.createElement('div');
+    summary.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 8px;';
+    summary.textContent = `${t('snapshotDiffSummary', '{creates} create(s), {moves} move(s), {renames} rename(s), {deletes} delete(s)')
+      .replace('{creates}', String(diff.summary.creates))
+      .replace('{moves}', String(diff.summary.moves))
+      .replace('{renames}', String(diff.summary.renames))
+      .replace('{deletes}', String(diff.summary.deletes))}`;
+    preview.appendChild(summary);
+
+    const list = document.createElement('ul');
+    list.style.cssText = 'margin: 0 0 8px 16px; padding: 0; font-size: 10px;';
+    for (const operation of diff.operations) {
+      const item = document.createElement('li');
+      item.textContent = `${operation.type}: ${operation.title || ''}`;
+      list.appendChild(item);
+    }
+    for (const issue of diff.unrestorable) {
+      const item = document.createElement('li');
+      item.style.color = 'var(--warning-color)';
+      item.textContent = `${issue.title}: ${issue.reason}`;
+      list.appendChild(item);
+    }
+    preview.appendChild(list);
+
+    const restoreButton = createSnapshotButton(t('snapshotRestore', 'Restore'), 'btn-snapshot-restore', snapshotId);
+    restoreButton.addEventListener('click', () => requestSnapshotRestore(snapshotId));
+    preview.appendChild(restoreButton);
+  } catch (error) {
+    preview.textContent = error.message || t('snapshotPreviewFailed', 'Snapshot preview failed.');
+  }
+}
+
+async function requestSnapshotRestore(snapshotId) {
+  const ok = await showConfirm(t('snapshotRestore', 'Restore'), t('snapshotConfirmRestore', 'Restore this snapshot? Bookmarks changed since it was captured may be modified.'));
+  if (!ok) return;
+  const button = document.querySelector(`.btn-snapshot-restore[data-snapshot-id="${CSS.escape(snapshotId)}"]`);
+  if (button) button.disabled = true;
+  try {
+    await sendSnapshotMessage({ action: 'restore_bookmark_snapshot', snapshotId });
+    showToast(t('snapshotRestoreSuccess', 'Snapshot restored.'));
+    renderHistory();
+  } catch (error) {
+    showToast(error.message || t('snapshotRestoreFailed', 'Snapshot restoration failed.'));
+    if (button) button.disabled = false;
+  }
 }
 
 export async function performRollback(sessionId, btnElement) {
