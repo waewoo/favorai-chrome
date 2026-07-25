@@ -1,6 +1,6 @@
 ---
 objective: "Permettre de sauvegarder localement l’arbre des favoris, de l’exporter, de le comparer à l’état courant et de le restaurer séquentiellement avec confirmation et erreurs visibles."
-status: in-progress
+status: implemented
 ---
 
 # Plan: Snapshots de favoris et restauration complète
