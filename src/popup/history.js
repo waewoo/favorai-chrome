@@ -448,7 +448,7 @@ export function renderSnapshots() {
     .catch(error => {
       const failed = document.createElement('div');
       failed.style.cssText = 'padding: 12px; color: var(--error-color); font-size: 11px;';
-      failed.textContent = error.message;
+      failed.textContent = snapshotErrorMessage(error, 'snapshotErrorRequest', 'Snapshot request failed.');
       container.appendChild(failed);
     });
 }
@@ -465,7 +465,7 @@ async function exportSnapshot(snapshotId) {
     URL.revokeObjectURL(url);
     showToast(t('snapshotExportSuccess', 'Snapshot exported.'));
   } catch (error) {
-    showToast(error.message || t('snapshotExportFailed', 'Snapshot export failed.'));
+    showToast(snapshotErrorMessage(error, 'snapshotExportFailed', 'Snapshot export failed.'));
   }
 }
 
@@ -544,10 +544,8 @@ async function requestSnapshotRestore(snapshotId) {
       showToast(summary);
       addLog(summary, error.partial ? 'warning' : 'error');
       renderHistory();
-      if (error.partial) {
-        await previewSnapshot(snapshotId);
-        appendRestoreOutcome(error);
-      }
+      await previewSnapshot(snapshotId);
+      appendRestoreOutcome(error);
     } else {
       const message = snapshotErrorMessage(error, 'snapshotRestoreFailed', 'Snapshot restoration failed.');
       showToast(message);

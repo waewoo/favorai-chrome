@@ -4,6 +4,7 @@ import {
   captureBookmarkSnapshot,
   buildBookmarkSnapshotDiff,
   createBookmarkSnapshot,
+  getBookmarkSnapshots,
   getBookmarkSnapshot,
   getSnapshotExportPayload,
   saveBookmarkSnapshot,
@@ -34,6 +35,26 @@ describe('bookmark snapshots', () => {
     expect(JSON.stringify(tree)).not.toContain('provider');
   });
 
+  it('preserves explicitly declared parent IDs during serialization', () => {
+    expect(serializeBookmarkTree({
+      id: '0',
+      title: 'Root',
+      parentId: null,
+      children: [{ id: '1', title: 'Bar', parentId: 'parent' }]
+    })).toEqual({
+      id: '0',
+      title: 'Root',
+      parentId: null,
+      children: [{ id: '1', title: 'Bar', parentId: 'parent' }]
+    });
+
+    expect(serializeBookmarkTree({ id: 'untitled', title: null })).toEqual({
+      id: 'untitled',
+      title: '',
+      parentId: null
+    });
+  });
+
   it('saves and reads a versioned snapshot without LLM configuration', async () => {
     const snapshot = createBookmarkSnapshot({ id: '0', title: 'Root', children: [] }, { timestamp: 123 });
     let stored = {};
@@ -46,6 +67,12 @@ describe('bookmark snapshots', () => {
     expect(loaded).toEqual(snapshot);
     expect(loaded.version).toBe(BOOKMARK_SNAPSHOT_VERSION);
     expect(JSON.stringify(loaded)).not.toMatch(/apiKey|provider|model|prompt/i);
+  });
+
+  it('generates a stable-format ID when the caller does not provide one', () => {
+    const snapshot = createBookmarkSnapshot({ id: '0', title: 'Root', children: [] }, { timestamp: 123 });
+
+    expect(snapshot.id).toMatch(/^snap_123_[a-z0-9]+$/);
   });
 
   it('keeps the newest snapshots within the retention limit', async () => {
@@ -70,6 +97,9 @@ describe('bookmark snapshots', () => {
     expect(chrome.bookmarks.getSubTree).toHaveBeenCalledWith('42');
     expect(snapshot.scope).toEqual({ bookmarkFolderId: '42' });
     expect(chrome.storage.local.set).toHaveBeenCalledWith({ bookmarkSnapshots: [snapshot] });
+
+    chrome.bookmarks.getSubTree.mockResolvedValue(null);
+    await expect(captureBookmarkSnapshot('missing-folder')).rejects.toThrow('Unable to read bookmarks');
   });
 
   it('captures the full bookmark tree and reports an empty tree', async () => {
@@ -85,9 +115,16 @@ describe('bookmark snapshots', () => {
     await expect(captureBookmarkSnapshot()).rejects.toThrow('Unable to read bookmarks');
   });
 
+  it('returns an empty list and null for missing stored snapshots', async () => {
+    expect(await getBookmarkSnapshots()).toEqual([]);
+    expect(await getBookmarkSnapshot('missing')).toBeNull();
+  });
+
   it('rejects invalid stored snapshots and malformed diff inputs', async () => {
     await expect(saveBookmarkSnapshot({ version: BOOKMARK_SNAPSHOT_VERSION, tree: null })).rejects.toThrow('Invalid bookmark snapshot');
     await expect(saveBookmarkSnapshot(null)).rejects.toThrow('Invalid bookmark snapshot');
+    await expect(saveBookmarkSnapshot({ version: BOOKMARK_SNAPSHOT_VERSION, tree: { id: '0', title: 'Root', url: 42 } })).rejects.toThrow('Invalid bookmark snapshot');
+    await expect(saveBookmarkSnapshot({ version: BOOKMARK_SNAPSHOT_VERSION, tree: { id: '0', title: 'Root', parentId: 42 } })).rejects.toThrow('Invalid bookmark snapshot');
     expect(() => buildBookmarkSnapshotDiff(null, { id: '0', title: 'Root', children: [] })).toThrow('Invalid bookmark snapshot');
     const validSnapshot = createBookmarkSnapshot({ id: '0', title: 'Root', children: [] });
     expect(() => buildBookmarkSnapshotDiff(validSnapshot, null)).toThrow('Invalid current bookmark tree');
@@ -136,6 +173,32 @@ describe('bookmark snapshots', () => {
     })]);
   });
 
+  it('matches a uniquely titled folder when its parent path has changed', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0',
+      title: 'Root',
+      children: [{
+        id: 'target-parent',
+        title: 'Target parent',
+        children: [{ id: 'target-child', title: 'Shared folder', children: [] }]
+      }]
+    }, { id: 'snap-title-match', timestamp: 1 });
+    const current = {
+      id: '0',
+      title: 'Root',
+      children: [{
+        id: 'current-parent',
+        title: 'Current parent',
+        children: [{ id: 'current-child', title: 'Shared folder', children: [] }]
+      }]
+    };
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, current);
+
+    expect(diff.operations.map(operation => operation.type)).toEqual(['create_folder', 'delete_folder']);
+    expect(diff.operations.map(operation => operation.title)).toEqual(['Target parent', 'Current parent']);
+  });
+
   it('exports only the authorized snapshot schema', () => {
     const snapshot = createBookmarkSnapshot({ id: '0', title: 'Root', children: [] }, {
       id: 'snap-export',
@@ -158,6 +221,12 @@ describe('bookmark snapshots', () => {
     expect(JSON.stringify(exported)).not.toMatch(/SECRET|openai|secret-model|secret prompt/i);
   });
 
+  it('omits an invalid scope from the exported snapshot', () => {
+    const snapshot = createBookmarkSnapshot({ id: '0', title: 'Root', children: [] }, { id: 'snap-invalid-scope', timestamp: 1 });
+
+    expect(getSnapshotExportPayload({ ...snapshot, scope: { bookmarkFolderId: 42 } }).scope).toBeNull();
+  });
+
   it('creates folders before their bookmark children and reports missing parents', () => {
     const snapshot = createBookmarkSnapshot({
       id: '0', title: 'Root', children: [{ id: '1', title: 'New folder', children: [{ id: '10', title: 'Site', url: 'https://example.com' }] }]
@@ -167,6 +236,70 @@ describe('bookmark snapshots', () => {
     expect(diff.operations.map(operation => operation.type)).toEqual(['create_folder', 'create_bookmark']);
     expect(diff.operations[1].params.parentId).toBe(diff.operations[0].params.tempId);
     expect(diff.unrestorable).toEqual([]);
+  });
+
+  it('uses the bookmarks bar as the parent when the snapshot root is recreated', () => {
+    const snapshot = {
+      version: BOOKMARK_SNAPSHOT_VERSION,
+      id: 'snap-root-create',
+      timestamp: 1,
+      scope: null,
+      tree: { id: 'snapshot-root', title: 'Snapshot root', children: [] }
+    };
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, { id: '0', title: 'Root', children: [] });
+
+    expect(diff.operations).toEqual([expect.objectContaining({
+      type: 'create_folder',
+      params: expect.objectContaining({ parentId: '1' })
+    })]);
+  });
+
+  it('renames folders without adding a bookmark URL update', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0',
+      title: 'Root',
+      children: [{ id: '1', title: 'Renamed Bar', children: [] }]
+    }, { id: 'snap-folder-rename', timestamp: 1 });
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, {
+      id: '0',
+      title: 'Root',
+      children: [{ id: '1', title: 'Old Bar', children: [] }]
+    });
+
+    expect(diff.operations).toEqual([expect.objectContaining({
+      type: 'rename_folder',
+      params: { nodeId: '1', newTitle: 'Renamed Bar' }
+    })]);
+  });
+
+  it('orders new folders before renames in the restoration preview', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0',
+      title: 'Root',
+      children: [{
+        id: '1',
+        title: 'Bar',
+        children: [
+          { id: '10', title: 'Updated site', url: 'https://example.com' },
+          { id: 'new-folder', title: 'New folder', children: [] }
+        ]
+      }]
+    }, { id: 'snap-mixed-order', timestamp: 1 });
+    const current = {
+      id: '0',
+      title: 'Root',
+      children: [{
+        id: '1',
+        title: 'Bar',
+        children: [{ id: '10', title: 'Old site', url: 'https://example.com' }]
+      }]
+    };
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, current);
+
+    expect(diff.operations.map(operation => operation.type)).toEqual(['create_folder', 'rename_bookmark']);
   });
 
   it('reports a snapshot node whose declared parent is not restorable', () => {
@@ -225,5 +358,31 @@ describe('bookmark snapshots', () => {
       'rename_bookmark', 'rename_bookmark', 'delete_bookmark', 'delete_bookmark'
     ]);
     expect(diff.operations.slice(2).map(operation => operation.targetId)).toEqual(['12', '13']);
+  });
+
+  it('deletes nested bookmarks before their containing folders', () => {
+    const snapshot = createBookmarkSnapshot({
+      id: '0',
+      title: 'Root',
+      children: [{ id: '1', title: 'Bar', children: [] }]
+    }, { id: 'snap-delete-folder', timestamp: 1 });
+    const current = {
+      id: '0',
+      title: 'Root',
+      children: [{
+        id: '1',
+        title: 'Bar',
+        children: [{
+          id: '2',
+          title: 'Temporary folder',
+          children: [{ id: '3', title: 'Temporary bookmark', url: 'https://temporary.example' }]
+        }]
+      }]
+    };
+
+    const diff = buildBookmarkSnapshotDiff(snapshot, current);
+
+    expect(diff.operations.map(operation => operation.type)).toEqual(['delete_bookmark', 'delete_folder']);
+    expect(diff.operations.map(operation => operation.title)).toEqual(['Temporary bookmark', 'Temporary folder']);
   });
 });

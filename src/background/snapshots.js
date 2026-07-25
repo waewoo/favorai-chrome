@@ -102,7 +102,7 @@ function flattenTree(root) {
     nodes.push({ node, path: currentPath.join(' > '), parentId: declaredParentId });
     for (const child of node.children || []) visit(child, currentPath, node.id);
   }
-  if (root) visit(root);
+  visit(root);
   return nodes;
 }
 
@@ -119,11 +119,11 @@ function makeTempId(nodeId) {
 }
 
 function sortByDepthAscending(a, b) {
-  return (a.params.targetPath || '').split(' > ').length - (b.params.targetPath || '').split(' > ').length;
+  return a.params.targetPath.split(' > ').length - b.params.targetPath.split(' > ').length;
 }
 
 function sortByDepthDescending(a, b) {
-  return (b.params.sourcePath || '').split(' > ').length - (a.params.sourcePath || '').split(' > ').length;
+  return b.params.sourcePath.split(' > ').length - a.params.sourcePath.split(' > ').length;
 }
 
 export function buildBookmarkSnapshotDiff(snapshot, currentTree) {
@@ -240,14 +240,18 @@ export function buildBookmarkSnapshotDiff(snapshot, currentTree) {
   }
 
   const orderedOperations = operations.sort((a, b) => {
-    const createOrder = a.type.startsWith('create_') && b.type.startsWith('create_')
+    const aIsCreate = a.type.startsWith('create_');
+    const bIsCreate = b.type.startsWith('create_');
+    const createOrder = aIsCreate && bIsCreate
       ? sortByDepthAscending(a, b)
       : 0;
     if (createOrder) return createOrder;
-    if (a.type.startsWith('create_') !== b.type.startsWith('create_')) return a.type.startsWith('create_') ? -1 : 1;
-    if (a.type.startsWith('delete_') && b.type.startsWith('delete_')) return sortByDepthDescending(a, b);
-    if (a.type.startsWith('delete_') !== b.type.startsWith('delete_')) return a.type.startsWith('delete_') ? 1 : -1;
-    const rank = type => type.startsWith('rename_') ? 1 : type.startsWith('move_') ? 2 : 0;
+    if (aIsCreate !== bIsCreate) return Number(bIsCreate) - Number(aIsCreate);
+    const aIsDelete = a.type.startsWith('delete_');
+    const bIsDelete = b.type.startsWith('delete_');
+    if (aIsDelete && bIsDelete) return sortByDepthDescending(a, b);
+    if (aIsDelete !== bIsDelete) return Number(aIsDelete) - Number(bIsDelete);
+    const rank = type => type.startsWith('rename_') ? 1 : 2;
     if (rank(a.type) !== rank(b.type)) return rank(a.type) - rank(b.type);
     return a.id.localeCompare(b.id);
   });

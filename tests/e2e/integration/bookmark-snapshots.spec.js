@@ -225,4 +225,60 @@ test.describe('Bookmark snapshots', () => {
       await cleanup(context, tmpDir);
     }
   });
+
+  test('shows successful and failed operations when Chrome rejects a restore move', async () => {
+    const { context, page, extensionId, tmpDir } = await launchExtension();
+
+    try {
+      await gotoPopup(page, extensionId);
+      await page.evaluate(async () => {
+        const folderA = await chrome.bookmarks.create({ parentId: '1', title: 'Restore folder A' });
+        const folderB = await chrome.bookmarks.create({ parentId: folderA.id, title: 'Restore folder B' });
+        await chrome.bookmarks.create({ parentId: '1', title: 'Before restore', url: 'https://snapshot-partial.example' });
+        const [root] = await chrome.bookmarks.getTree();
+        const serialize = (node, parentId = null) => ({
+          id: String(node.id),
+          title: node.title || '',
+          parentId: node.parentId === undefined ? parentId : String(node.parentId),
+          ...(node.url ? { url: node.url } : {}),
+          ...(node.children ? { children: node.children.map(child => serialize(child, String(node.id))) } : {})
+        });
+        const tree = serialize(root);
+        const bar = tree.children.find(child => child.id === '1');
+        const targetA = bar.children.find(child => child.id === String(folderA.id));
+        const targetB = targetA.children.find(child => child.id === String(folderB.id));
+        const targetBookmark = bar.children.find(child => child.title === 'Before restore');
+
+        targetA.children = [];
+        targetA.parentId = targetB.id;
+        targetB.parentId = bar.id;
+        targetB.children = [targetA];
+        targetBookmark.title = 'After restore';
+        bar.children = [targetB, targetBookmark];
+
+        await chrome.storage.local.set({ bookmarkSnapshots: [{
+          version: 1,
+          id: 'snap_partial_error_e2e',
+          timestamp: Date.now(),
+          scope: null,
+          tree
+        }] });
+      });
+
+      await page.locator('#tabHistoryBtn').click();
+      await expect(page.locator('.btn-snapshot-preview')).toBeVisible();
+      await page.locator('.btn-snapshot-preview').click();
+      await expect(page.locator('.btn-snapshot-restore')).toBeVisible();
+      await page.locator('.btn-snapshot-restore').click();
+      await page.locator('#modalBtnConfirm').click();
+
+      await expect(page.locator('#snapshotPreview')).toContainText(/Restored: After restore|Restauré : After restore/);
+      await expect(page.locator('#snapshotPreview')).toContainText(/Could not restore: Restore folder A|Impossible de restaurer : Restore folder A/);
+      await expect(page.locator('#snapshotPreview')).toContainText(/failed: 1|échecs : 1/);
+      const snapshots = await page.evaluate(async () => (await chrome.storage.local.get('bookmarkSnapshots')).bookmarkSnapshots);
+      expect(snapshots.some(snapshot => snapshot.id === 'snap_partial_error_e2e')).toBe(true);
+    } finally {
+      await cleanup(context, tmpDir);
+    }
+  });
 });
