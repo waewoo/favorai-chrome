@@ -58,7 +58,6 @@ export function createBookmarkSnapshot(rootNode, options = {}) {
     tree
   };
 
-  if (!validateNode(snapshot.tree)) throw new Error('Cannot create a snapshot from an invalid bookmark tree.');
   return snapshot;
 }
 
@@ -99,7 +98,8 @@ function flattenTree(root) {
   const nodes = [];
   function visit(node, path = [], parentId = null) {
     const currentPath = [...path, node.title];
-    nodes.push({ node, path: currentPath.join(' > '), parentId });
+    const declaredParentId = node.parentId === undefined ? parentId : node.parentId;
+    nodes.push({ node, path: currentPath.join(' > '), parentId: declaredParentId });
     for (const child of node.children || []) visit(child, currentPath, node.id);
   }
   if (root) visit(root);
@@ -171,7 +171,8 @@ export function buildBookmarkSnapshotDiff(snapshot, currentTree) {
       unrestorable.push({
         type: operationType('create', target),
         title: target.title,
-        reason: 'Parent folder cannot be resolved.'
+        code: 'UNRESOLVED_PARENT',
+        details: { parentId: targetEntry.parentId }
       });
     }
   }
@@ -201,12 +202,18 @@ export function buildBookmarkSnapshotDiff(snapshot, currentTree) {
     const current = currentNodes.find(entry => entry.node.id === currentId);
     if (!current || targetEntry.parentId === null || targetEntry.parentId === undefined) continue;
 
-    if (current.node.title !== target.title) {
+    const titleChanged = current.node.title !== target.title;
+    const urlChanged = target.url !== undefined && current.node.url !== target.url;
+    if (titleChanged || urlChanged) {
       operations.push({
         id: `snapshot_rename_${target.id}`,
         type: operationType('rename', target),
         title: target.title,
-        params: { nodeId: currentId, newTitle: target.title, ...(target.url !== undefined ? { newUrl: target.url } : {}) }
+        params: {
+          nodeId: currentId,
+          newTitle: target.title,
+          ...(target.url !== undefined ? { newUrl: target.url } : {})
+        }
       });
     }
 
@@ -263,7 +270,15 @@ export function getSnapshotExportPayload(snapshot) {
   if (!snapshot || snapshot.version !== BOOKMARK_SNAPSHOT_VERSION || !validateNode(snapshot.tree)) {
     throw new Error('Invalid bookmark snapshot.');
   }
-  return JSON.parse(JSON.stringify(snapshot));
+  return {
+    version: BOOKMARK_SNAPSHOT_VERSION,
+    id: snapshot.id,
+    timestamp: snapshot.timestamp,
+    scope: snapshot.scope && typeof snapshot.scope === 'object' && typeof snapshot.scope.bookmarkFolderId === 'string'
+      ? { bookmarkFolderId: snapshot.scope.bookmarkFolderId }
+      : null,
+    tree: JSON.parse(JSON.stringify(snapshot.tree))
+  };
 }
 
 export {

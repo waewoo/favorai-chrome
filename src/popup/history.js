@@ -6,6 +6,71 @@ import { isSafeUrl, formatExplanation, showConfirm, showToast, addLog } from './
 
 const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
 
+function replaceMessage(message, replacements) {
+  return Object.entries(replacements).reduce(
+    (result, [key, value]) => result.replace(`{${key}}`, String(value)),
+    message
+  );
+}
+
+function snapshotErrorMessage(error, fallbackKey, fallbackText) {
+  const messages = {
+    SNAPSHOT_NOT_FOUND: ['snapshotErrorNotFound', 'Snapshot not found.'],
+    SNAPSHOT_REQUEST_FAILED: ['snapshotErrorRequest', 'Snapshot request failed.'],
+    SNAPSHOT_EXPORT_FAILED: ['snapshotErrorExport', 'Snapshot export failed.'],
+    SNAPSHOT_PREVIEW_FAILED: ['snapshotErrorPreview', 'Snapshot preview failed.'],
+    SNAPSHOT_UNRESTORABLE: ['snapshotErrorUnrestorable', 'Some snapshot items cannot be restored automatically.'],
+    SNAPSHOT_RESTORE_FAILED: ['snapshotErrorRestore', 'Snapshot restoration failed.'],
+    SNAPSHOT_RESTORE_PARTIAL: ['snapshotErrorRestorePartial', 'Snapshot restoration completed partially.'],
+    BOOKMARKS_CHANGED_BEFORE_APPLY: ['snapshotErrorStale', 'Bookmarks changed since the preview. Please preview the snapshot again.']
+  };
+  const [key, fallback] = messages[error?.code] || [fallbackKey, fallbackText];
+  return t(key, fallback);
+}
+
+function snapshotIssueMessage(issue) {
+  const detail = issue.code === 'UNRESOLVED_PARENT'
+    ? t('snapshotUnresolvedParent', 'Parent folder cannot be resolved.')
+    : t('snapshotUnrestorableOperation', 'This operation cannot be restored automatically.');
+  return `${issue.title}: ${detail}`;
+}
+
+function snapshotOperationMessage(operation, success) {
+  const key = success ? 'snapshotRestoreSucceededOperation' : 'snapshotRestoreFailedOperation';
+  const fallback = success ? 'Restored: {title}' : 'Could not restore: {title}';
+  return replaceMessage(t(key, fallback), { title: operation.title || '' });
+}
+
+function appendRestoreOutcome(error) {
+  const preview = document.getElementById('snapshotPreview');
+  if (!preview) return;
+
+  const outcome = document.createElement('div');
+  outcome.style.cssText = 'margin-top: 8px; font-size: 10px;';
+  const summary = document.createElement('div');
+  summary.textContent = replaceMessage(
+    t('snapshotRestorePartial', 'Restored: {success}; failed: {failed}.'),
+    { success: error.successCount || 0, failed: error.failureCount || 0 }
+  );
+  outcome.appendChild(summary);
+
+  const list = document.createElement('ul');
+  list.style.cssText = 'margin: 4px 0 0 16px; padding: 0;';
+  for (const operation of error.successes || []) {
+    const item = document.createElement('li');
+    item.textContent = snapshotOperationMessage(operation, true);
+    list.appendChild(item);
+  }
+  for (const failure of error.failures || []) {
+    const item = document.createElement('li');
+    item.style.color = 'var(--error-color)';
+    item.textContent = snapshotOperationMessage(failure, false);
+    list.appendChild(item);
+  }
+  outcome.appendChild(list);
+  preview.appendChild(outcome);
+}
+
 export function renderHistory() {
   const historyListContainer = document.getElementById('historyListContainer');
   const btnClearHistory = document.getElementById('btnClearHistory');
@@ -316,6 +381,12 @@ function sendSnapshotMessage(message) {
       if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
       else if (!response?.success) {
         const error = new Error(response?.error || 'Snapshot request failed.');
+        error.code = response?.errorCode;
+        error.details = response?.errorDetails;
+        error.partial = response?.partial || false;
+        error.successCount = response?.successCount || 0;
+        error.failureCount = response?.failureCount || 0;
+        error.successes = response?.successes || [];
         error.failures = response?.failures || [];
         reject(error);
       }
@@ -416,11 +487,13 @@ async function previewSnapshot(snapshotId) {
 
     const summary = document.createElement('div');
     summary.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 8px;';
-    summary.textContent = `${t('snapshotDiffSummary', '{creates} create(s), {moves} move(s), {renames} rename(s), {deletes} delete(s)')
-      .replace('{creates}', String(diff.summary.creates))
-      .replace('{moves}', String(diff.summary.moves))
-      .replace('{renames}', String(diff.summary.renames))
-      .replace('{deletes}', String(diff.summary.deletes))}`;
+    summary.textContent = `${replaceMessage(t('snapshotDiffSummary', '{creates} create(s), {moves} move(s), {renames} rename(s), {deletes} delete(s), {unrestorable} not restorable'), {
+      creates: diff.summary.creates,
+      moves: diff.summary.moves,
+      renames: diff.summary.renames,
+      deletes: diff.summary.deletes,
+      unrestorable: diff.summary.unrestorable
+    })}`;
     preview.appendChild(summary);
 
     const list = document.createElement('ul');
@@ -433,7 +506,7 @@ async function previewSnapshot(snapshotId) {
     for (const issue of diff.unrestorable) {
       const item = document.createElement('li');
       item.style.color = 'var(--warning-color)';
-      item.textContent = `${issue.title}: ${issue.reason}`;
+      item.textContent = snapshotIssueMessage(issue);
       list.appendChild(item);
     }
     preview.appendChild(list);
@@ -442,7 +515,7 @@ async function previewSnapshot(snapshotId) {
     restoreButton.addEventListener('click', () => requestSnapshotRestore(snapshotId));
     preview.appendChild(restoreButton);
   } catch (error) {
-    preview.textContent = error.message || t('snapshotPreviewFailed', 'Snapshot preview failed.');
+    preview.textContent = snapshotErrorMessage(error, 'snapshotPreviewFailed', 'Snapshot preview failed.');
   }
 }
 
@@ -452,19 +525,34 @@ async function requestSnapshotRestore(snapshotId) {
   const button = document.querySelector(`.btn-snapshot-restore[data-snapshot-id="${CSS.escape(snapshotId)}"]`);
   if (button) button.disabled = true;
   try {
-    await sendSnapshotMessage({
+    const response = await sendSnapshotMessage({
       action: 'restore_bookmark_snapshot',
       snapshotId,
       expectedTreeFingerprint: document.getElementById('snapshotPreview')?.dataset.treeFingerprint || null
     });
-    showToast(t('snapshotRestoreSuccess', 'Snapshot restored.'));
+    const successText = response.successCount > 0
+      ? replaceMessage(t('snapshotRestoreSuccessCount', 'Snapshot restored: {count} operation(s).'), { count: response.successCount })
+      : t('snapshotRestoreSuccess', 'Snapshot restored.');
+    showToast(successText);
     renderHistory();
   } catch (error) {
-    const details = Array.isArray(error.failures) && error.failures.length > 0
-      ? ` ${error.failures.map(failure => `${failure.type}: ${failure.title || ''} — ${failure.error || ''}`).join('; ')}`
-      : '';
-    showToast(error.message || t('snapshotRestoreFailed', 'Snapshot restoration failed.'));
-    addLog(`${t('snapshotRestoreFailed', 'Snapshot restoration failed.')}${details}`, 'error');
+    if (error.successCount > 0 || error.failureCount > 0) {
+      const summary = replaceMessage(
+        t('snapshotRestorePartial', 'Restored: {success}; failed: {failed}.'),
+        { success: error.successCount, failed: error.failureCount }
+      );
+      showToast(summary);
+      addLog(summary, error.partial ? 'warning' : 'error');
+      renderHistory();
+      if (error.partial) {
+        await previewSnapshot(snapshotId);
+        appendRestoreOutcome(error);
+      }
+    } else {
+      const message = snapshotErrorMessage(error, 'snapshotRestoreFailed', 'Snapshot restoration failed.');
+      showToast(message);
+      addLog(message, 'error');
+    }
     if (button) button.disabled = false;
   }
 }

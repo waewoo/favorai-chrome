@@ -20,6 +20,12 @@ export function resolveParentId(id, idMap) {
   return s;
 }
 
+function createApplyConsistencyError() {
+  const error = new Error(chrome.i18n.getMessage('errBookmarksChangedBeforeApply') || 'Bookmarks changed since analysis. Please run the analysis again before applying changes.');
+  error.code = 'BOOKMARKS_CHANGED_BEFORE_APPLY';
+  return error;
+}
+
 /**
  * Applique les modifications approuvées par l'utilisateur sur les favoris Chrome.
  */
@@ -38,7 +44,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     rootNode = await readBookmarkRoot(options.bookmarkFolderId);
   } catch {
     if (options.expectedTreeFingerprint) {
-      throw new Error(chrome.i18n.getMessage('errBookmarksChangedBeforeApply') || 'Bookmarks changed since analysis. Please run the analysis again before applying changes.');
+      throw createApplyConsistencyError();
     }
     // Silently continue if unable to read tree and no consistency guard was requested.
   }
@@ -46,7 +52,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     if (options.expectedTreeFingerprint) {
       const currentFingerprint = buildBookmarkTreeFingerprint(rootNode);
       if (currentFingerprint !== options.expectedTreeFingerprint) {
-        throw new Error(chrome.i18n.getMessage('errBookmarksChangedBeforeApply') || 'Bookmarks changed since analysis. Please run the analysis again before applying changes.');
+        throw createApplyConsistencyError();
       }
     }
     nodeMap = buildNodeMap(rootNode);
@@ -62,6 +68,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
   const idMap = {};
   const history = [];
   const failures = [];
+  const successes = [];
 
   // A. Créer les dossiers (ordre croissant de profondeur)
   const creates = toRun.filter(a => a.type === 'create_folder')
@@ -71,11 +78,18 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     const parentId = resolveParentId(act.params.parentId, idMap);
     if (parentId === null) {
       console.warn(`[FavorAI] applyChanges: skipping folder creation "${act.params.title}" — parent ${act.params.parentId} was not created`);
+      failures.push({
+        type: act.type,
+        title: act.params.title,
+        errorCode: 'UNRESOLVED_PARENT',
+        error: `Parent ${act.params.parentId} was not created.`
+      });
       continue;
     }
     try {
       const created = await chrome.bookmarks.create({ parentId, title: act.params.title });
       idMap[act.params.tempId] = created.id;
+      successes.push({ type: act.type, title: act.params.title });
       history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
       failures.push({ type: act.type, title: act.params.title, error: e.message });
@@ -92,6 +106,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     try {
       const created = await chrome.bookmarks.create({ parentId, title: act.params.title, url: act.params.url });
       idMap[act.params.tempId] = created.id;
+      successes.push({ type: act.type, title: act.params.title });
       history.push({ type: 'create_bookmark', title: act.params.title, realId: created.id, parentId, url: act.params.url, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
       failures.push({ type: act.type, title: act.params.title, error: e.message });
@@ -107,9 +122,10 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       if (nodes?.[0]) { oldTitle = nodes[0].title; oldUrl = nodes[0].url || null; parentId = nodes[0].parentId; }
     } catch { /* ignore */ }
     const update = { title: act.params.newTitle };
-    if (act.type === 'rename_bookmark' && act.params.newUrl) update.url = act.params.newUrl;
+    if (act.type === 'rename_bookmark' && act.params.newUrl !== undefined) update.url = act.params.newUrl;
     try {
       await chrome.bookmarks.update(realId, update);
+      successes.push({ type: act.type, title: act.params.newTitle || oldTitle });
       history.push({ type: 'rename', nodeId: realId, oldTitle, newTitle: act.params.newTitle, oldUrl, newUrl: update.url || null, isFolder: !oldUrl, parentPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
       failures.push({ type: act.type, title: act.params.newTitle || oldTitle, error: e.message });
@@ -122,6 +138,12 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     const realPid = resolveParentId(act.params.newParentId, idMap);
     if (realPid === null) {
       console.warn(`[FavorAI] applyChanges: skipping move of "${act.title}" — target parent ${act.params.newParentId} was not created`);
+      failures.push({
+        type: act.type,
+        title: act.title || '',
+        errorCode: 'UNRESOLVED_PARENT',
+        error: `Parent ${act.params.newParentId} was not created.`
+      });
       continue;
     }
     let oldPid = '', title = '', isFolder = false;
@@ -131,6 +153,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     } catch { /* ignore */ }
     try {
       await chrome.bookmarks.move(realId, { parentId: realPid });
+      successes.push({ type: act.type, title: title || act.title || '' });
       history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
     } catch (e) {
       failures.push({ type: act.type, title: title || act.title, error: e.message });
@@ -158,6 +181,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       } else {
         await chrome.bookmarks.remove(realId);
       }
+      successes.push({ type: act.type, title: act.title || old?.title || '' });
       if (old) history.push({ type: 'delete', nodeId: realId, title: old.title, url: old.url || null, parentId: old.parentId, isFolder: !old.url, sourcePath: getPathFromMap(old.parentId, nodeMap) });
     } catch (e) {
       failures.push({ type: act.type, title: act.title || old?.title || '', error: e.message });
@@ -175,7 +199,7 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
     await saveSessionToHistory(historyWithIds, mode, explanation);
   }
 
-  return { failures, snapshotId };
+  return { failures, successes, snapshotId };
 }
 
 async function readBookmarkRoot(bookmarkFolderId) {

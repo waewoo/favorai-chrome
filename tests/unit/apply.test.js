@@ -294,10 +294,81 @@ describe('applyChanges', () => {
     chrome.bookmarks.create.mockClear();
     chrome.bookmarks.move.mockClear();
 
-    await applyChanges(approvedActionIds, pendingActions, 'complete');
+    const result = await applyChanges(approvedActionIds, pendingActions, 'complete');
 
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
     expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+    expect(result.failures).toEqual([
+      expect.objectContaining({ type: 'create_folder', errorCode: 'UNRESOLVED_PARENT' }),
+      expect.objectContaining({ type: 'move_bookmark', errorCode: 'UNRESOLVED_PARENT' })
+    ]);
+  });
+
+  it('reports successful operations alongside unresolved parent failures', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const result = await applyChanges(
+      ['create', 'move'],
+      [
+        { id: 'create', type: 'create_folder', params: { tempId: 'new_folder', title: 'Created', parentId: '1' } },
+        { id: 'move', type: 'move_bookmark', title: 'Existing', params: { nodeId: '10', newParentId: 'new_missing' } }
+      ],
+      'snapshot_restore'
+    );
+
+    expect(result.successes).toEqual([{ type: 'create_folder', title: 'Created' }]);
+    expect(result.failures).toEqual([expect.objectContaining({
+      type: 'move_bookmark',
+      title: 'Existing',
+      errorCode: 'UNRESOLVED_PARENT'
+    })]);
+  });
+
+  it('reports bookmark creation success and unresolved bookmark parents', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'bookmark-id', title: 'Site' });
+
+    const success = await applyChanges(
+      ['bookmark'],
+      [{ id: 'bookmark', type: 'create_bookmark', params: { tempId: 'new_bookmark', title: 'Site', url: 'https://example.com', parentId: '1' } }],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+    const failure = await applyChanges(
+      ['orphan'],
+      [{ id: 'orphan', type: 'create_bookmark', params: { tempId: 'new_orphan', title: 'Orphan', url: 'https://orphan.example', parentId: 'new_missing' } }],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+
+    expect(success.successes).toEqual([{ type: 'create_bookmark', title: 'Site' }]);
+    expect(failure.failures).toEqual([{ type: 'create_bookmark', title: 'Orphan', error: 'Parent new_missing was not created.' }]);
+  });
+
+  it('records successful empty-title renames and moves with fallback titles', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.get.mockResolvedValue([{ id: '20', title: '', parentId: '1' }]);
+
+    const result = await applyChanges(
+      ['rename', 'move'],
+      [
+        { id: 'rename', type: 'rename_folder', params: { nodeId: '20', newTitle: '' } },
+        { id: 'move', type: 'move_folder', params: { nodeId: '20', newParentId: '1' } }
+      ],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+
+    expect(result.successes).toEqual([
+      { type: 'rename_folder', title: '' },
+      { type: 'move_folder', title: '' }
+    ]);
   });
 
   it('should handle bookmarks.get returning empty or failing gracefully', async () => {
@@ -890,7 +961,7 @@ describe('applyChanges', () => {
       'complete',
       '',
       { expectedTreeFingerprint: buildBookmarkTreeFingerprint(analyzedTree) }
-    )).rejects.toThrow(/changed|favoris/i);
+    )).rejects.toMatchObject({ code: 'BOOKMARKS_CHANGED_BEFORE_APPLY' });
 
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
     expect(chrome.storage.local.set).not.toHaveBeenCalledWith(expect.objectContaining({ bookmarkSnapshots: expect.anything() }));
