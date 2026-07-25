@@ -280,7 +280,9 @@ function repairCommonJsonSyntax(text) {
     }
   }
 
-  return repaired;
+  // Some models omit the comma between a completed object/array property and
+  // the next quoted property (most often before "explanation").
+  return repaired.replace(/([}\]])(\s*)("(?:[^"\\]|\\.)*"\s*:)/g, '$1,$2$3');
 }
 
 function getNextSignificantChar(text, startIndex) {

@@ -26,6 +26,19 @@ describe('alignReorganizedIds', () => {
     expect(node.id).toBe('1');
   });
 
+  it('should preserve Chrome root IDs when the model calls the root "root"', () => {
+    const node = {
+      id: '0',
+      title: 'root',
+      children: [{ id: '1', title: 'Folder A', children: [] }]
+    };
+
+    alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);
+
+    expect(node.id).toBe('0');
+    expect(node.children[0].id).toBe('1');
+  });
+
   it('should match and align by exact title when ID has drifted', () => {
     const node = { id: 'new_123', title: 'Folder A', children: [] };
     alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle);

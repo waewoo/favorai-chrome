@@ -62,6 +62,20 @@ export function getPathFromMap(nodeId, nodeMap) {
  */
 export function alignReorganizedIds(node, originalMap, originalFoldersByTitle, originalBookmarksByTitle, parentId = null) {
   const isFolder = Array.isArray(node.children);
+  const isChromeRoot = CHROME_ROOT_IDS.has(String(node.id)) && !originalMap[node.id]?.url;
+
+  // Chrome's virtual roots are structural nodes, never user-created folders.
+  // Keep their IDs even when the LLM uses a generic title such as "root".
+  if (isChromeRoot) {
+    if (!node.title && originalMap[node.id]?.title) node.title = originalMap[node.id].title;
+    if (node.children) {
+      for (const child of node.children) {
+        alignReorganizedIds(child, originalMap, originalFoldersByTitle, originalBookmarksByTitle, node.id);
+      }
+    }
+    return;
+  }
+
   const titleKey = (node.title || '').trim().toLowerCase();
   let matchedNode = null;
 

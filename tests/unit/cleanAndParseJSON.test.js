@@ -123,6 +123,15 @@ describe('cleanAndParseJSON', () => {
     });
   });
 
+  it('should repair a missing comma before the explanation property', () => {
+    const json = '{"reorganizedTree":{"id":"0","children":[]}\n"explanation":"Done"}';
+
+    expect(cleanAndParseJSON(json)).toEqual({
+      reorganizedTree: { id: '0', children: [] },
+      explanation: 'Done'
+    });
+  });
+
   it('should scan to the end when no significant char follows a closing quote', () => {
     expect(() => cleanAndParseJSON('{"title": "unfinished"   ')).toThrow();
   });

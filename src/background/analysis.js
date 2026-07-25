@@ -54,19 +54,49 @@ function preserveManagedFolder(node, originalMap, managedFolderId) {
   const managedFolder = originalMap[String(managedFolderId)];
   if (!managedFolder || managedFolder.url) return;
   const protectedCopy = deepCloneNode(managedFolder);
-  function find(current) {
-    if (String(current.id) === String(managedFolder.parentId)) return current;
+  function find(current, targetId) {
+    if (String(current.id) === String(targetId)) return current;
     for (const child of current.children || []) {
-      const found = find(child);
+      const found = find(child, targetId);
       if (found) return found;
     }
     return null;
   }
-  const parentNode = find(node);
-  if (!parentNode) throw new Error('Le dossier des favoris les plus consultés ne peut pas être préservé.');
+  let parentNode = find(node, managedFolder.parentId);
+  if (!parentNode) {
+    // The model may omit an unchanged parent folder while keeping the protected
+    // folder contractually required. Rebuild only the missing parent chain from
+    // local metadata, stopping at the nearest ancestor still present in the
+    // model output. This avoids restoring the user's complete old tree.
+    let childToAttach = protectedCopy;
+    let currentParentId = String(managedFolder.parentId || '');
+    while (currentParentId && !parentNode) {
+      parentNode = find(node, currentParentId) || null;
+      if (parentNode) break;
+
+      const originalParent = originalMap[currentParentId];
+      if (!originalParent || originalParent.url) {
+        throw new Error('Le dossier des favoris les plus consultés ne peut pas être préservé.');
+      }
+      childToAttach = {
+        id: originalParent.id,
+        title: originalParent.title,
+        parentId: originalParent.parentId,
+        children: [childToAttach]
+      };
+      currentParentId = String(originalParent.parentId || '');
+    }
+
+    if (!parentNode) throw new Error('Le dossier des favoris les plus consultés ne peut pas être préservé.');
+    parentNode.children = (parentNode.children || []).filter(child => String(child.id) !== String(managedFolderId));
+    parentNode.children.push(childToAttach);
+    return;
+  }
   parentNode.children = (parentNode.children || []).filter(child => String(child.id) !== String(managedFolderId));
   parentNode.children.push(protectedCopy);
 }
+
+export { preserveManagedFolder };
 
 /** Cède le contrôle à l'event loop pour permettre le rendu UI entre deux étapes lourdes. */
 function yieldToUI() {
