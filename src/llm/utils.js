@@ -206,8 +206,11 @@ export function cleanAndParseJSON(text) {
     }
     // Detect if the JSON was truncated (LLM hit max_tokens)
     const trimmed = text.trimEnd();
-    const isLikelyTruncated = trimmed.length > 2000 &&
-      !trimmed.endsWith('}') && !trimmed.endsWith(']');
+    const isLikelyTruncated = trimmed.length > 2000 && (
+      !trimmed.endsWith('}')
+      && !trimmed.endsWith(']')
+      || /Unterminated string|Unexpected end of JSON input/i.test(e.message)
+    );
 
     if (isLikelyTruncated) {
       console.error('[FavorAI] LLM response truncated (max_tokens reached).');

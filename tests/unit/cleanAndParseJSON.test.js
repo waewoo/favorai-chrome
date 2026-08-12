@@ -136,6 +136,12 @@ describe('cleanAndParseJSON', () => {
     expect(() => cleanAndParseJSON('{"title": "unfinished"   ')).toThrow();
   });
 
+  it('should detect a long unterminated string even when the response ends with a brace', () => {
+    const truncated = '{"reorganizedTree": {}, "explanation": "' + 'a'.repeat(2100) + '}';
+
+    expect(() => cleanAndParseJSON(truncated)).toThrow(/limite de tokens/i);
+  });
+
   it('should escape raw literal newlines and carriage returns inside double-quoted string literals', () => {
     const json = '{\n  "key": "line1\r\nline2\nline3"\n}';
     expect(cleanAndParseJSON(json)).toEqual({ key: 'line1\nline2\nline3' });
