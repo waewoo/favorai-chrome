@@ -2,7 +2,7 @@ import { URL_CHECK_TIMEOUT_MS, RESTRICTED_DOMAINS, CHROME_ROOT_IDS, NEW_FOLDER_P
 import { queryLLM } from '../llm/index.js';
 import {
   flattenBookmarks, buildNodeMap, buildReorganizedMap,
-  alignReorganizedIds, sanitizeReorganizedTree,
+  alignReorganizedIds, sanitizeReorganizedTree, normalizeReorganizedRoot,
   getPathFromMap, cleanTreeForLLM
 } from './diff.js';
 import { sendRuntimeMessage } from './runtime-messaging.js';
@@ -690,6 +690,8 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
     reorganizedTree = root ?? { id: '0', title: 'root', children: reorganizedTree };
   }
 
+  normalizeReorganizedRoot(reorganizedTree, rootNode.id, rootNode.title);
+
   preserveManagedFolder(reorganizedTree, originalMap, managedFolderId);
 
   // Restaurer les enfants originaux pour les dossiers où le LLM a utilisé [...] → []
@@ -761,6 +763,7 @@ export async function runAnalysis(config, mode, analysisOptions, userSignal, cur
   // B. Créations de dossiers
   for (const id in reorganizedMap) {
     const n = reorganizedMap[id];
+    if (CHROME_ROOT_IDS.has(id)) continue;
     if ((id.startsWith(NEW_FOLDER_PREFIX) || !originalMap[id]) && n.isFolder) {
       actions.push({
         id: `act_${counter++}`, type: 'create_folder', targetId: id,

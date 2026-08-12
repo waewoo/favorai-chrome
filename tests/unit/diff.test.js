@@ -3,6 +3,7 @@ import {
   flattenBookmarks,
   buildNodeMap,
   buildReorganizedMap,
+  normalizeReorganizedRoot,
   getPathFromMap,
   alignReorganizedIds,
   sanitizeReorganizedTree,
@@ -136,6 +137,60 @@ describe('diff.js functions', () => {
       const result = buildReorganizedMap(node);
       expect(result['30'].parentId).toBe('20');
       expect(result['20'].parentId).toBe('10');
+    });
+  });
+
+  describe('normalizeReorganizedRoot', () => {
+    it('maps a generic LLM root to the analyzed Chrome root', () => {
+      const node = { id: 'root', title: 'root', children: [] };
+
+      normalizeReorganizedRoot(node, '1', 'Barre de favoris');
+
+      expect(node).toMatchObject({ id: '1', title: 'Barre de favoris' });
+    });
+
+    it('does not alter an unrelated folder', () => {
+      const node = { id: 'new_user_folder', title: 'Personal root', children: [] };
+
+      normalizeReorganizedRoot(node, '1', 'Barre de favoris');
+
+      expect(node).toMatchObject({ id: 'new_user_folder', title: 'Personal root' });
+    });
+
+    it.each([
+      ['a missing node', null, '1'],
+      ['a missing analyzed root', { id: 'root', title: 'root', children: [] }, ''],
+      ['a bookmark node', { id: 'root', title: 'root', url: 'https://example.com' }, '1']
+    ])('leaves %s unchanged', (_case, node, originalRootId) => {
+      expect(normalizeReorganizedRoot(node, originalRootId, 'Bookmarks Bar')).toBe(node);
+    });
+
+    it.each([
+      [{ id: 'llm_root', title: ' ROOT ', children: [] }, 'Barre de favoris'],
+      [{ id: 'llm_container', title: ' bookmarks bar ', children: [] }, 'Bookmarks Bar']
+    ])('recognizes a generic root from its semantic title', (node, originalRootTitle) => {
+      normalizeReorganizedRoot(node, '1', originalRootTitle);
+
+      expect(node).toMatchObject({ id: '1', title: originalRootTitle });
+    });
+
+    it('does not invent missing root metadata', () => {
+      const unnamedContainer = { children: [] };
+      const genericRoot = { id: 'root', children: [] };
+
+      normalizeReorganizedRoot(unnamedContainer, '1', '');
+      normalizeReorganizedRoot(genericRoot, '1', '');
+
+      expect(unnamedContainer).toEqual({ children: [] });
+      expect(genericRoot).toEqual({ id: '1', children: [] });
+    });
+
+    it('preserves an existing Chrome root identifier', () => {
+      const node = { id: '1', title: 'root', children: [] };
+
+      normalizeReorganizedRoot(node, '1', 'Bookmarks Bar');
+
+      expect(node).toEqual({ id: '1', title: 'root', children: [] });
     });
   });
 
