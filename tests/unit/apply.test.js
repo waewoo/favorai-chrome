@@ -137,6 +137,29 @@ describe('applyChanges', () => {
     expect(result.failures).toEqual([{ type: 'create_bookmark', title: 'Site', error: 'bookmark create failed' }]);
   });
 
+  it('logs the failed bookmark operation with its target context', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.create.mockRejectedValue(new Error('folder create failed'));
+
+    await applyChanges(
+      ['create'],
+      [{ id: 'create', type: 'create_folder', params: { tempId: 'new_folder', title: 'Folder', parentId: '1' } }],
+      'complete'
+    );
+
+    expect(console.error).toHaveBeenCalledWith(
+      '[FavorAI] Bookmark apply operation failed',
+      {
+        type: 'create_folder',
+        title: 'Folder',
+        error: 'folder create failed',
+        parentId: '1',
+        tempId: 'new_folder'
+      }
+    );
+  });
+
   it('should recursively delete empty folders while preserving non-empty ones and root folders', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([
       { id: '0', title: 'Root', children: [{ id: '1', title: 'Barre de favoris' }] }

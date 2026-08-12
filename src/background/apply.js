@@ -26,6 +26,14 @@ function createApplyConsistencyError() {
   return error;
 }
 
+function recordApplyFailure(failures, failure, context) {
+  failures.push(failure);
+  console.error('[FavorAI] Bookmark apply operation failed', {
+    ...failure,
+    ...context
+  });
+}
+
 /**
  * Applique les modifications approuvées par l'utilisateur sur les favoris Chrome.
  */
@@ -92,7 +100,11 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       successes.push({ type: act.type, title: act.params.title });
       history.push({ type: 'create_folder', title: act.params.title, realId: created.id, parentId, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
-      failures.push({ type: act.type, title: act.params.title, error: e.message });
+      recordApplyFailure(
+        failures,
+        { type: act.type, title: act.params.title, error: e.message },
+        { parentId, tempId: act.params.tempId }
+      );
     }
   }
 
@@ -109,7 +121,11 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       successes.push({ type: act.type, title: act.params.title });
       history.push({ type: 'create_bookmark', title: act.params.title, realId: created.id, parentId, url: act.params.url, targetPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
-      failures.push({ type: act.type, title: act.params.title, error: e.message });
+      recordApplyFailure(
+        failures,
+        { type: act.type, title: act.params.title, error: e.message },
+        { parentId, tempId: act.params.tempId }
+      );
     }
   }
 
@@ -128,7 +144,11 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       successes.push({ type: act.type, title: act.params.newTitle || oldTitle });
       history.push({ type: 'rename', nodeId: realId, oldTitle, newTitle: act.params.newTitle, oldUrl, newUrl: update.url || null, isFolder: !oldUrl, parentPath: getPathFromMap(parentId, nodeMap) });
     } catch (e) {
-      failures.push({ type: act.type, title: act.params.newTitle || oldTitle, error: e.message });
+      recordApplyFailure(
+        failures,
+        { type: act.type, title: act.params.newTitle || oldTitle, error: e.message },
+        { nodeId: realId, parentId }
+      );
     }
   }
 
@@ -156,7 +176,11 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       successes.push({ type: act.type, title: title || act.title || '' });
       history.push({ type: 'move', nodeId: realId, title: title || act.title, isFolder, oldParentId: oldPid, newParentId: realPid, sourcePath: getPathFromMap(oldPid, nodeMap), targetPath: getPathFromMap(realPid, nodeMap) });
     } catch (e) {
-      failures.push({ type: act.type, title: title || act.title, error: e.message });
+      recordApplyFailure(
+        failures,
+        { type: act.type, title: title || act.title, error: e.message },
+        { nodeId: realId, parentId: realPid }
+      );
     }
   }
 
@@ -184,7 +208,11 @@ export async function applyChanges(approvedActionIds, pendingActions, mode, expl
       successes.push({ type: act.type, title: act.title || old?.title || '' });
       if (old) history.push({ type: 'delete', nodeId: realId, title: old.title, url: old.url || null, parentId: old.parentId, isFolder: !old.url, sourcePath: getPathFromMap(old.parentId, nodeMap) });
     } catch (e) {
-      failures.push({ type: act.type, title: act.title || old?.title || '', error: e.message });
+      recordApplyFailure(
+        failures,
+        { type: act.type, title: act.title || old?.title || '', error: e.message },
+        { nodeId: realId, parentId: old?.parentId || '' }
+      );
     }
   }
 
