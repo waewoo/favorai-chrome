@@ -126,4 +126,61 @@ describe('queryGemini retry behaviour', () => {
       256
     )).rejects.toThrow(/Gemini:/);
   });
+
+  it('parses JSON split across multiple response parts', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        candidates: [{
+          content: {
+            parts: [
+              { text: '{"reorganizedTree":{"id":"0",' },
+              { text: '"children":[]},"explanation":"split"}' }
+            ]
+          },
+          finishReason: 'STOP'
+        }]
+      })
+    });
+
+    await expect(queryGemini(
+      'https://generativelanguage.googleapis.com',
+      'test-key',
+      'gemini-2.0-flash',
+      'prompt',
+      'system prompt',
+      null,
+      false,
+      256
+    )).resolves.toEqual({
+      reorganizedTree: { id: '0', children: [] },
+      explanation: 'split'
+    });
+  });
+
+  it('reports a token-limit error when Gemini stops at max output tokens', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        candidates: [{
+          content: { parts: [{ text: '{"reorganizedTree": {' }] },
+          finishReason: 'MAX_TOKENS',
+          finishMessage: 'Maximum output tokens reached'
+        }]
+      })
+    });
+
+    await expect(queryGemini(
+      'https://generativelanguage.googleapis.com',
+      'test-key',
+      'gemini-2.0-flash',
+      'prompt',
+      'system prompt',
+      null,
+      false,
+      256
+    )).rejects.toMatchObject({ isTokenLimit: true });
+  });
 });

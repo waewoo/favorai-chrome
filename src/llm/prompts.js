@@ -171,6 +171,11 @@ Specific rules:
 - DETECT & REMOVE DUPLICATES: if two bookmarks point to the same resource, keep only the best-placed one.
 COMPLETE MODE — MANDATORY WORKFLOW:
 
+OUTPUT SIZE CONSTRAINT:
+- Keep the "explanation" value concise: maximum 250 words.
+- Summarize repeated changes by category instead of listing every bookmark.
+- The complete JSON tree is the source of truth; do not repeat the whole tree in the explanation.
+
 Step 1 — PLAN your 6 to 8 new top-level categories (all with new_ IDs):
   Example: new_dev, new_devops, new_ai, new_finance, new_personal, new_reference
   → Write these down mentally before generating the JSON
