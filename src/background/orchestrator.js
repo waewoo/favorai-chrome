@@ -6,6 +6,7 @@
 import { runAnalysis } from './analysis.js';
 import { applyChanges } from './apply.js';
 import { rollbackSession, saveSessionToHistory } from './history.js';
+import { buildBookmarkSnapshotDiff, getBookmarkSnapshot, getBookmarkSnapshots, getBookmarkTree, getSnapshotExportPayload } from './snapshots.js';
 import { suggestBookmarkLocation } from '../llm/index.js';
 import { cleanAndParseJSON } from '../llm/utils.js';
 import { buildNodeMap, getPathFromMap } from './diff.js';
@@ -15,9 +16,30 @@ import { sendRuntimeMessage } from './runtime-messaging.js';
 import { AUTO_MOVE_CONFIDENCE_THRESHOLD_DEFAULT } from '../utils/constants.js';
 import { normalizeAutoBookmarkPolicy } from './auto-bookmark-policy.js';
 import { createAutoBookmarkQueue } from './auto-bookmark-queue.js';
+import { buildBookmarkTreeFingerprint } from './tree-fingerprint.js';
 import { MOST_USED_ALARM, MOST_USED_FOLDER_ID_KEY, MOST_USED_SYSTEM_COPY_IDS_KEY, getMostUsedBookmarks, queueMostUsedRefresh, refreshMostUsedBookmarks, setMostUsedWindow } from './most-used.js';
 
 const DIAGNOSTIC_LOG_LIMIT = 100;
+
+function createSnapshotError(code, details = null) {
+  const error = new Error('Snapshot request failed.');
+  error.code = code;
+  error.details = details;
+  return error;
+}
+
+function sendSnapshotError(sendResponse, error, fallbackCode) {
+  sendResponse({
+    success: false,
+    error: error?.message || '',
+    errorCode: error?.code || fallbackCode,
+    errorDetails: error?.details || null,
+    successCount: error?.successCount || 0,
+    failureCount: error?.failureCount || error?.failures?.length || 0,
+    successes: error?.successes || [],
+    failures: error?.failures || []
+  });
+}
 
 let pendingActions = [];
 // currentAbortController is intentionally not persisted: if the SW is killed mid-analysis
@@ -857,7 +879,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           currentStatus.logs = [];
           currentStatus.analysisTreeFingerprint = null;
           chrome.storage.local.set({ extensionStatus: currentStatus, pendingActions: [] });
-          sendResponse({ success: true, failures: result?.failures || [] });
+          sendResponse({ success: true, failures: result?.failures || [], snapshotId: result?.snapshotId || null });
         })
         .catch(error => {
           sendResponse({ success: false, error: error.message });
@@ -870,6 +892,77 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     saveSessionToHistory(message.entries, 'forgotten', '')
       .then(() => sendResponse({ success: true }))
       .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (message.action === 'get_bookmark_snapshots') {
+    getBookmarkSnapshots()
+      .then(snapshots => sendResponse({ success: true, snapshots }))
+      .catch(error => sendSnapshotError(sendResponse, error, 'SNAPSHOT_REQUEST_FAILED'));
+    return true;
+  }
+
+  if (message.action === 'export_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(snapshot => {
+        if (!snapshot) throw createSnapshotError('SNAPSHOT_NOT_FOUND');
+        return sendResponse({ success: true, snapshot: getSnapshotExportPayload(snapshot) });
+      })
+      .catch(error => sendSnapshotError(sendResponse, error, 'SNAPSHOT_EXPORT_FAILED'));
+    return true;
+  }
+
+  if (message.action === 'preview_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(async snapshot => {
+        if (!snapshot) throw createSnapshotError('SNAPSHOT_NOT_FOUND');
+        const scopeId = snapshot.scope?.bookmarkFolderId || null;
+        const currentTree = await getBookmarkTree(scopeId);
+        const diff = buildBookmarkSnapshotDiff(snapshot, currentTree);
+        return sendResponse({ success: true, snapshotId: snapshot.id, currentTreeFingerprint: buildBookmarkTreeFingerprint(currentTree), diff });
+      })
+      .catch(error => sendSnapshotError(sendResponse, error, 'SNAPSHOT_PREVIEW_FAILED'));
+    return true;
+  }
+
+  if (message.action === 'restore_bookmark_snapshot') {
+    getBookmarkSnapshot(message.snapshotId)
+      .then(async snapshot => {
+        if (!snapshot) throw createSnapshotError('SNAPSHOT_NOT_FOUND');
+        const scopeId = snapshot.scope?.bookmarkFolderId || null;
+        const currentTree = await getBookmarkTree(scopeId);
+        const diff = buildBookmarkSnapshotDiff(snapshot, currentTree);
+        if (diff.unrestorable.length > 0) {
+          throw createSnapshotError('SNAPSHOT_UNRESTORABLE', diff.unrestorable);
+        }
+        const result = await applyChanges(
+          diff.operations.map(operation => operation.id),
+          diff.operations,
+          'snapshot_restore',
+          `Restored snapshot ${snapshot.id}`,
+          {
+            expectedTreeFingerprint: message.expectedTreeFingerprint || buildBookmarkTreeFingerprint(currentTree),
+            bookmarkFolderId: scopeId,
+            skipCleanup: true
+          }
+        );
+        const successes = result.successes || [];
+        const successCount = successes.length;
+        const failureCount = result.failures.length;
+        return sendResponse({
+          success: failureCount === 0,
+          partial: successCount > 0 && failureCount > 0,
+          errorCode: failureCount > 0
+            ? (successCount > 0 ? 'SNAPSHOT_RESTORE_PARTIAL' : 'SNAPSHOT_RESTORE_FAILED')
+            : null,
+          successCount,
+          failureCount,
+          successes,
+          failures: result.failures,
+          snapshotId: snapshot.id
+        });
+      })
+      .catch(error => sendSnapshotError(sendResponse, error, 'SNAPSHOT_RESTORE_FAILED'));
     return true;
   }
 

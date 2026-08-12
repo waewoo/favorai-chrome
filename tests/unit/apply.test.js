@@ -98,6 +98,45 @@ describe('applyChanges', () => {
     );
   });
 
+  it('should save a dated snapshot before the first approved mutation', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'folder-id', title: 'Folder' });
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const result = await applyChanges(
+      ['create'],
+      [{ id: 'create', type: 'create_folder', params: { tempId: 'new_folder', title: 'Folder', parentId: '1' } }],
+      'complete'
+    );
+
+    expect(result.snapshotId).toMatch(/^snap_/);
+    const snapshotCall = chrome.storage.local.set.mock.calls.findIndex(([value]) => value.bookmarkSnapshots);
+    const createCall = chrome.bookmarks.create.mock.invocationCallOrder[0];
+    const snapshotStorageCall = chrome.storage.local.set.mock.invocationCallOrder[snapshotCall];
+    expect(snapshotStorageCall).toBeLessThan(createCall);
+  });
+
+  it('should create bookmark children after folders and report bookmark failures', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.create
+      .mockResolvedValueOnce({ id: 'folder-id', title: 'Folder' })
+      .mockRejectedValueOnce(new Error('bookmark create failed'));
+
+    const result = await applyChanges(
+      ['folder', 'bookmark'],
+      [
+        { id: 'bookmark', type: 'create_bookmark', params: { tempId: 'new_bookmark', title: 'Site', url: 'https://example.com', parentId: 'new_folder' } },
+        { id: 'folder', type: 'create_folder', params: { tempId: 'new_folder', title: 'Folder', parentId: '1' } }
+      ],
+      'snapshot_restore'
+    );
+
+    expect(chrome.bookmarks.create).toHaveBeenNthCalledWith(1, { parentId: '1', title: 'Folder' });
+    expect(chrome.bookmarks.create).toHaveBeenNthCalledWith(2, { parentId: 'folder-id', title: 'Site', url: 'https://example.com' });
+    expect(result.failures).toEqual([{ type: 'create_bookmark', title: 'Site', error: 'bookmark create failed' }]);
+  });
+
   it('should recursively delete empty folders while preserving non-empty ones and root folders', async () => {
     chrome.bookmarks.getTree.mockResolvedValue([
       { id: '0', title: 'Root', children: [{ id: '1', title: 'Barre de favoris' }] }
@@ -255,10 +294,81 @@ describe('applyChanges', () => {
     chrome.bookmarks.create.mockClear();
     chrome.bookmarks.move.mockClear();
 
-    await applyChanges(approvedActionIds, pendingActions, 'complete');
+    const result = await applyChanges(approvedActionIds, pendingActions, 'complete');
 
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
     expect(chrome.bookmarks.move).not.toHaveBeenCalled();
+    expect(result.failures).toEqual([
+      expect.objectContaining({ type: 'create_folder', errorCode: 'UNRESOLVED_PARENT' }),
+      expect.objectContaining({ type: 'move_bookmark', errorCode: 'UNRESOLVED_PARENT' })
+    ]);
+  });
+
+  it('reports successful operations alongside unresolved parent failures', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+
+    const result = await applyChanges(
+      ['create', 'move'],
+      [
+        { id: 'create', type: 'create_folder', params: { tempId: 'new_folder', title: 'Created', parentId: '1' } },
+        { id: 'move', type: 'move_bookmark', title: 'Existing', params: { nodeId: '10', newParentId: 'new_missing' } }
+      ],
+      'snapshot_restore'
+    );
+
+    expect(result.successes).toEqual([{ type: 'create_folder', title: 'Created' }]);
+    expect(result.failures).toEqual([expect.objectContaining({
+      type: 'move_bookmark',
+      title: 'Existing',
+      errorCode: 'UNRESOLVED_PARENT'
+    })]);
+  });
+
+  it('reports bookmark creation success and unresolved bookmark parents', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.create.mockResolvedValue({ id: 'bookmark-id', title: 'Site' });
+
+    const success = await applyChanges(
+      ['bookmark'],
+      [{ id: 'bookmark', type: 'create_bookmark', params: { tempId: 'new_bookmark', title: 'Site', url: 'https://example.com', parentId: '1' } }],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+    const failure = await applyChanges(
+      ['orphan'],
+      [{ id: 'orphan', type: 'create_bookmark', params: { tempId: 'new_orphan', title: 'Orphan', url: 'https://orphan.example', parentId: 'new_missing' } }],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+
+    expect(success.successes).toEqual([{ type: 'create_bookmark', title: 'Site' }]);
+    expect(failure.failures).toEqual([{ type: 'create_bookmark', title: 'Orphan', error: 'Parent new_missing was not created.' }]);
+  });
+
+  it('records successful empty-title renames and moves with fallback titles', async () => {
+    chrome.bookmarks.getTree.mockResolvedValue([{ id: '0', title: 'Root', children: [] }]);
+    chrome.bookmarks.getChildren.mockResolvedValue([]);
+    chrome.bookmarks.get.mockResolvedValue([{ id: '20', title: '', parentId: '1' }]);
+
+    const result = await applyChanges(
+      ['rename', 'move'],
+      [
+        { id: 'rename', type: 'rename_folder', params: { nodeId: '20', newTitle: '' } },
+        { id: 'move', type: 'move_folder', params: { nodeId: '20', newParentId: '1' } }
+      ],
+      'snapshot_restore',
+      '',
+      { skipCleanup: true }
+    );
+
+    expect(result.successes).toEqual([
+      { type: 'rename_folder', title: '' },
+      { type: 'move_folder', title: '' }
+    ]);
   });
 
   it('should handle bookmarks.get returning empty or failing gracefully', async () => {
@@ -419,8 +529,10 @@ describe('applyChanges', () => {
 
     await applyChanges(['act_fail'], pendingActions, 'complete', 'No history produced');
 
-    // saveSessionToHistory should NOT have been called since no operations succeeded
-    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    // A failed mutation still has a pre-mutation snapshot for recovery.
+    expect(chrome.storage.local.set).toHaveBeenCalledWith(
+      expect.objectContaining({ bookmarkSnapshots: expect.any(Array) })
+    );
   });
 
   it('should filter out non-approved actions and only process approved ones', async () => {
@@ -849,9 +961,10 @@ describe('applyChanges', () => {
       'complete',
       '',
       { expectedTreeFingerprint: buildBookmarkTreeFingerprint(analyzedTree) }
-    )).rejects.toThrow(/changed|favoris/i);
+    )).rejects.toMatchObject({ code: 'BOOKMARKS_CHANGED_BEFORE_APPLY' });
 
     expect(chrome.bookmarks.create).not.toHaveBeenCalled();
+    expect(chrome.storage.local.set).not.toHaveBeenCalledWith(expect.objectContaining({ bookmarkSnapshots: expect.anything() }));
   });
 
   it('should validate the selected bookmark subtree before applying scoped changes', async () => {

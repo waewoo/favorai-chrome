@@ -45,7 +45,7 @@ export async function rollbackSession(historyEntries) {
   for (const entry of reversed) {
     try {
       let handled = true;
-      if (entry.type === 'create_folder') {
+      if (entry.type === 'create_folder' || entry.type === 'create_bookmark') {
         const realId = idMap[entry.realId] || entry.realId;
         await chrome.bookmarks.remove(realId);
 

@@ -6,10 +6,77 @@ import { isSafeUrl, formatExplanation, showConfirm, showToast, addLog } from './
 
 const t = (key, fallback = '') => chrome.i18n.getMessage(key) || fallback;
 
+function replaceMessage(message, replacements) {
+  return Object.entries(replacements).reduce(
+    (result, [key, value]) => result.replace(`{${key}}`, String(value)),
+    message
+  );
+}
+
+function snapshotErrorMessage(error, fallbackKey, fallbackText) {
+  const messages = {
+    SNAPSHOT_NOT_FOUND: ['snapshotErrorNotFound', 'Snapshot not found.'],
+    SNAPSHOT_REQUEST_FAILED: ['snapshotErrorRequest', 'Snapshot request failed.'],
+    SNAPSHOT_EXPORT_FAILED: ['snapshotErrorExport', 'Snapshot export failed.'],
+    SNAPSHOT_PREVIEW_FAILED: ['snapshotErrorPreview', 'Snapshot preview failed.'],
+    SNAPSHOT_UNRESTORABLE: ['snapshotErrorUnrestorable', 'Some snapshot items cannot be restored automatically.'],
+    SNAPSHOT_RESTORE_FAILED: ['snapshotErrorRestore', 'Snapshot restoration failed.'],
+    SNAPSHOT_RESTORE_PARTIAL: ['snapshotErrorRestorePartial', 'Snapshot restoration completed partially.'],
+    BOOKMARKS_CHANGED_BEFORE_APPLY: ['snapshotErrorStale', 'Bookmarks changed since the preview. Please preview the snapshot again.']
+  };
+  const [key, fallback] = messages[error?.code] || [fallbackKey, fallbackText];
+  return t(key, fallback);
+}
+
+function snapshotIssueMessage(issue) {
+  const detail = issue.code === 'UNRESOLVED_PARENT'
+    ? t('snapshotUnresolvedParent', 'Parent folder cannot be resolved.')
+    : t('snapshotUnrestorableOperation', 'This operation cannot be restored automatically.');
+  return `${issue.title}: ${detail}`;
+}
+
+function snapshotOperationMessage(operation, success) {
+  const key = success ? 'snapshotRestoreSucceededOperation' : 'snapshotRestoreFailedOperation';
+  const fallback = success ? 'Restored: {title}' : 'Could not restore: {title}';
+  return replaceMessage(t(key, fallback), { title: operation.title || '' });
+}
+
+function appendRestoreOutcome(error) {
+  const preview = document.getElementById('snapshotPreview');
+  if (!preview) return;
+
+  const outcome = document.createElement('div');
+  outcome.style.cssText = 'margin-top: 8px; font-size: 10px;';
+  const summary = document.createElement('div');
+  summary.textContent = replaceMessage(
+    t('snapshotRestorePartial', 'Restored: {success}; failed: {failed}.'),
+    { success: error.successCount || 0, failed: error.failureCount || 0 }
+  );
+  outcome.appendChild(summary);
+
+  const list = document.createElement('ul');
+  list.style.cssText = 'margin: 4px 0 0 16px; padding: 0;';
+  for (const operation of error.successes || []) {
+    const item = document.createElement('li');
+    item.textContent = snapshotOperationMessage(operation, true);
+    list.appendChild(item);
+  }
+  for (const failure of error.failures || []) {
+    const item = document.createElement('li');
+    item.style.color = 'var(--error-color)';
+    item.textContent = snapshotOperationMessage(failure, false);
+    list.appendChild(item);
+  }
+  outcome.appendChild(list);
+  preview.appendChild(outcome);
+}
+
 export function renderHistory() {
   const historyListContainer = document.getElementById('historyListContainer');
   const btnClearHistory = document.getElementById('btnClearHistory');
   if (!historyListContainer) return;
+
+  renderSnapshots();
 
   chrome.storage.local.get(['reorgHistory'], (res) => {
     const history = res.reorgHistory || [];
@@ -306,6 +373,186 @@ export function renderHistory() {
       });
     });
   });
+}
+
+function sendSnapshotMessage(message) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(message, response => {
+      if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+      else if (!response?.success) {
+        const error = new Error(response?.error || 'Snapshot request failed.');
+        error.code = response?.errorCode;
+        error.details = response?.errorDetails;
+        error.partial = response?.partial || false;
+        error.successCount = response?.successCount || 0;
+        error.failureCount = response?.failureCount || 0;
+        error.successes = response?.successes || [];
+        error.failures = response?.failures || [];
+        reject(error);
+      }
+      else resolve(response);
+    });
+  });
+}
+
+function createSnapshotButton(label, className, snapshotId) {
+  const button = document.createElement('button');
+  button.className = `btn btn-flat ${className}`;
+  button.dataset.snapshotId = snapshotId;
+  button.textContent = label;
+  button.style.cssText = 'font-size: 10px; padding: 3px 8px; height: auto; margin-left: 4px;';
+  return button;
+}
+
+export function renderSnapshots() {
+  const container = document.getElementById('snapshotsListContainer');
+  if (!container) return;
+  container.textContent = '';
+
+  sendSnapshotMessage({ action: 'get_bookmark_snapshots' })
+    .then(({ snapshots }) => {
+      if (!snapshots.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding: 12px; text-align: center; color: var(--text-muted); font-size: 11px;';
+        empty.textContent = t('snapshotsEmpty', 'No bookmark snapshots available.');
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const snapshot of snapshots) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px; border-bottom: 1px dashed rgba(255,255,255,0.08);';
+        const label = document.createElement('span');
+        label.style.color = 'var(--text-main)';
+        label.textContent = new Date(snapshot.timestamp).toLocaleString();
+        const actions = document.createElement('span');
+        const preview = createSnapshotButton(t('snapshotPreview', 'Preview'), 'btn-snapshot-preview', snapshot.id);
+        const exportButton = createSnapshotButton(t('snapshotExport', 'Export'), 'btn-snapshot-export', snapshot.id);
+        actions.appendChild(preview);
+        actions.appendChild(exportButton);
+        row.appendChild(label);
+        row.appendChild(actions);
+        container.appendChild(row);
+      }
+
+      container.querySelectorAll('.btn-snapshot-preview').forEach(button => {
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try { await previewSnapshot(button.dataset.snapshotId); } finally { button.disabled = false; }
+        });
+      });
+      container.querySelectorAll('.btn-snapshot-export').forEach(button => {
+        button.addEventListener('click', () => exportSnapshot(button.dataset.snapshotId));
+      });
+    })
+    .catch(error => {
+      const failed = document.createElement('div');
+      failed.style.cssText = 'padding: 12px; color: var(--error-color); font-size: 11px;';
+      failed.textContent = snapshotErrorMessage(error, 'snapshotErrorRequest', 'Snapshot request failed.');
+      container.appendChild(failed);
+    });
+}
+
+async function exportSnapshot(snapshotId) {
+  try {
+    const { snapshot } = await sendSnapshotMessage({ action: 'export_bookmark_snapshot', snapshotId });
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `favorai-${snapshotId}.json`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(t('snapshotExportSuccess', 'Snapshot exported.'));
+  } catch (error) {
+    showToast(snapshotErrorMessage(error, 'snapshotExportFailed', 'Snapshot export failed.'));
+  }
+}
+
+async function previewSnapshot(snapshotId) {
+  const preview = document.getElementById('snapshotPreview');
+  if (!preview) return;
+  preview.style.display = 'block';
+  preview.textContent = t('snapshotLoading', 'Calculating snapshot differences...');
+
+  try {
+    const response = await sendSnapshotMessage({ action: 'preview_bookmark_snapshot', snapshotId });
+    const { diff } = response;
+    preview.dataset.treeFingerprint = response.currentTreeFingerprint || '';
+    preview.textContent = '';
+    const heading = document.createElement('div');
+    heading.style.cssText = 'font-weight: 600; margin-bottom: 6px;';
+    heading.textContent = t('snapshotPreviewTitle', 'Restoration preview');
+    preview.appendChild(heading);
+
+    const summary = document.createElement('div');
+    summary.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 8px;';
+    summary.textContent = `${replaceMessage(t('snapshotDiffSummary', '{creates} create(s), {moves} move(s), {renames} rename(s), {deletes} delete(s), {unrestorable} not restorable'), {
+      creates: diff.summary.creates,
+      moves: diff.summary.moves,
+      renames: diff.summary.renames,
+      deletes: diff.summary.deletes,
+      unrestorable: diff.summary.unrestorable
+    })}`;
+    preview.appendChild(summary);
+
+    const list = document.createElement('ul');
+    list.style.cssText = 'margin: 0 0 8px 16px; padding: 0; font-size: 10px;';
+    for (const operation of diff.operations) {
+      const item = document.createElement('li');
+      item.textContent = `${operation.type}: ${operation.title || ''}`;
+      list.appendChild(item);
+    }
+    for (const issue of diff.unrestorable) {
+      const item = document.createElement('li');
+      item.style.color = 'var(--warning-color)';
+      item.textContent = snapshotIssueMessage(issue);
+      list.appendChild(item);
+    }
+    preview.appendChild(list);
+
+    const restoreButton = createSnapshotButton(t('snapshotRestore', 'Restore'), 'btn-snapshot-restore', snapshotId);
+    restoreButton.addEventListener('click', () => requestSnapshotRestore(snapshotId));
+    preview.appendChild(restoreButton);
+  } catch (error) {
+    preview.textContent = snapshotErrorMessage(error, 'snapshotPreviewFailed', 'Snapshot preview failed.');
+  }
+}
+
+async function requestSnapshotRestore(snapshotId) {
+  const ok = await showConfirm(t('snapshotRestore', 'Restore'), t('snapshotConfirmRestore', 'Restore this snapshot? Bookmarks changed since it was captured may be modified.'));
+  if (!ok) return;
+  const button = document.querySelector(`.btn-snapshot-restore[data-snapshot-id="${CSS.escape(snapshotId)}"]`);
+  if (button) button.disabled = true;
+  try {
+    const response = await sendSnapshotMessage({
+      action: 'restore_bookmark_snapshot',
+      snapshotId,
+      expectedTreeFingerprint: document.getElementById('snapshotPreview')?.dataset.treeFingerprint || null
+    });
+    const successText = response.successCount > 0
+      ? replaceMessage(t('snapshotRestoreSuccessCount', 'Snapshot restored: {count} operation(s).'), { count: response.successCount })
+      : t('snapshotRestoreSuccess', 'Snapshot restored.');
+    showToast(successText);
+    renderHistory();
+  } catch (error) {
+    if (error.successCount > 0 || error.failureCount > 0) {
+      const summary = replaceMessage(
+        t('snapshotRestorePartial', 'Restored: {success}; failed: {failed}.'),
+        { success: error.successCount, failed: error.failureCount }
+      );
+      showToast(summary);
+      addLog(summary, error.partial ? 'warning' : 'error');
+      renderHistory();
+      await previewSnapshot(snapshotId);
+      appendRestoreOutcome(error);
+    } else {
+      const message = snapshotErrorMessage(error, 'snapshotRestoreFailed', 'Snapshot restoration failed.');
+      showToast(message);
+      addLog(message, 'error');
+    }
+    if (button) button.disabled = false;
+  }
 }
 
 export async function performRollback(sessionId, btnElement) {

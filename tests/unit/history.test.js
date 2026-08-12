@@ -136,6 +136,12 @@ describe('saveSessionToHistory', () => {
 
 
 describe('rollbackSession', () => {
+  it('removes a bookmark created during snapshot restoration', async () => {
+    await rollbackSession([{ type: 'create_bookmark', realId: 'created-bookmark' }]);
+
+    expect(chrome.bookmarks.remove).toHaveBeenCalledWith('created-bookmark');
+  });
+
   it('should undo operations in reverse order', async () => {
     const historyEntries = [
       { type: 'create_folder', realId: 'new-folder-1' },
