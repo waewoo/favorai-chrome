@@ -37,6 +37,28 @@ export function buildReorganizedMap(node, map = {}, parentId = null) {
 }
 
 /**
+ * Rattache un conteneur racine générique renvoyé par le LLM à la racine Chrome
+ * réellement analysée. Le modèle peut utiliser `root` comme identifiant
+ * sémantique, mais ce n'est jamais un dossier que l'extension doit créer.
+ */
+export function normalizeReorganizedRoot(node, originalRootId, originalRootTitle) {
+  if (!node || !originalRootId || node.url) return node;
+
+  const nodeId = String(node.id || '').trim().toLowerCase();
+  const nodeTitle = String(node.title || '').trim().toLowerCase();
+  const rootTitle = String(originalRootTitle || '').trim().toLowerCase();
+  const isGenericRoot = nodeId === 'root'
+    || nodeTitle === 'root'
+    || (rootTitle && nodeTitle === rootTitle);
+
+  if (isGenericRoot && !CHROME_ROOT_IDS.has(String(node.id))) {
+    node.id = String(originalRootId);
+    if (originalRootTitle) node.title = originalRootTitle;
+  }
+  return node;
+}
+
+/**
  * Reconstruit le chemin complet depuis la map (ex: "Barre de favoris > Dev > JS").
  */
 export function getPathFromMap(nodeId, nodeMap) {
